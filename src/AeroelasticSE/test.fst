@@ -70,13 +70,13 @@ True        CompNoise   - Compute aerodynamic noise (flag)
    0.0      IPDefl      - Initial in-plane blade-tip deflection (meters)
    0.0      TeetDefl    - Initial or fixed teeter angle (degrees) [unused for 3 blades]
    0.0      Azimuth     - Initial azimuth angle for blade 1 (degrees)
-  12.1      RotSpeed    - Initial or fixed rotor speed (rpm)
+12.20     RotSpeed - Initial or fixed rotor speed (rpm)
    0.0      NacYaw      - Initial or fixed nacelle-yaw angle (degrees)
    0.0      TTDspFA     - Initial fore-aft tower-top displacement (meters)
    0.0      TTDspSS     - Initial side-to-side tower-top displacement (meters)
 ---------------------- TURBINE CONFIGURATION -----------------------------------
-  63.0      TipRad      - The distance from the rotor apex to the blade tip (meters)
-   1.5      HubRad      - The distance from the rotor apex to the blade root (meters)
+63.00     TipRad - The distance from the rotor apex to the blade tip (meters)
+1.50     HubRad - The distance from the rotor apex to the blade root (meters)
    1        PSpnElN     - Number of the innermost blade element which is still part of the pitchable portion of the blade for partial-span pitch control [1 to BldNodes] [CURRENTLY IGNORED] (-)
    0.0      UndSling    - Undersling length [distance from teeter pin to the rotor apex] (meters) [unused for 3 blades]
    0.0      HubCM       - Distance from rotor apex to hub mass [positive downwind] (meters)
@@ -129,10 +129,10 @@ False       GBRevers    - Gearbox reversal {T: if rotor and generator rotate in 
 9999.9      TEC_MR      - Magnetizing reactance (ohms) [used only when VSContrl=0 and GenModel=2]
 ---------------------- PLATFORM ------------------------------------------------
    0        PtfmModel   - Platform model {0: none, 1: onshore, 2: fixed bottom offshore, 3: floating offshore} (switch)
-  ""        PtfmFile    - Name of file containing platform properties (quoted string) [unused when PtfmModel=0]
+"C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/InputFilesToWrite/" PtfmFile - Name of file containing platform properties (quoted string) [unused when PtfmModel=0]
 ---------------------- TOWER ---------------------------------------------------
   33       TwrNodes    - Number of tower nodes used for analysis (-)
-"NREL5MW_Tower_Onshore.dat"          TwrFile     - Name of file containing tower properties (quoted string)
+"C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/ModelFiles/NREL5MW_Tower_Onshore.dat" TwrFile - Name of file containing tower properties (quoted string)
 ---------------------- NACELLE-YAW ---------------------------------------------
 9028.32E6   YawSpr      - Nacelle-yaw spring constant (N-m/rad)
   19.16E6   YawDamp     - Nacelle-yaw damping constant (N-m/(rad/s))

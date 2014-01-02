@@ -16,7 +16,7 @@ try:
     from openmdao.units import units
 except:
     sys.stderr.write("Can't import openmdao - I'll try again using setpath.\n")
-    sys.path.append('C:/Python27/openmdao-0.3.0/models/FAST') # path to setpath.py # todo- machine dependency
+    sys.path.append('C:/Models/FAST/') # path to setpath.py # todo- machine dependency
     import setpath # add OpenMDAO packages to Python path
     from openmdao.units import units
 
@@ -67,7 +67,7 @@ class FAST_component(Component):
         super(FAST_component,self).__init__()
 
         if adpath is None:
-            adpath = 'C:/Python27/openmdao-0.3.0/twister/inputFiles/airfoils/5MWRef/' # todo: machine dependency
+            adpath = 'C:/Models/FAST/airfoils/5MWRef/' # todo: machine dependency
 
         if geometryaero is None:
             self.add('geometryaero', GeometryAero(adpath))

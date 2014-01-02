@@ -76,7 +76,7 @@ class runFAST(object):
         DIR_NAME = 'nt'
         fastexe = 'FAST_v7.01.00a-bjj_AeroDyn_v13.00.01a-bjj_BladedDLLInterface.exe'
         isWindows = True
-        template_file = 'NREL5MW_Tower_Onshore_ts.fst' # kld 'NREL5MW_Monopile_Rigid.v7.01.fst'
+        template_file = 'NREL5MW_Monopile_Rigid.fst' # kld 'NREL5MW_Monopile_Rigid.v7.01.fst'
         noise_template = 'Noise.ipt' # kld 'Noise.v7.01.ipt'
     elif platform.system() == 'Darwin':
         FAST_BIN = os.path.join(FAST_BIN, 'osx')
@@ -87,9 +87,6 @@ class runFAST(object):
     elif platform.system() == 'Linux':
         FAST_BIN = os.path.join(FAST_BIN, 'linux')
         DIR_NAME = 'linux'
-        fastexe = 'FAST_glin64'
-        template_file = 'NREL5MW_Monopile_Rigid.v7.02.fst'
-        noise_template = 'Noise.v7.02.ipt'
     # ---------------------------------------
 
 
@@ -108,10 +105,10 @@ class runFAST(object):
 ### beware windows-python path wierdness: after numbers(?), apparantly "\" as separator is NOT ok. ###
 
     # kld 10/22/2013 - using these till fix is implemented
-    fastpath = 'C:/Models/FAST/'  # todo: machine specific
+    fastpath = 'C:/Python27/openmdao-0.7.0/twister/models/FAST/FASTexe'  # todo: machine specific
     fastexe = 'FAST_v7.01.00a-bjj_AeroDyn_v13.00.01a-bjj_BladedDLLInterface.exe'
-    template_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/InputFilesToWrite/'
-    model_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/ModelFiles/'
+    template_path = 'C:/Python27/openmdao-0.7.0/twister/models/FAST/InputFilesToWrite/'
+    model_path = 'C:/Python27/openmdao-0.7.0/twister/models/FAST/ModelFiles/'
 
 
     def __init__(self, geometry=None, atm=None, debug=False):
@@ -131,16 +128,8 @@ class runFAST(object):
         self.noise_outfile = 'Noise.ipt'
         self.blade_file = 'NREL5MW_Blade.dat'
         self.ad_file    = 'NREL5MW.ad'
-        self.ts_file = None
-        self.ptfm_file    = None
-        self.wamit_path = "ModelFiles/WAMIT/spar"
-#        self.ptfm_file    = 'NREL5MW_Monopile_Platform_RigFnd.dat'
         self.fast_file  = self.template_file
         self.wind_file = None ## can be set by user, in which case that gets substituted
-        self.ws = None ## can be set by user, in which case that gets substituted
-        self.rpm = None ## can be set by user, in which case that gets substituted
-        self.wshr=0.14
-        self.output_list = None
 
         self.fstDict = {}
 
@@ -169,22 +158,6 @@ class runFAST(object):
 
         self.runname = 'test'
 
-
-    #---------------------------
-    def getBin(self):
-        return os.path.join(self.fastpath, self.fastexe)
-    def getTemplateDir(self):
-        return self.template_path
-    def getafNames(self):
-        names = [self.af_dict['polar_files'][i] for i in range(len(self.af_dict['polar_files']))]
-        return names
-
-    def computeMaxPower(self):
-        self.max_power = max(self.getOutputValue("RotPwr"))
-    def getMaxPower(self):
-        # note; we have to assume it's already computed here, because we might be grabbing it at the end of a bunch of 
-        # runs that have since overwritten the output file corresponding to this object
-        return self.max_power
 
     #---------------------------
 
@@ -274,18 +247,22 @@ class runFAST(object):
         self.rpm = rpm
     def set_wind_file(self,wind_file):
         self.wind_file = wind_file
-    def setFastFile(self,fname):
-        self.fast_file = fname
-    def setOutputs(self, output_list):
-        self.output_list = output_list
-    def set_dict(self, fst_dict):
-        self.fstDict = fst_dict
-        
-##
 
-    def write_inputs(self, extraFstDict={}):
-        """ writes the *xxx.fst* file"""
-        print "writing FAST input files NOW"
+    # the real execute (no args)
+    def execute(self):
+        """ writes the *xxx.fst* file and uses subprocess to run **FAST**
+
+        Parameters
+        ----------
+        ws : float
+           Wind speed for **FAST** run
+
+        Returns
+        -------
+        ret : integer
+            return code from subprocess.call()
+        """
+
         if (self.exec_count <= 1): # Is 0 when invoked by main()
                                    # Is 1 when invoked by Assembly ???
             rstat = self.readFST()
@@ -295,36 +272,15 @@ class runFAST(object):
             rstat = self.readAD()
             rstat = self.readBlade()
 
-            if (self.ptfm_file != None):
-                rstat = self.readPtfm()
-
         in_fst = self.runname + '.fst'
-
-        for key in extraFstDict:
-            self.fstDict[key] = extraFstDict[key]
-        self.writeFST(in_fst,self.fstDict) 
+        self.writeFST(in_fst,self.fstDict,self.rpm) #todo - append rpm to dict?
 
         self.writeAD()
         self.writeBlade()
-        self.writeWnd()
+        self.writeWnd(self.ws)
         self.writeNoise()
-        if (self.ptfm_file != None):
-            self.writePtfm(self.fstDict)
 
-    # the real execute (no args)
-    def execute(self):
-        """ use subprocess to run **FAST**
-
-        Returns
-        -------
-        ret : integer
-            return code from subprocess.call()
-        """
-
-        self.write_inputs()
-        
-        in_fst = self.runname + '.fst'
-        ffname = os.path.join(self.fastpath,self.fastexe)
+        ffname = '/'.join([self.fastpath,self.fastexe])
         if (not os.path.exists(ffname)):
             sys.stderr.write("Can't find FAST executable: {:}\n".format(ffname))
             return 0
@@ -363,10 +319,8 @@ class runFAST(object):
 
     #---------------------------
 
-    def parseFASTout(self, directory = None):
+    def parseFASTout(self):
         fname = self.runname + '.out'
-        if directory != None:
-            fname = os.path.join(directory, fname)
         if (not os.path.exists(fname)):
             sys.stderr.write ('parseFASTout: {:} does not exist\n'.format(fname))
             return None
@@ -386,22 +340,9 @@ class runFAST(object):
 
     #---------------------------
 
-    def getMaxOutputValue(self, paramname, directory=None, out=None, hdr=None):
-        col = self.getOutputValue(paramname, directory, out, hdr)
-        val = max(col)
-        return val
-
-    def getMaxOutputValueStdDev(self, paramname, directory=None, out=None, hdr=None):
-        col = self.getOutputValue(paramname, directory, out, hdr)
-        try:
-            val = np.std(col)
-        except:
-            val = None
-        return val
-
-    def getOutputValue(self, paramname,  directory=None, out=None, hdr=None):
+    def getOutputValue(self, paramname, out=None, hdr=None):
         if out == None:
-            hdr, out = self.parseFASTout(directory)
+            hdr, out = self.parseFASTout()
             if (out == None):
                 fname = self.runname + '.out'
                 sys.stderr.write("output param %s does not exist in %s\n" % (paramname, fname))
@@ -409,55 +350,10 @@ class runFAST(object):
 
         # out contains header info. find our guy, then give back the whole column
         for i in range(len(hdr)):
-#            print "hdr_i , paramname", hdr[i].strip(), paramname
             if hdr[i].strip() == paramname:
                 out = out[:,i]
                 return out
         raise Exception, "param %s not found" % paramname
-
-
-    def getMaxOutputValues(self, paramname, directory=None, out=None, hdr=None):
-        col = self.getOutputValues(paramname, directory, out, hdr)
-        vals = []
-        for i in range(len(col)):
-            c = col[i]
-            val = np.max(c)
-            vals.append(val)
-        return vals
-
-    def getMaxOutputValueStdDevs(self, paramname, directory=None, out=None, hdr=None):
-        col = self.getOutputValues(paramname, directory, out, hdr)
-        vals = []
-        for i in range(len(col)):
-            c = col[i]
-            try:
-                val = np.std(c)
-            except:
-                val = None
-            vals.append(val)
-        return vals
-
-    def getOutputValues(self, paramnames,  directory=None, out=None, hdr=None):
-        if out == None:
-            hdr, out = self.parseFASTout(directory)
-            if (out == None):
-                fname = self.runname + '.out'
-                sys.stderr.write("cannot parse output %s\n" %  (fname))
-                raise Exception
-
-        # out contains header info. find our guy, then give back the whole column
-        all_out = []
-        for j in range(len(paramnames)):
-            found = False
-            for i in range(len(hdr)):
-#            print "hdr_i , paramname", hdr[i].strip(), paramname
-                if hdr[i].strip() == paramnames[j]:
-                    out2 = out[:,i]
-                    all_out.append(out2)
-                    found = True
-            if (not found):
-                raise Exception, "param %s not found" % paramname
-        return all_out
 
     #---------------------------
 
@@ -509,23 +405,6 @@ class runFAST(object):
             sys.stdout.write ("Error opening {:}\n".format(fname))
             return 0
 
-    #---------------------------
-
-    def readPtfm(self):
-        """ read AD input file and save lines """
-
-        fname = self.template_path + self.ptfm_file
-        print "reading platform file from ", fname
-        try:
-            fh = open(fname,'r')
-            self.lines_ptfm = fh.readlines()
-            fh.close()
-            if self.debug:
-                sys.stdout.write('Read {:d} lines from {:}\n'.format(len(self.lines_ptfm),fname))
-        except:
-            sys.stdout.write ("Error opening {:}\n".format(fname))
-            return 0
-
 
     #---------------------------
 
@@ -561,24 +440,25 @@ class runFAST(object):
 
     #------------------------------------------------------------
 
-    def writeWnd(self):
+    def writeWnd(self,ws,wshr=0.14):
         """ Write the new hub-height wind file
 
         Parameters
         ----------
-        none, all part of "self" 
+        ws : float
+            Wind speed for this **FAST** run
+        wshr : float (optional)
+            Wind shear exponent for this **FAST** run (defaults to 0.14)
+
         """
 
         ofname = 'HH_Rated.wnd'
         ofh = open(ofname,'w')
-        ofh.write('{:5.1f}		{:4.1f}	0.0	0.0	0.0		{:4.2f}	0.0	0.0\n'.format(  0.0,self.ws,self.wshr))
-        ofh.write('{:5.1f}		{:4.1f}	0.0	0.0	0.0		{:4.2f}	0.0	0.0\n'.format(999.9,self.ws,self.wshr))
+        ofh.write('{:5.1f}		{:4.1f}	0.0	0.0	0.0		{:4.2f}	0.0	0.0\n'.format(  0.0,ws,wshr))
+        ofh.write('{:5.1f}		{:4.1f}	0.0	0.0	0.0		{:4.2f}	0.0	0.0\n'.format(999.9,ws,wshr))
         ofh.close()
         if self.debug:
             sys.stderr.write('Wrote file {:}\n'.format(ofname))
-
-            
-            
 
     #------------------------------------------------------------
 
@@ -621,41 +501,6 @@ class runFAST(object):
 
         for line in self.lines_blade:
             ofh.write(line)
-        ofh.close()
-        if self.debug:
-            sys.stderr.write('Wrote file {:}\n'.format(ofname))
-    #------------------------------------------------------------
-
-    def writePtfm(self, fstDict):
-        """ Write the new platform file
-
-        Parameters
-        ----------
-
-        """
-
-        print "writing platform file for fstDict = ", fstDict
-        ofname = self.ptfm_file
-        ofh = open(ofname,'w')
-
-        for line in self.lines_ptfm:
-            flds = line.strip().split()
-
-            """ If the second field in the line is present in the dictionary,
-                  write the new value
-                Otherwise
-                  write the original line """
-            if (len(flds) > 1 and flds[1] == 'WAMITFile'):
-                ofh.write("\"%s\"   WAMITFile   location and root file name of WAMIT spar files\n" % self.wamit_path)
-            elif (len(flds) > 1 and flds[1] in fstDict):
-                f0 = '{:.6f}    '.format(fstDict[flds[1]])
-                oline = ' '.join([f0] + flds[1:])
-                ofh.write(oline)
-                ofh.write('\n')
-                if self.debug:
-                    sys.stderr.write('writeFST: {:} {:}\n'.format(f0, flds[1]))
-            else:
-                ofh.write(line)
         ofh.close()
         if self.debug:
             sys.stderr.write('Wrote file {:}\n'.format(ofname))
@@ -730,7 +575,7 @@ class runFAST(object):
 
     #---------------------------
 
-    def writeFST(self,ofname,fstDict):
+    def writeFST(self,ofname,fstDict, rpm):
         """ write output file with substitutions for names in fstDict
             Only floating-point values can be substituted, and they are written to 2 decimal places.
 
@@ -740,6 +585,8 @@ class runFAST(object):
             name of FAST file (newname.fst) to write
         fstDict : dictionary
             dictionary containing new values which will override those found in self.lines_fast
+        rpm :
+            rotor speed for analysis
 
         """
         try:
@@ -750,7 +597,7 @@ class runFAST(object):
 
         fstDict['TipRad'] = self._rotorR
         fstDict['HubRad'] = self.hubR
-        fstDict['RotSpeed'] = self.rpm
+        fstDict['RotSpeed'] = rpm
 
         for line in self.lines_fast:
             if (line.startswith('---')):
@@ -764,24 +611,13 @@ class runFAST(object):
                 Otherwise
                   write the original line """
 
-#            if (len(flds) > 1 and flds[1] in ['TwrFile','PtfmFile']):  # pgraf: PtfmFile now part of "InputFilesToWrite"
-            if (len(flds) > 1 and flds[1] in ['TwrFile']):  
+            if (len(flds) > 1 and flds[1] in ['TwrFile','PtfmFile']):
                 # add model_path to file names
                 fn = flds[0].strip('"')
                 fn = fn.strip("'")
-                fn = '"' + os.path.join(self.model_path,fn) + '"'
+                fn = '"' + self.model_path + fn + '"'
                 oline = ' '.join([fn] + flds[1:])
                 ofh.write(oline)
-                print "twr fld: ", flds[0], flds[1], oline
-                ofh.write('\n')
-            elif (self.ptfm_file == None and len(flds) > 1 and flds[1] in ['PtfmFile']):  
-                # add model_path to file names
-                fn = flds[0].strip('"')
-                fn = fn.strip("'")
-                fn = '"' + os.path.join(self.template_path,fn) + '"'
-                oline = ' '.join([fn] + flds[1:])
-                ofh.write(oline)
-                print "ptfm fld: ", flds[0], flds[1], oline
                 ofh.write('\n')
 
             elif (len(flds) > 1 and flds[1] in fstDict):
@@ -791,12 +627,6 @@ class runFAST(object):
                 ofh.write('\n')
                 if self.debug:
                     sys.stderr.write('writeFST: {:} {:}\n'.format(f0, flds[1]))
-            elif (len(flds) > 0 and flds[0] == "END"):
-                # uh oh, better back up and write the outputs!
-                if self.output_list != None:
-                    for out in self.output_list:
-                        ofh.write("\"%s\"\n" % out)
-                ofh.write(line)
             else:
                 ofh.write(line)
 

@@ -12,7 +12,18 @@ from math import pi
 
 from openmdao.main.api import Component, Assembly, VariableTree
 from openmdao.main.datatypes.api import Int, Float, Array, List, Dict, Bool, Enum, Slot, VarTree
+
+# aerodynamics
+#from twister.models.CST.turbine.rotor.rotoraeroanalysis import RotorAeroAnalysis, WTPerf, CCBlade
+#from twister.models.CST.turbine.rotor.rotoraero import RotorAero
 from airfoil import PolarByRe, Profile
+# drivetrain
+#from twister.models.csm.csmDriveEfficiency import DrivetrainEfficiencyModel, csmDriveEfficiency # added for drivetrain model
+# structures
+## moved this so it would import without pbeam, etc. for cases when that wasn't being used anyway.
+# kld - 10/22/2013 readding this so assembly runs
+#from twister.models.CST.turbine.rotor.rotorstruc import  CompositeSection, Orthotropic2DMaterial
+# common
 from common import D2R, R2D, RPM2RS, TurbineVector, setup_akima
 akima_interpolate = setup_akima()
 
@@ -72,42 +83,7 @@ def ref5MW_aero(afpath):
 
 
     return r_af, polars
-
-
-def ref5MW_struc():
-    #kld 10/22 undoing the move on import
-    #from twister.models.CST.turbine.rotor.rotorstruc import CompositeSection, Orthotropic2DMaterial
-    r = np.array([1.5, 1.80135, 1.89975, 1.99815, 2.1027, 2.2011, 2.2995, 2.87145, 3.0006,
-        3.099, 5.60205, 6.9981, 8.33265, 10.49745, 11.75205, 13.49865, 15.84795, 18.4986, 19.95,
-        21.99795, 24.05205, 26.1, 28.14795, 32.25, 33.49845, 36.35205, 38.4984, 40.44795, 42.50205,
-        43.49835, 44.55, 46.49955, 48.65205, 52.74795, 56.16735, 58.89795, 61.62855, 63.0])
-
-    n = 38
-    compSec = [0]*n
-    profile = [0]*n
-
-    nweb_str = [0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
-
-    materials = Orthotropic2DMaterial.initFromPrecompFile('C:/Python27/openmdao-0.7.0/twister/inputFiles/5MW_PrecompFiles/materials.inp')
-
-    for i in range(n):
-
-        # hack for now
-        if nweb_str[i] == 3:
-            webLoc = [0.3, 0.6]
-        elif nweb_str[i] == 2:
-            webLoc = [0.3, 0.6]
-        else:
-            webLoc = []
-
-        compSec[i] = CompositeSection.initFromPrecompLayupFile('C:/Python27/openmdao-0.7.0/twister/inputFiles/5MW_PrecompFiles/layup_' + str(i+1) + '.inp', webLoc, materials)
-        profile[i] = Profile.initFromPrecompFile('C:/Python27/openmdao-0.7.0/twister/inputFiles/5MW_PrecompFiles/shape_' + str(i+1) + '.inp')
-
-    profile = profile
-    compSec = compSec
-
-    return r, profile, compSec, materials
-
+      
 
 class GeometryAero(VariableTree):
     """geometry for rotor"""
@@ -131,7 +107,7 @@ class GeometryAero(VariableTree):
     tilt = Float(5.0, iotype='in', desc='shaft tilt', units='deg')
     yaw = Float(0.0, iotype='in', desc='yaw error', units='deg')
 
-    def __init__(self, afpath="C:/Python27/openmdao-0.7.0/twister/inputFiles/airfoils/5MWRef/"):  # kld - changed for fast noise; #todo - machine dependency
+    def __init__(self, afpath="C:/Models/FAST/airfoils/5MWRef/"):  # kld - changed for fast noise; #todo - machine dependency
         """
         OpenMDAO variable tree container for aerodynamic geometry inputs.
         
