@@ -101,17 +101,17 @@ class runFAST(object):
     # model_path : folder containing tower file, platform file,
 
     # kld 10/22/2013 - fix below from Peter on machine dependency has issues with windows \/
-    #fastpath = FAST_BIN
-    #model_path = os.path.join(FAST_DIR,'ModelFiles/')
-    #template_path = os.path.join(FAST_DIR,"InputFilesToWrite/")
-    #print "template_path=", template_path
+    fastpath = FAST_BIN
+    model_path = os.path.join(FAST_DIR,'ModelFiles')
+    template_path= os.path.join(FAST_DIR,"InputFilesToWrite")
+    print "template_path=", template_path
 ### beware windows-python path wierdness: after numbers(?), apparantly "\" as separator is NOT ok. ###
 
     # kld 10/22/2013 - using these till fix is implemented
-    fastpath = 'C:/Models/FAST/'  # todo: machine specific
-    fastexe = 'FAST_v7.01.00a-bjj_AeroDyn_v13.00.01a-bjj_BladedDLLInterface.exe'
-    template_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/InputFilesToWrite/'
-    model_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/ModelFiles/'
+#    fastpath = 'C:/Models/FAST/'  # todo: machine specific
+#    fastexe = 'FAST_v7.01.00a-bjj_AeroDyn_v13.00.01a-bjj_BladedDLLInterface.exe'
+#    template_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/InputFilesToWrite/'
+#    model_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/ModelFiles/'
 
 
     def __init__(self, geometry=None, atm=None, debug=False):
@@ -464,7 +464,7 @@ class runFAST(object):
     def readNoise(self):
         """ read noise input file and save lines """
 
-        fname = self.template_path + self.noise_file
+        fname = os.path.join(self.template_path,self.noise_file)
         print "trying to open", fname
         try:
             fh = open(fname,'r')
@@ -481,7 +481,7 @@ class runFAST(object):
     def readBlade(self):
         """ read blade input file and save lines """
 
-        fname = self.template_path + self.blade_file
+        fname = os.path.join(self.template_path, self.blade_file)
         try:
             fh = open(fname,'r')
             self.lines_blade = fh.readlines()
@@ -498,7 +498,7 @@ class runFAST(object):
     def readAD(self):
         """ read AD input file and save lines """
 
-        fname = self.template_path + self.ad_file
+        fname = os.path.join(self.template_path, self.ad_file)
         try:
             fh = open(fname,'r')
             self.lines_ad = fh.readlines()
@@ -514,7 +514,7 @@ class runFAST(object):
     def readPtfm(self):
         """ read AD input file and save lines """
 
-        fname = self.template_path + self.ptfm_file
+        fname = os.path.join(self.template_path, self.ptfm_file)
         print "reading platform file from ", fname
         try:
             fh = open(fname,'r')
@@ -532,7 +532,7 @@ class runFAST(object):
     def readFST(self):
         """ read **FAST** input file and save lines """
 
-        fname = self.template_path + self.fast_file
+        fname = os.path.join(self.template_path,self.fast_file)
         print "trying to open ", fname
         print "template path = ", self.template_path
         try:

@@ -7,14 +7,14 @@ False       Echo        - Echo input data to "echo.out" (flag)
    1        ADAMSPrep   - ADAMS preprocessor mode {1: Run FAST, 2: use FAST as a preprocessor to create an ADAMS model, 3: do both} (switch)
    1        AnalMode    - Analysis mode {1: Run a time-marching simulation, 2: create a periodic linearized model} (switch)
    3        NumBl       - Number of blades (-)
-  10.0      TMax        - Total run time (s)
+  1.0      TMax        - Total run time (s)
    0.0125   DT          - Integration time step (s)
 ---------------------- TURBINE CONTROL -----------------------------------------
    0        YCMode      - Yaw control mode {0: none, 1: user-defined from routine UserYawCont, 2: user-defined from Simulink} (switch)
 9999.9      TYCOn       - Time to enable active yaw control (s) [unused when YCMode=0]
-   1        PCMode      - Pitch control mode {0: none, 1: user-defined from routine PitchCntrl, 2: user-defined from Simulink} (switch)
+   0        PCMode      - Pitch control mode {0: none, 1: user-defined from routine PitchCntrl, 2: user-defined from Simulink} (switch)
    0.0      TPCOn       - Time to enable active pitch control (s) [unused when PCMode=0]
-   2        VSContrl    - Variable-speed control mode {0: none, 1: simple VS, 2: user-defined from routine UserVSCont, 3: user-defined from Simulink} (switch)
+   0        VSContrl    - Variable-speed control mode {0: none, 1: simple VS, 2: user-defined from routine UserVSCont, 3: user-defined from Simulink} (switch)
 9999.9      VS_RtGnSp   - Rated generator speed for simple variable-speed generator control (HSS side) (rpm) [used only when VSContrl=1]
 9999.9      VS_RtTq     - Rated generator torque/constant generator torque in Region 3 for simple variable-speed generator control (HSS side) (N-m) [used only when VSContrl=1]
 9999.9      VS_Rgn2K    - Generator torque constant in Region 2 for simple variable-speed generator control (HSS side) (N-m/rpm^2) [used only when VSContrl=1]
@@ -70,7 +70,7 @@ True        CompNoise   - Compute aerodynamic noise (flag)
    0.0      IPDefl      - Initial in-plane blade-tip deflection (meters)
    0.0      TeetDefl    - Initial or fixed teeter angle (degrees) [unused for 3 blades]
    0.0      Azimuth     - Initial azimuth angle for blade 1 (degrees)
-  12.1      RotSpeed    - Initial or fixed rotor speed (rpm)
+  12.03     RotSpeed    - Initial or fixed rotor speed (rpm)
    0.0      NacYaw      - Initial or fixed nacelle-yaw angle (degrees)
    0.0      TTDspFA     - Initial fore-aft tower-top displacement (meters)
    0.0      TTDspSS     - Initial side-to-side tower-top displacement (meters)
@@ -128,11 +128,11 @@ False       GBRevers    - Gearbox reversal {T: if rotor and generator rotate in 
 9999.9      TEC_RLR     - Rotor leakage reactance (ohms) [used only when VSContrl=0 and GenModel=2]
 9999.9      TEC_MR      - Magnetizing reactance (ohms) [used only when VSContrl=0 and GenModel=2]
 ---------------------- PLATFORM ------------------------------------------------
-   0        PtfmModel   - Platform model {0: none, 1: onshore, 2: fixed bottom offshore, 3: floating offshore} (switch)
-  ""        PtfmFile    - Name of file containing platform properties (quoted string) [unused when PtfmModel=0]
+   2        PtfmModel   - Platform model {0: none, 1: onshore, 2: fixed bottom offshore, 3: floating offshore} (switch)
+"NREL5MW_Monopile_Platform_RigFnd.dat"   PtfmFile    - Name of file containing platform properties (quoted string) [unused when PtfmModel=0]
 ---------------------- TOWER ---------------------------------------------------
-  33       TwrNodes    - Number of tower nodes used for analysis (-)
-"NREL5MW_Tower_Onshore.dat"          TwrFile     - Name of file containing tower properties (quoted string)
+  99        TwrNodes    - Number of tower nodes used for analysis (-)
+"NREL5MW_Monopile_Tower_RigFnd.dat"      TwrFile     - Name of file containing tower properties (quoted string)
 ---------------------- NACELLE-YAW ---------------------------------------------
 9028.32E6   YawSpr      - Nacelle-yaw spring constant (N-m/rad)
   19.16E6   YawDamp     - Nacelle-yaw damping constant (N-m/(rad/s))
@@ -166,7 +166,7 @@ False       Furling     - Read in additional model properties for furling turbin
 ---------------------- LINEARIZATION CONTROL -----------------------------------
 "NREL5MW_Linear.dat"                 LinFile     - Name of file containing FAST linearization parameters (quoted string) [unused when AnalMode=1]
 ---------------------- OUTPUT --------------------------------------------------
-True        SumPrint    - Print summary data to "<RootName>.fsm" (flag)
+False       SumPrint    - Print summary data to "<RootName>.fsm" (flag)
 True        TabDelim    - Generate a tab-delimited tabular output file. (flag)
 "F7.3"      OutFmt      - Format used for tabular output except time.  Resulting field should be 10 characters. (quoted string)  [not checked for validity!]
    0.0      TStart      - Time to begin tabular output (s)
@@ -201,3 +201,5 @@ END of FAST input file (the word "END" must appear in the first 3 columns of thi
 "YawBrMxp , YawBrMyp , YawBrMzp"                             - Side-to-side bending, fore-aft bending, and yaw moments at the top of the tower (not rotating with nacelle yaw)
 "TwrBsFxt , TwrBsFyt , TwrBsFzt"                             - Fore-aft shear, side-to-side shear, and vertical forces at the mudline
 "TwrBsMxt , TwrBsMyt , TwrBsMzt"                             - Side-to-side bending, fore-aft bending, and yaw moments at the mudline
+
+

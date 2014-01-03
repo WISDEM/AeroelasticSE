@@ -22,7 +22,7 @@ class runTurbSim(object):
     if platform.system() == 'Windows':
         TS_BIN = os.path.join(TS_BIN, 'nt') 
         DIR_NAME = 'nt'
-        tsexe = 'TurbSim.exe'
+        tsexe = 'TurbSim64.exe'
         isWindows = True
     elif platform.system() == 'Darwin':
         TS_BIN = os.path.join(TS_BIN, 'osx')
@@ -34,7 +34,8 @@ class runTurbSim(object):
         tsexe = 'TurbSim_glin64'
     # ---------------------------------------
 
-    template_file = 'turbsim_template.inp'
+    template_dir = os.path.join(TS_DIR, "InputFilesToWrite")
+    template_file = os.path.join(template_dir, 'turbsim_template.inp')  ## default, for testing.  should be set by caller.
     runname = 'turbsim_test.inp'
     tsDict = {}
 
