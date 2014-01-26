@@ -110,7 +110,7 @@ True        CompNoise   - Compute aerodynamic noise (flag)
 False       GBRevers    - Gearbox reversal {T: if rotor and generator rotate in opposite directions} (flag)
   28.1162E3 HSSBrTqF    - Fully deployed HSS-brake torque (N-m)
    0.6      HSSBrDT     - Time for HSS-brake to reach full deployment once initiated (sec) [used only when HSSBrMode=1]
-            DynBrkFi    - File containing a mech-gen-torque vs HSS-speed curve for a dynamic brake [CURRENTLY IGNORED] (quoted string)
+    ""      DynBrkFi    - File containing a mech-gen-torque vs HSS-speed curve for a dynamic brake [CURRENTLY IGNORED] (quoted string)
  867.637E6  DTTorSpr    - Drivetrain torsional spring (N-m/rad)
    6.215E6  DTTorDmp    - Drivetrain torsional damper (N-m/(rad/s))
 ---------------------- SIMPLE INDUCTION GENERATOR ------------------------------
@@ -139,7 +139,7 @@ False       GBRevers    - Gearbox reversal {T: if rotor and generator rotate in 
    0.0      YawNeut     - Neutral yaw position--yaw spring force is zero at this yaw (degrees)
 ---------------------- FURLING -------------------------------------------------
 False       Furling     - Read in additional model properties for furling turbine (flag)
-            FurlFile    - Name of file containing furling properties (quoted string) [unused when Furling=False]
+   ""       FurlFile    - Name of file containing furling properties (quoted string) [unused when Furling=False]
 ---------------------- ROTOR-TEETER --------------------------------------------
    0        TeetMod     - Rotor-teeter spring/damper model {0: none, 1: standard, 2: user-defined from routine UserTeet} (switch) [unused for 3 blades]
    0.0      TeetDmpP    - Rotor-teeter damper position (degrees) [used only for 2 blades and when TeetMod=1]
@@ -160,11 +160,11 @@ False       Furling     - Read in additional model properties for furling turbin
 ---------------------- AERODYN -------------------------------------------------
 "NREL5MW.ad"                ADFile      - Name of file containing AeroDyn input parameters (quoted string)
 ---------------------- NOISE ---------------------------------------------------
-"Noise.ipt"            NoiseFile   - Name of file containing aerodynamic noise input parameters (quoted string) [used only when CompNoise=True]
+"Noise.v7.01.ipt"            NoiseFile   - Name of file containing aerodynamic noise input parameters (quoted string) [used only when CompNoise=True]
 ---------------------- ADAMS ---------------------------------------------------
-"NREL5MW_ADAMSSpecific.dat"          ADAMSFile   - Name of file containing ADAMS-specific input parameters (quoted string) [unused when ADAMSPrep=1]
+""          ADAMSFile   - Name of file containing ADAMS-specific input parameters (quoted string) [unused when ADAMSPrep=1]
 ---------------------- LINEARIZATION CONTROL -----------------------------------
-"NREL5MW_Linear.dat"                 LinFile     - Name of file containing FAST linearization parameters (quoted string) [unused when AnalMode=1]
+""                 LinFile     - Name of file containing FAST linearization parameters (quoted string) [unused when AnalMode=1]
 ---------------------- OUTPUT --------------------------------------------------
 False       SumPrint    - Print summary data to "<RootName>.fsm" (flag)
 1           OutFileFmt  - Format for tabular (time-marching) output file(s) (1: text file [<RootName>.out], 2: binary
@@ -177,9 +177,9 @@ True        TabDelim    - Generate a tab-delimited tabular output file. (flag)
    0.0      NcIMUyn     - Lateral  distance from the tower-top to the nacelle IMU (meters)
    2.23336  NcIMUzn     - Vertical distance from the tower-top to the nacelle IMU (meters)
    1.912    ShftGagL    - Distance from rotor apex [3 blades] or teeter pin [2 blades] to shaft strain gages [positive for upwind rotors] (meters)
-   0        NTwGages    - Number of tower nodes that have strain gages for output [0 to 9] (-)
+   3        NTwGages    - Number of tower nodes that have strain gages for output [0 to 9] (-)
 10,19,28    TwrGagNd    - List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]
-   0        NBlGages    - Number of blade nodes that have strain gages for output [0 to 9] (-)
+   3        NBlGages    - Number of blade nodes that have strain gages for output [0 to 9] (-)
  5,9,13     BldGagNd    - List of blade nodes that have strain gages [1 to BldNodes] (-) [unused if NBlGages=0]
             OutList     - The next line(s) contains a list of output parameters.  See OutList.txt for a listing of available output channels, (-)
 "WindVxi"        - Longitudinal wind speed (m/s)

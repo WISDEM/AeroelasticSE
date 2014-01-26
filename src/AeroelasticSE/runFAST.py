@@ -108,7 +108,7 @@ class runFAST(object):
 ### beware windows-python path wierdness: after numbers(?), apparantly "\" as separator is NOT ok. ###
 
     # kld 10/22/2013 - using these till fix is implemented
-#    fastpath = 'C:/Models/FAST/'  # todo: machine specific
+    fastpath = 'C:/Models/FAST/'  # todo: machine specific
 #    fastexe = 'FAST_v7.01.00a-bjj_AeroDyn_v13.00.01a-bjj_BladedDLLInterface.exe'
 #    template_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/InputFilesToWrite/'
 #    model_path = 'C:/Python27/openmdao-0.9.2/aeroelasticSE/AeroelasticSE/src/AeroelasticSE/ModelFiles/'
