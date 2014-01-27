@@ -4,6 +4,10 @@ from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool,
 
 # Variable Trees
 
+class OutputList(VariableTree):
+
+    OutList = List(desc='list of output channels')
+
 class SimpleWind(VariableTree):
 
     TimeSteps = Int(desc='number of time steps')
@@ -246,6 +250,9 @@ class FstModel(VariableTree):
     # FAST Structural Information
     fst_blade_vt = VarTree(FstBladeStrucGeometry(), desc='Structural information on the blade and properties')
     fst_tower_vt = VarTree(FstTowerStrucGeometry(), desc='Structural information on the tower and properties')
+    
+    # FAST Outputs
+    fst_output_vt = VarTree(OutputList(), desc='List of output channels')
 
     # FAST Inputs
     description = Str(desc='description of platform')

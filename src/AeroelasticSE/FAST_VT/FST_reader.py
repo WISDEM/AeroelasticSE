@@ -353,7 +353,14 @@ class FstInputReader(FstInputBase):
             self.fst_vt.BldGagNd.append(blg[i])
         self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
     
-        # Outlist (TODO)
+        # Outlist (TODO - detailed categorization)
+        f.readline()
+        data = f.readline()
+        self.fst_vt.fst_output_vt.OutList = []
+        while data.split()[0] != 'END':
+            channels = data.split('"')
+            self.fst_vt.fst_output_vt.OutList.append(channels[1])
+            data = f.readline()
 
         self.AeroReader()
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
@@ -806,7 +813,7 @@ class FstInputReader(FstInputBase):
                 break
             line_split = line.split()
             if line_split[0] != '!':
-            		data.append(line.split())
+                data.append(line.split())
 
         self.fst_vt.simple_wind_vt.TimeSteps = len(data)
 

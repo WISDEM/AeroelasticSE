@@ -43,13 +43,15 @@ class FstInputWriter(FstInputBase):
     
     def execute(self):
 
+        self.template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'tmp')
+
         self.WindWriter()
         self.AeroWriter()        
         self.BladeWriter()
         self.TowerWriter()
         self.PlatformWriter()
 
-        self.fst_file = "tmp\\FASTmodel.fst"
+        self.fst_file = os.path.join(self.template_path,'FASTmodel.fst')
         ofh = open(self.fst_file, 'w')
 
         # FAST Inputs
@@ -185,11 +187,11 @@ class FstInputWriter(FstInputBase):
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.PtfmModel))
         ofh.write('"{:}"\n'.format(self.platform_file))
-        self.fst_vt.PtfmFile = self.platform_file
+        self.fst_vt.PtfmFile = "Platform.dat"
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.TwrNodes))
         ofh.write('"{:}"\n'.format(self.tower_file))
-        self.fst_vt.TwrFile = self.tower_file
+        self.fst_vt.TwrFile = "Tower.dat"
         ofh.write('---\n')
         ofh.write('{:.5f}\n'.format(self.fst_vt.YawSpr))
         ofh.write('{:.5f}\n'.format(self.fst_vt.YawDamp))
@@ -214,12 +216,12 @@ class FstInputWriter(FstInputBase):
         ofh.write('"{:}"\n'.format(self.blade_file))
         ofh.write('"{:}"\n'.format(self.blade_file))
         ofh.write('"{:}"\n'.format(self.blade_file))
-        self.fst_vt.BldFile1 = self.blade_file #TODO - different blade files
-        self.fst_vt.BldFile2 = self.blade_file
-        self.fst_vt.BldFile3 = self.blade_file
+        self.fst_vt.BldFile1 = "Blade.dat" #TODO - different blade files
+        self.fst_vt.BldFile2 = "Blade.dat"
+        self.fst_vt.BldFile3 = "Blade.dat"
         ofh.write('---\n') 
         ofh.write('"{:}"\n'.format(self.ad_file))
-        self.fst_vt.ADFile = self.ad_file
+        self.fst_vt.ADFile = "AeroDynInput.ad"
         ofh.write('---\n')
         ofh.write('{:}\n'.format(self.fst_vt.NoiseFile))
         ofh.write('---\n')
@@ -246,17 +248,18 @@ class FstInputWriter(FstInputBase):
         for i in range(self.fst_vt.NBlGages-1):
             ofh.write('{:3}, '.format(self.fst_vt.BldGagNd[i]))
         ofh.write('{:3}\n'.format(self.fst_vt.BldGagNd[-1]))
-        ofh.write('\n')
     
         # Outlist (TODO)
-        
+        ofh.write('\n')
+        for i in range(len(self.fst_vt.fst_output_vt.OutList)):
+            ofh.write('"{:}"\n'.format(self.fst_vt.fst_output_vt.OutList[i]))        
         ofh.write('END\n')
         
         ofh.close()
     
     def PlatformWriter(self):
       
-        self.platform_file = "tmp\\Platform.dat"
+        self.platform_file = os.path.join(self.template_path,'Platform.dat')
         ofh = open(self.platform_file, 'w')
         
         ofh.write('---\n')
@@ -344,13 +347,13 @@ class FstInputWriter(FstInputBase):
         if self.fst_vt.platform_vt.NWaveKin != 0:
             ofh.write('{:5}\n'.format(self.fst_vt.platform_vt.WaveKinNd)) 
         else:
-            ofh.write('\n')
+            ofh.write('\n')  
         
         ofh.close()
     
     def TowerWriter(self):
 
-        self.tower_file = "tmp\\Tower.dat"
+        self.tower_file = os.path.join(self.template_path,'Tower.dat')
         ofh = open(self.tower_file, 'w')
 
         ofh.write('---\n')
@@ -408,7 +411,7 @@ class FstInputWriter(FstInputBase):
     
     def BladeWriter(self):
         
-        self.blade_file = "tmp\\Blade.dat"
+        self.blade_file = os.path.join(self.template_path,'Blade.dat')
         ofh = open(self.blade_file, 'w')
         
         ofh.write('---\n')
@@ -466,11 +469,11 @@ class FstInputWriter(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             af_name = 'tmp\\AeroData\\Airfoil' + str(i) + '.dat'
+             af_name = os.path.join(self.template_path, 'AeroData\\Airfoil' + str(i) + '.dat')
              self.fst_vt.aero_vt.blade_vt.FoilNm[i] = 'AeroData\\Airfoil' + str(i) + '.dat'
              self.writeAirfoilFile(af_name, i, 2)
 
-        self.ad_file = "tmp\\AeroDynInput.ad"
+        self.ad_file = os.path.join(self.template_path,'AeroDynInput.ad')
         ofh = open(self.ad_file,'w')
         
         ofh.write('Aerodyn input file for FAST\n')
@@ -591,7 +594,7 @@ class FstInputWriter(FstInputBase):
       
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
     
-            self.wind_file = "tmp\\WindFile.hh"
+            self.wind_file = os.path.join(self.template_path,'WindFile.hh')
             self.fst_vt.aero_vt.WindFile = "WindFile.hh"
             ofh = open(self.wind_file,'w')
         

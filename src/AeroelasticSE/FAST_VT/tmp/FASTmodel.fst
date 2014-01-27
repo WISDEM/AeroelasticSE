@@ -129,10 +129,10 @@ False
 9999.90000
 ---
   2
-"tmp\Platform.dat"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\Platform.dat"
 ---
  99
-"tmp\Tower.dat"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\Tower.dat"
 ---
 9028320000.00000
 19160000.00000
@@ -154,11 +154,11 @@ False
 0.00000
 0.00000
 ---
-"tmp\Blade.dat"
-"tmp\Blade.dat"
-"tmp\Blade.dat"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\Blade.dat"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\Blade.dat"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\Blade.dat"
 ---
-"tmp\AeroDynInput.ad"
+"C:\Python27\NREL-Models\WISDEM\AeroelasticSE\src\AeroelasticSE\FAST_VT\tmp\AeroDynInput.ad"
 ---
 ""
 ---
@@ -181,15 +181,16 @@ True
 10 , 19 , 28 
   3
  5 , 9  , 13 
-"WindVxi  , WindVyi  , WindVzi"                              - Longitudinal, lateral, and vertical wind speeds
-"WaveElev"                                                   - Wave elevation at the platform reference point
-"GenPwr   , GenTq"                                           - Electrical generator power and torque
-"OoPDefl1 , IPDefl1  , TwstDefl1"                            - Blade 1 out-of-plane and in-plane deflections and tip twist
-"BldPitch1"                                                  - Blade 1 pitch angle
-"Azimuth"                                                    - Blade 1 azimuth angle
-"RotSpeed , GenSpeed"                                        - Low-speed shaft and high-speed shaft speeds
-"TTDspFA  , TTDspSS  , TTDspTwst"                            - Tower fore-aft and side-to-side displacements and top twist
-"TeetDefl , TeetDefl"                                        - Dummy placeholders for the unavailable fore-aft and side-to-side displacements of the tower base at the monopile attachement location
-"PtfmTDxi , PtfmTDyi , PtfmRDxi , PtfmRDyi"                  - Fore-aft, side-to-side, roll, and pitch displacements of the monopile at the mudline
-"TeetDefl , TeetDefl"                                        - Dummy placeholders for the unavailable fore-aft and side-to-side displacements of the monopile at 7m below the mudline
+
+"WindVxi  , WindVyi  , WindVzi"
+"WaveElev"
+"GenPwr   , GenTq"
+"OoPDefl1 , IPDefl1  , TwstDefl1"
+"BldPitch1"
+"Azimuth"
+"RotSpeed , GenSpeed"
+"TTDspFA  , TTDspSS  , TTDspTwst"
+"TeetDefl , TeetDefl"
+"PtfmTDxi , PtfmTDyi , PtfmRDxi , PtfmRDyi"
+"TeetDefl , TeetDefl"
 END
