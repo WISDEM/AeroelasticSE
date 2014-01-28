@@ -7,18 +7,18 @@ from FST_writer import FstInputWriter
 from FST_reader import FstInputReader
 from FST_vartrees import FstModel
 
-class FSTExternalCode(ExternalCode):
+class FstExternalCode(ExternalCode):
 
     pass
 
 
-class FSTWrapper(ExternalCode):
+class FstWrapper(FstExternalCode):
 
     FSTexe = Str(io_type='in', desc='Path to executable')
     FSTInputFile = Str(iotype='in', desc='Path to FAST input file (ext=.fst)')
 
     def __init__(self):
-        super(FSTWrapper, self).__init__()
+        super(FstWrapper, self).__init__()
 
     def execute(self):
 
@@ -33,12 +33,12 @@ class FSTWrapper(ExternalCode):
         self.command.append(self.FSTexe)
         self.command.append(self.input_file)
         
-        super(FSTWrapper,self).execute()
+        super(FstWrapper,self).execute()
 
 
 if __name__=="__main__":
 
-    fst = FSTWrapper()
+    fst = FstWrapper()
     fst.FSTexe = 'C:/Models/FAST/FAST.exe'
     #fst.FSTInputFile = 'C:/Models/FAST/ModelFiles/FASTmodel.fst'
     #fst.execute()

@@ -16,11 +16,14 @@ class FstInputBuilder(Component):
     """
 
     fstIn = VarTree(FstModel(), iotype='in')
+    fstS = VarTree(FstModel(), iotype='in')
     fstOut = VarTree(FstModel(), iotype='out')
 
     def execute(self):
 
-        self.fstOut = self.fstIn
+        self.fstS = self.fstIn.copy()
+        # Do changes...
+        self.fstOut = self.fstS
 
 # Writer
 

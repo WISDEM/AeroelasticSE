@@ -6,12 +6,13 @@ import os
 import matplotlib.pylab as plt
 
 from openmdao.main.api import Component, Assembly
-from openmdao.lib.datatypes.api import Str, Slot, Bool, VarTree #, Instance
-from FST_vartrees import FSTModel
-from FST_reader import FSTInputReader
-from FST_writer import FSTInputWriter
-from FST_wrapper import FSTWrapper
+from openmdao.lib.datatypes.api import Str, Slot, Bool, VarTree, Slot
+from FST_vartrees import FstModel
+from FST_reader import FstInputReader
+from FST_writer import FstInputWriter, FstInputBuilder
+from FST_wrapper import FstWrapper
 
+from fusedwind.runSuite.runAero import FUSEDIECBase
 
 class FUSEDFSTCaseRunner(FUSEDIECBase):
 
@@ -22,24 +23,22 @@ class FUSEDFSTCaseRunner(FUSEDIECBase):
 
         self.force_execute = True
 
-        self.add('reader', FSTInputReader())
+        self.add('reader', FstInputReader())
         self.driver.workflow.add('reader')
         self.reader.force_execute = True
 
-        self.add('builder', FSTInputBuilder())
+        self.add('builder', FstInputBuilder())
         self.driver.workflow.add('builder')
         self.connect('reader.fst_vt', 'builder.fstIn')
         self.builder.force_execute = True
 
-        self.add('writer', FSTInputWriter())
+        self.add('writer', FstInputWriter())
         self.driver.workflow.add('writer')
         self.connect('builder.fstOut', 'writer.fst_vt')
         self.writer.force_execute = True
 
-        self.add('wrapper', FSTWrapper())
+        self.add('wrapper', FstWrapper())
         self.driver.workflow.add('wrapper')
-        self.wrapper.FSTexe = 'C:/Models/FAST/FAST.exe'
-
 
 if __name__ == '__main__':
     

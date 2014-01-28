@@ -2,11 +2,9 @@
 from openmdao.main.api import VariableTree, Container, Component
 from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
 
+from FST_vartrees_out import FstOutput
+
 # Variable Trees
-
-class OutputList(VariableTree):
-
-    OutList = List(desc='list of output channels')
 
 class SimpleWind(VariableTree):
 
@@ -59,7 +57,6 @@ class ADBladeAeroGeometry(VariableTree):
     NFoil = Array(desc='Airfoil ID Number')
     PrnElm = Array(desc='Flag for printing element ouput for blade section')
 
-
 class ADAero(VariableTree):
 
     # General Model Inputs
@@ -89,7 +86,6 @@ class ADAero(VariableTree):
     blade_vt = VarTree(ADBladeAeroGeometry(), desc = 'Variable tree for blade geometry and airfoil information')
 
 class FstBladeStrucGeometry(VariableTree):
-
 
     description = Str(desc='Blade file description')
 
@@ -252,7 +248,7 @@ class FstModel(VariableTree):
     fst_tower_vt = VarTree(FstTowerStrucGeometry(), desc='Structural information on the tower and properties')
     
     # FAST Outputs
-    fst_output_vt = VarTree(OutputList(), desc='List of output channels')
+    fst_output_vt = VarTree(FstOutput(), desc='List of output channels')
 
     # FAST Inputs
     description = Str(desc='description of platform')
@@ -435,4 +431,5 @@ class FstModel(VariableTree):
     NBlGages = Int(desc='Number of blade nodes that have strain gages for output [0 to 9] (-)')
     BldGagNd = List(desc='List of blade nodes that have strain gages [1 to BldNodes] (-) [unused if NBlGages=0]')
 
-    # Outlist (TODO)
+    # Outlist
+    #See Variable Tree
