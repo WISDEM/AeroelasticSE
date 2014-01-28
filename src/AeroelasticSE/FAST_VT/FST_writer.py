@@ -252,10 +252,99 @@ class FstInputWriter(FstInputBase):
             ofh.write('{:3}, '.format(self.fst_vt.BldGagNd[i]))
         ofh.write('{:3}\n'.format(self.fst_vt.BldGagNd[-1]))
     
-        # Outlist (TODO)
-        ofh.write('\n')
-        for i in range(len(self.fst_vt.fst_output_vt.OutList)):
-            ofh.write('"{:}"\n'.format(self.fst_vt.fst_output_vt.OutList[i]))        
+        # Outlist
+        ofh.write('Outlist\n')
+        # Wind Motions
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.wind_mot_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.wind_mot_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Blade Motions
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.blade_mot_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.blade_mot_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Hub and Nacelle Motions
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Tower and Support Motions
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Wave Motions
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.wave_mot_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.wave_mot_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Blade Loads
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.blade_loads_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.blade_loads_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Hub and Nacelle Loads
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # Tower and Support Loads
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+        # DOF
+        out_list = []
+        for i in self.fst_vt.fst_output_vt.dof_vt.__dict__.keys():
+            if self.fst_vt.fst_output_vt.dof_vt.__dict__[i] == True:
+                out_list.append(i)
+        ofh.write('"')
+        for i in range(len(out_list)):
+        	  if out_list[i][0] != '_':
+        	      ofh.write('{:}, '.format(out_list[i]))
+        ofh.write('"\n')
+
         ofh.write('END\n')
         
         ofh.close()

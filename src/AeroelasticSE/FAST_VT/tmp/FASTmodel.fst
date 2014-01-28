@@ -181,16 +181,14 @@ True
 10 , 19 , 28 
   3
  5 , 9  , 13 
-
-"WindVxi  , WindVyi  , WindVzi"
-"WaveElev"
-"GenPwr   , GenTq"
-"OoPDefl1 , IPDefl1  , TwstDefl1"
-"BldPitch1"
-"Azimuth"
-"RotSpeed , GenSpeed"
-"TTDspFA  , TTDspSS  , TTDspTwst"
-"TeetDefl , TeetDefl"
-"PtfmTDxi , PtfmTDyi , PtfmRDxi , PtfmRDyi"
-"TeetDefl , TeetDefl"
+Outlist
+"WindVzi, WindVyi, WindVxi, "
+"IPDefl1, OoPDefl1, TwstDefl1, "
+"BldPitch1, TeetDefl, GenSpeed, RotSpeed, Azimuth, "
+"PtfmRDyi, TTDspTwst, PtfmTDxi, PtfmRDxi, TTDspSS, TTDspFA, PtfmTDyi, "
+"WaveElev, "
+""
+"GenPwr, GenTq, "
+""
+""
 END

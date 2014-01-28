@@ -356,10 +356,45 @@ class FstInputReader(FstInputBase):
         # Outlist (TODO - detailed categorization)
         f.readline()
         data = f.readline()
-        self.fst_vt.fst_output_vt.OutList = []
         while data.split()[0] != 'END':
             channels = data.split('"')
-            self.fst_vt.fst_output_vt.OutList.append(channels[1])
+            channel_list = channels[1].split(',')
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.wind_mot_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.wind_mot_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.blade_mot_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.blade_mot_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.wave_mot_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.wave_mot_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.blade_loads_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.blade_loads_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__[channel_list[i]] = True
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.fst_output_vt.dof_vt.__dict__.keys():
+                    self.fst_vt.fst_output_vt.dof_vt.__dict__[channel_list[i]] = True
             data = f.readline()
 
         self.AeroReader()

@@ -1,11 +1,9 @@
 from openmdao.main.api import VariableTree, Container, Component
 from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
 
-# Variable Trees
+# Output Channel Variable Trees
 
-class FstOutput(VariableTree):
-
-    OutList = List(desc='list of output channels')
+class WindMotionsOut(VariableTree):
 
     # Wind Motions
     WindVxi = Bool(False, iotype='in', desc='Nominally downwind component of the hub-height wind velocity (Directed along the xi-axis            ) , (.NOT. CompAero) units= m/s')
@@ -15,6 +13,14 @@ class FstOutput(VariableTree):
     HorWindV = Bool(False, iotype='in', desc='Horizontal hub-height wind velocity magnitude (In the xi- and yi-plane  ) , (.NOT. CompAero) units= m/s')
     HorWndDir = Bool(False, iotype='in', desc='Horizontal hub-height wind direction.  Please note that FAST  uses the opposite sign convention that AeroDyn uses.  Put a "-", "_", "m", or "M" character in front of this variable name if you want to use the AeroDyn convention. (About the zi-axis        ) , (.NOT. CompAero) units= deg')
     VerWndDir = Bool(False, iotype='in', desc='Vertical hub-height wind direction (About an axis orthogonal to the zi-axis and the HorWindV-vector) , (.NOT. CompAero) units= deg')
+
+    # Wind Motions Other Name(s) 1
+    uWind = Bool(False, iotype='in', desc='Nominally downwind component of the hub-height wind velocity (Directed along the xi-axis            ) , (.NOT. CompAero) units= m/s')
+    vWind = Bool(False, iotype='in', desc='Cross-wind component of the hub-height wind velocity (Directed along the yi-axis            ) , (.NOT. CompAero) units= m/s')
+    wWind = Bool(False, iotype='in', desc='Vertical component of the hub-height wind velocity (Directed along the zi-axis            ) , (.NOT. CompAero) units= m/s')
+
+
+class BladeMotionsOut(VariableTree):
 
     # Blade 1 Tip Motions
     TipDxc1 = Bool(False, iotype='in', desc='Blade 1 out-of-plane tip deflection (relative to the undeflected position) (Directed along the xc1-axis) , () units= m')
@@ -29,7 +35,6 @@ class FstOutput(VariableTree):
     TipRDyb1 = Bool(False, iotype='in', desc='Blade 1 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb1-axis) , () units= deg')
     TipRDzc1 = Bool(False, iotype='in', desc='Blade 1 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc1- and zb1-axes) , () units= deg')
     TipClrnc1 = Bool(False, iotype='in', desc='Blade 1 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
-
     # Blade 2 Tip Motions
     TipDxc2 = Bool(False, iotype='in', desc='Blade 2 out-of-plane tip deflection (relative to the pitch axis) (Directed along the xc2-axis) , () units= m')
     TipDyc2 = Bool(False, iotype='in', desc='Blade 2 in-plane tip deflection (relative to the pitch axis) (Directed along the yc2-axis) , () units= m')
@@ -43,7 +48,6 @@ class FstOutput(VariableTree):
     TipRDyb2 = Bool(False, iotype='in', desc='Blade 2 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb2-axis) , () units= deg')
     TipRDzc2 = Bool(False, iotype='in', desc='Blade 2 torsional (angular/rotational) tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc2- and zb2-axes) , () units= deg')
     TipClrnc2 = Bool(False, iotype='in', desc='Blade 2 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
-
     # Blade 3 Tip Motions
     TipDxc3 = Bool(False, iotype='in', desc='Blade 3 out-of-plane tip deflection (relative to the pitch axis) (Directed along the xc3-axis) , (NumBl < 3) units= m')
     TipDyc3 = Bool(False, iotype='in', desc='Blade 3 in-plane tip deflection (relative to the pitch axis) (Directed along the yc3-axis) , (NumBl < 3) units= m')
@@ -57,7 +61,6 @@ class FstOutput(VariableTree):
     TipRDyb3 = Bool(False, iotype='in', desc='Blade 3 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb3-axis) , (NumBl < 3) units= deg')
     TipRDzc3 = Bool(False, iotype='in', desc='Blade 3 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc3- and zb3-axes) , (NumBl < 3) units= deg')
     TipClrnc3 = Bool(False, iotype='in', desc='Blade 3 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , (NumBl < 3) units= m')
-
     # Blade 1 Local Span Motions
     Spn1ALxb1 = Bool(False, iotype='in', desc='Blade 1 local flapwise acceleration (absolute) of span station 1 (Directed along the local xb1-axis) , (NBlGages < 1) units= m/s**2')
     Spn1ALyb1 = Bool(False, iotype='in', desc='Blade 1 local edgewise acceleration (absolute) of span station 1 (Directed along the local yb1-axis) , (NBlGages < 1) units= m/s**2')
@@ -140,7 +143,6 @@ class FstOutput(VariableTree):
     Spn9RDxb1 = Bool(False, iotype='in', desc='Blade 1 local roll (angular/rotational)  deflection (relative to the undeflected position) of span station 9. In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the local xb1-axis) , (NBlGages < 9) units= deg')
     Spn9RDyb1 = Bool(False, iotype='in', desc='Blade 1 local pitch (angular/rotational) deflection (relative to the undeflected position) of span station 9. In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the local yb1-axis) , (NBlGages < 9) units= deg')
     Spn9RDzb1 = Bool(False, iotype='in', desc='Blade 1 local torsional (angular/rotational) deflection (relative to the undeflected position) of span station 9. This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the local zb1-axis) , (NBlGages < 9) units= deg')
-
     # Blade 2 Local Span Motions
     Spn1ALxb2 = Bool(False, iotype='in', desc='Blade 2 local flapwise acceleration (absolute) of span station 1 (Directed along the local xb2-axis) , (NBlGages < 1) units= m/s**2')
     Spn1ALyb2 = Bool(False, iotype='in', desc='Blade 2 local edgewise acceleration (absolute) of span station 1 (Directed along the local yb2-axis) , (NBlGages < 1) units= m/s**2')
@@ -223,7 +225,6 @@ class FstOutput(VariableTree):
     Spn9RDxb2 = Bool(False, iotype='in', desc='Blade 2 local roll (angular/rotational)  deflection (relative to the undeflected position) of span station 9. In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the local xb2-axis) , (NBlGages < 9) units= deg')
     Spn9RDyb2 = Bool(False, iotype='in', desc='Blade 2 local pitch (angular/rotational) deflection (relative to the undeflected position) of span station 9. In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the local yb2-axis) , (NBlGages < 9) units= deg')
     Spn9RDzb2 = Bool(False, iotype='in', desc='Blade 2 local torsional (angular/rotational) deflection (relative to the undeflected position) of span station 9. This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the local zb2-axis) , (NBlGages < 9) units= deg')
-
     # Blade 3 Local Span Motions
     Spn1ALxb3 = Bool(False, iotype='in', desc='Blade 3 local flapwise acceleration (absolute) of span station 1 (Directed along the local xb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 1 )) units= m/s**2')
     Spn1ALyb3 = Bool(False, iotype='in', desc='Blade 3 local edgewise acceleration (absolute) of span station 1 (Directed along the local yb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 1 )) units= m/s**2')
@@ -307,16 +308,52 @@ class FstOutput(VariableTree):
     Spn9RDyb3 = Bool(False, iotype='in', desc='Blade 3 local pitch (angular/rotational) deflection (relative to the undeflected position) of span station 9. In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the local yb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 9 )) units= deg')
     Spn9RDzb3 = Bool(False, iotype='in', desc='Blade 3 local torsional (angular/rotational) deflection (relative to the undeflected position) of span station 9. This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the local zb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 9 )) units= deg')
 
+    # Other Names
+    # Blade 1 Tip Motions 
+    OoPDefl1 = Bool(False, iotype='in', desc='Blade 1 out-of-plane tip deflection (relative to the undeflected position) (Directed along the xc1-axis) , () units= m')
+    IPDefl1 = Bool(False, iotype='in', desc='Blade 1 in-plane tip deflection (relative to the undeflected position) (Directed along the yc1-axis) , () units= m')
+    TipDzb1 = Bool(False, iotype='in', desc='Blade 1 axial tip deflection (relative to the undeflected position) (Directed along the zc1- and zb1-axes) , () units= m')
+    RollDefl1 = Bool(False, iotype='in', desc='Blade 1 roll (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the xb1-axis) , () units= deg')
+    PtchDefl1 = Bool(False, iotype='in', desc='Blade 1 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb1-axis) , () units= deg')
+    TipRDzb1 = Bool(False, iotype='in', desc='Blade 1 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc1- and zb1-axes) , () units= deg')
+    TwrClrnc1 = Bool(False, iotype='in', desc='Blade 1 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
+    # Blade 1 Tip Motions
+    TwstDefl1 = Bool(False, iotype='in', desc='Blade 1 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc1- and zb1-axes) , () units= deg')
+    Tip2Twr1 = Bool(False, iotype='in', desc='Blade 1 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
+    # Blade 2 Tip Motions TwrClrnc1
+    OoPDefl2 = Bool(False, iotype='in', desc='Blade 2 out-of-plane tip deflection (relative to the pitch axis) (Directed along the xc2-axis) , () units= m')
+    IPDefl2 = Bool(False, iotype='in', desc='Blade 2 in-plane tip deflection (relative to the pitch axis) (Directed along the yc2-axis) , () units= m')
+    TipDzb2 = Bool(False, iotype='in', desc='Blade 2 axial tip deflection (relative to the pitch axis) (Directed along the zc2- and zb2-axes) , () units= m')
+    RollDefl2 = Bool(False, iotype='in', desc='Blade 2 roll (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the xb2-axis) , () units= deg')
+    PtchDefl2 = Bool(False, iotype='in', desc='Blade 2 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb2-axis) , () units= deg')
+    TipRDzb2 = Bool(False, iotype='in', desc='Blade 2 torsional (angular/rotational) tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc2- and zb2-axes) , () units= deg')
+    TwrClrnc2 = Bool(False, iotype='in', desc='Blade 2 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
+    # Blade 2 Tip Motions Tip2Twr1
+    TwstDefl2 = Bool(False, iotype='in', desc='Blade 2 torsional (angular/rotational) tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc2- and zb2-axes) , () units= deg')
+    Tip2Twr2 = Bool(False, iotype='in', desc='Blade 2 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , () units= m')
+    # Blade 3 Tip Motions TwrClrnc2
+    OoPDefl3 = Bool(False, iotype='in', desc='Blade 3 out-of-plane tip deflection (relative to the pitch axis) (Directed along the xc3-axis) , (NumBl < 3) units= m')
+    IPDefl3 = Bool(False, iotype='in', desc='Blade 3 in-plane tip deflection (relative to the pitch axis) (Directed along the yc3-axis) , (NumBl < 3) units= m')
+    TipDzb3 = Bool(False, iotype='in', desc='Blade 3 axial tip deflection (relative to the pitch axis) (Directed along the zc3- and zb3-axes) , (NumBl < 3) units= m')
+    RollDefl3 = Bool(False, iotype='in', desc='Blade 3 roll (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the xb3-axis) , (NumBl < 3) units= deg')
+    PtchDefl3 = Bool(False, iotype='in', desc='Blade 3 pitch (angular/rotational) tip deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small blade deflections, so that the rotation sequence does not matter. (About the yb3-axis) , (NumBl < 3) units= deg')
+    TipRDzb3 = Bool(False, iotype='in', desc='Blade 3 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc3- and zb3-axes) , (NumBl < 3) units= deg')
+    TwrClrnc3 = Bool(False, iotype='in', desc='Blade 3 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , (NumBl < 3) units= m')
+    # Blade 3 Tip Motions Tip2Twr2
+    TwstDefl3 = Bool(False, iotype='in', desc='Blade 3 torsional tip deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining blade torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence.  Please note that this output uses the opposite of the sign convention used for blade pitch angles. (About the zc3- and zb3-axes) , (NumBl < 3) units= deg')
+    Tip2Twr3 = Bool(False, iotype='in', desc='Blade 3 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance. (N/A) , (NumBl < 3) units= m')
+
+
+class HubNacelleMotionsOut(VariableTree):
+
     # Blade Pitch Motions
     PtchPMzc1 = Bool(False, iotype='in', desc='Blade 1 pitch angle (position) (Positive towards feather about the minus zc1- and minus zb1-axes) , () units= deg')
     PtchPMzc2 = Bool(False, iotype='in', desc='Blade 2 pitch angle (position) (Positive towards feather about the minus zc2- and minus zb2-axes) , () units= deg')
     PtchPMzc3 = Bool(False, iotype='in', desc='Blade 3 pitch angle (position) (Positive towards feather about the minus zc3- and minus zb3-axes) , (NumBl < 3) units= deg')
-
     # Teeter Motions
     TeetPya = Bool(False, iotype='in', desc='Rotor teeter angle (position) (About the ya-axis) , (NumBl > 2) units= deg')
     TeetVya = Bool(False, iotype='in', desc='Rotor teeter angular velocity (About the ya-axis) , (NumBl > 2) units= deg/s')
     TeetAya = Bool(False, iotype='in', desc='Rotor teeter angular acceleration (About the ya-axis) , (NumBl > 2) units= deg/s**2')
-
     # Shaft Motions
     LSSTipPxa = Bool(False, iotype='in', desc='Rotor azimuth angle (position) (About the xa- and xs-axes) , () units= deg')
     LSSTipVxa = Bool(False, iotype='in', desc='Rotor azimuth angular speed (About the xa- and xs-axes) , () units= rpm')
@@ -327,7 +364,6 @@ class FstOutput(VariableTree):
     HSShftV = Bool(False, iotype='in', desc='Angular speed of the high-speed shaft and generator (Same sign as LSSGagVxa / LSSGagVxs / LSSGagV) , () units= rpm')
     HSShftA = Bool(False, iotype='in', desc='Angular acceleration of the high-speed shaft and generator (Same sign as LSSGagAxa / LSSGagAxs / LSSGagA) , () units= deg/s**2')
     TipSpdRat = Bool(False, iotype='in', desc='Rotor blade tip speed ratio (N/A) , (.NOT. CompAero) units= ')
-
     # Nacelle IMU Motions
     NcIMUTVxs = Bool(False, iotype='in', desc='Nacelle inertial measurement unit translational velocity (absolute) (Directed along the xs-axis) , () units= m/s')
     NcIMUTVys = Bool(False, iotype='in', desc='Nacelle inertial measurement unit translational velocity (absolute) (Directed along the ys-axis) , () units= m/s')
@@ -341,22 +377,80 @@ class FstOutput(VariableTree):
     NcIMURAxs = Bool(False, iotype='in', desc='Nacelle inertial measurement unit angular (rotational) acceleration (absolute) (About the xs-axis) , () units= deg/s**2')
     NcIMURAys = Bool(False, iotype='in', desc='Nacelle inertial measurement unit angular (rotational) acceleration (absolute) (About the ys-axis) , () units= deg/s**2')
     NcIMURAzs = Bool(False, iotype='in', desc='Nacelle inertial measurement unit angular (rotational) acceleration (absolute) (About the zs-axis) , () units= deg/s**2')
-
     # Rotor-Furl Motions
     RotFurlP = Bool(False, iotype='in', desc='Rotor-furl angle (position) (About the rotor-furl axis) , () units= deg')
     RotFurlV = Bool(False, iotype='in', desc='Rotor-furl angular velocity (About the rotor-furl axis) , () units= deg/s')
     RotFurlA = Bool(False, iotype='in', desc='Rotor-furl angular acceleration (About the rotor-furl axis) , () units= deg/s**2')
-
     # Tail-Furl Motions
     TailFurlP = Bool(False, iotype='in', desc='Tail-furl angle (position) (About the tail-furl axis) , () units= deg')
     TailFurlV = Bool(False, iotype='in', desc='Tail-furl angular velocity (About the tail-furl axis) , () units= deg/s')
     TailFurlA = Bool(False, iotype='in', desc='Tail-furl angular acceleration (About the tail-furl axis) , () units= deg/s**2')
-
     # Nacelle Yaw Motions
     YawPzn = Bool(False, iotype='in', desc='Nacelle yaw angle (position) (About the zn- and zp-axes) , () units= deg')
     YawVzn = Bool(False, iotype='in', desc='Nacelle yaw angular velocity (About the zn- and zp-axes) , () units= deg/s')
     YawAzn = Bool(False, iotype='in', desc='Nacelle yaw angular acceleration (About the zn- and zp-axes) , () units= deg/s**2')
     NacYawErr = Bool(False, iotype='in', desc='Nacelle yaw error estimate. This is computed as follows: NacYawErr = HorWndDir - YawPzn - YawBrRDzt - PtfmRDzi. This estimate is not accurate instantaneously in the presence of significant tower deflection or platform angular (rotational) displacement since the angles used in the computation are not all defined about the same axis of rotation. However, the estimate should be useful in a yaw controller if averaged over a time scale long enough to diminish the effects of tower and platform motions (i.e., much longer than the period of oscillation). (About the zi-axis) , (.NOT. CompAero) units= deg')
+
+    # Other Names
+    # Blade Pitch Motions 
+    PtchPMzb1 = Bool(False, iotype='in', desc='Blade 1 pitch angle (position) (Positive towards feather about the minus zc1- and minus zb1-axes) , () units= deg')
+    PtchPMzb2 = Bool(False, iotype='in', desc='Blade 2 pitch angle (position) (Positive towards feather about the minus zc2- and minus zb2-axes) , () units= deg')
+    PtchPMzb3 = Bool(False, iotype='in', desc='Blade 3 pitch angle (position) (Positive towards feather about the minus zc3- and minus zb3-axes) , (NumBl < 3) units= deg')
+    # Blade Pitch Motions 
+    BldPitch1 = Bool(False, iotype='in', desc='Blade 1 pitch angle (position) (Positive towards feather about the minus zc1- and minus zb1-axes) , () units= deg')
+    BldPitch2 = Bool(False, iotype='in', desc='Blade 2 pitch angle (position) (Positive towards feather about the minus zc2- and minus zb2-axes) , () units= deg')
+    BldPitch3 = Bool(False, iotype='in', desc='Blade 3 pitch angle (position) (Positive towards feather about the minus zc3- and minus zb3-axes) , (NumBl < 3) units= deg')
+    # Teeter Motions PtchPMzb3
+    RotTeetP = Bool(False, iotype='in', desc='Rotor teeter angle (position) (About the ya-axis) , (NumBl > 2) units= deg')
+    RotTeetV = Bool(False, iotype='in', desc='Rotor teeter angular velocity (About the ya-axis) , (NumBl > 2) units= deg/s')
+    RotTeetA = Bool(False, iotype='in', desc='Rotor teeter angular acceleration (About the ya-axis) , (NumBl > 2) units= deg/s**2')
+    # Teeter Motions BldPitch3
+    TeetDefl = Bool(False, iotype='in', desc='Rotor teeter angle (position) (About the ya-axis) , (NumBl > 2) units= deg')
+    RotTeetV = Bool(False, iotype='in', desc='Rotor teeter angular velocity (About the ya-axis) , (NumBl > 2) units= deg/s')
+    RotTeetA = Bool(False, iotype='in', desc='Rotor teeter angular acceleration (About the ya-axis) , (NumBl > 2) units= deg/s**2')
+    # Teeter Motions 
+    RotTeetV = Bool(False, iotype='in', desc='Rotor teeter angular velocity (About the ya-axis) , (NumBl > 2) units= deg/s')
+    RotTeetA = Bool(False, iotype='in', desc='Rotor teeter angular acceleration (About the ya-axis) , (NumBl > 2) units= deg/s**2')
+    # Shaft Motions RotTeetA
+    LSSTipPxs = Bool(False, iotype='in', desc='Rotor azimuth angle (position) (About the xa- and xs-axes) , () units= deg')
+    LSSTipVxs = Bool(False, iotype='in', desc='Rotor azimuth angular speed (About the xa- and xs-axes) , () units= rpm')
+    LSSTipAxs = Bool(False, iotype='in', desc='Rotor azimuth angular acceleration (About the xa- and xs-axes) , () units= deg/s**2')
+    LSSGagPxs = Bool(False, iotype='in', desc='Low-speed shaft strain gage azimuth angle (position) (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= deg')
+    LSSGagVxs = Bool(False, iotype='in', desc='Low-speed shaft strain gage angular speed (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= rpm')
+    LSSGagAxs = Bool(False, iotype='in', desc='Low-speed shaft strain gage angular acceleration (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= deg/s**2')
+    GenSpeed = Bool(False, iotype='in', desc='Angular speed of the high-speed shaft and generator (Same sign as LSSGagVxa / LSSGagVxs / LSSGagV) , () units= rpm')
+    # Shaft Motions RotTeetA
+    LSSTipP = Bool(False, iotype='in', desc='Rotor azimuth angle (position) (About the xa- and xs-axes) , () units= deg')
+    LSSTipV = Bool(False, iotype='in', desc='Rotor azimuth angular speed (About the xa- and xs-axes) , () units= rpm')
+    LSSTipA = Bool(False, iotype='in', desc='Rotor azimuth angular acceleration (About the xa- and xs-axes) , () units= deg/s**2')
+    LSSGagP = Bool(False, iotype='in', desc='Low-speed shaft strain gage azimuth angle (position) (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= deg')
+    LSSGagV = Bool(False, iotype='in', desc='Low-speed shaft strain gage angular speed (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= rpm')
+    LSSGagA = Bool(False, iotype='in', desc='Low-speed shaft strain gage angular acceleration (on the gearbox side of the low-speed shaft) (About the xa- and xs-axes) , () units= deg/s**2')
+    # Shaft Motions RotTeetA
+    Azimuth = Bool(False, iotype='in', desc='Rotor azimuth angle (position) (About the xa- and xs-axes) , () units= deg')
+    RotSpeed = Bool(False, iotype='in', desc='Rotor azimuth angular speed (About the xa- and xs-axes) , () units= rpm')
+    RotAccel = Bool(False, iotype='in', desc='Rotor azimuth angular acceleration (About the xa- and xs-axes) , () units= deg/s**2')
+    # Rotor-Furl Motions 
+    RotFurl = Bool(False, iotype='in', desc='Rotor-furl angle (position) (About the rotor-furl axis) , () units= deg')
+    # Tail-Furl Motions 
+    TailFurl = Bool(False, iotype='in', desc='Tail-furl angle (position) (About the tail-furl axis) , () units= deg')
+    # Nacelle Yaw Motions 
+    YawPzp = Bool(False, iotype='in', desc='Nacelle yaw angle (position) (About the zn- and zp-axes) , () units= deg')
+    YawVzp = Bool(False, iotype='in', desc='Nacelle yaw angular velocity (About the zn- and zp-axes) , () units= deg/s')
+    YawAzp = Bool(False, iotype='in', desc='Nacelle yaw angular acceleration (About the zn- and zp-axes) , () units= deg/s**2')
+    # Nacelle Yaw Motions 
+    NacYawP = Bool(False, iotype='in', desc='Nacelle yaw angle (position) (About the zn- and zp-axes) , () units= deg')
+    NacYawV = Bool(False, iotype='in', desc='Nacelle yaw angular velocity (About the zn- and zp-axes) , () units= deg/s')
+    NacYawA = Bool(False, iotype='in', desc='Nacelle yaw angular acceleration (About the zn- and zp-axes) , () units= deg/s**2')
+    # Nacelle Yaw Motions 
+    NacYaw = Bool(False, iotype='in', desc='Nacelle yaw angle (position) (About the zn- and zp-axes) , () units= deg')
+    YawRate = Bool(False, iotype='in', desc='Nacelle yaw angular velocity (About the zn- and zp-axes) , () units= deg/s')
+    YawAccel = Bool(False, iotype='in', desc='Nacelle yaw angular acceleration (About the zn- and zp-axes) , () units= deg/s**2')
+    # Nacelle Yaw Motions 
+    YawPos = Bool(False, iotype='in', desc='Nacelle yaw angle (position) (About the zn- and zp-axes) , () units= deg')
+
+
+class TowerSupportMotionsOut(VariableTree):
 
     # Tower-Top / Yaw Bearing Motions
     YawBrTDxp = Bool(False, iotype='in', desc='Tower-top / yaw bearing fore-aft (translational) deflection (relative to the undeflected position) (Directed along the xp-axis) , () units= m')
@@ -377,7 +471,6 @@ class FstOutput(VariableTree):
     YawBrRAxp = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) roll acceleration (absolute) (About the xp-axis) , () units= deg/s**2')
     YawBrRAyp = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) pitch acceleration (absolute) (About the yp-axis) , () units= deg/s**2')
     YawBrRAzp = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) torsion acceleration. This output will always be very close to zero for FAST simulation results. Use it for examining tower torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. (absolute) (About the zp-axis) , () units= deg/s**2')
-
     # Local Tower Motions
     TwHt1ALxt = Bool(False, iotype='in', desc='Local tower fore-aft (translational) acceleration (absolute) of tower gage 1  (Directed along the local xt-axis) , (NTwGages < 1) units= m/s**2')
     TwHt1ALyt = Bool(False, iotype='in', desc='Local tower side-to-side (translational) acceleration (absolute) of tower gage 1  (Directed along the local yt-axis) , (NTwGages < 1) units= m/s**2')
@@ -514,7 +607,6 @@ class FstOutput(VariableTree):
     TwHt9RPxi = Bool(False, iotype='in', desc='xi-component of the rotational position (relative to the inertia frame) of tower gage 9. In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small tower and platform rotational deflections, so that the rotation sequence does not matter. (About the local xi-axis) , (NTwGages < 9) units= deg')
     TwHt9RPyi = Bool(False, iotype='in', desc='yi-component of the rotational position (relative to the inertia frame) of tower gage 9. In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small tower and platform rotational deflections, so that the rotation sequence does not matter. (About the local yi-axis) , (NTwGages < 9) units= deg')
     TwHt9RPzi = Bool(False, iotype='in', desc='zi-component of the rotational position (relative to the inertia frame) of tower gage 9. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small tower and platform rotational deflections, so that the rotation sequence does not matter. (About the local zi-axis) , (NTwGages < 9) units= deg')
-
     # Platform Motions
     PtfmTDxt = Bool(False, iotype='in', desc='Platform horizontal surge (translational) displacement (Directed along the xt-axis) , () units= m')
     PtfmTDyt = Bool(False, iotype='in', desc='Platform horizontal sway (translational) displacement (Directed along the yt-axis) , () units= m')
@@ -550,6 +642,25 @@ class FstOutput(VariableTree):
     PtfmRAyi = Bool(False, iotype='in', desc='Platform pitch tilt angular (rotational) acceleration (About the yi-axis) , () units= deg/s**2')
     PtfmRAzi = Bool(False, iotype='in', desc='Platform yaw angular (rotational) acceleration (About the zi-axis) , () units= deg/s**2')
 
+    # Other Names
+    # Tower-Top / Yaw Bearing Motions 
+    TTDspFA = Bool(False, iotype='in', desc='Tower-top / yaw bearing fore-aft (translational) deflection (relative to the undeflected position) (Directed along the xt-axis) , () units= m')
+    TTDspSS = Bool(False, iotype='in', desc='Tower-top / yaw bearing side-to-side (translation) deflection (relative to the undeflected position) (Directed along the yt-axis) , () units= m')
+    TTDspAx = Bool(False, iotype='in', desc='Tower-top / yaw bearing axial (translational) deflection (relative to the undeflected position) (Directed along the zt-axis) , () units= m')
+    TTDspRoll = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) roll deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small tower deflections, so that the rotation sequence does not matter. (About the xt-axis) , () units= deg')
+    TTDspPtch = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) pitch deflection (relative to the undeflected position). In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small tower deflections, so that the rotation sequence does not matter. (About the yt-axis) , () units= deg')
+    TTDspTwst = Bool(False, iotype='in', desc='Tower-top / yaw bearing angular (rotational) torsion deflection (relative to the undeflected position). This output will always be zero for FAST simulation results. Use it for examining tower torsional deflections of ADAMS simulations run using ADAMS datasets created using the FAST-to-ADAMS preprocessor. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence. (About the zt-axis) , () units= deg')
+    # Platform Motions 
+    PtfmSurge = Bool(False, iotype='in', desc='Platform horizontal surge (translational) displacement (Directed along the xi-axis) , () units= m')
+    PtfmSway = Bool(False, iotype='in', desc='Platform horizontal sway (translational) displacement (Directed along the yi-axis) , () units= m')
+    PtfmHeave = Bool(False, iotype='in', desc='Platform vertical heave (translational) displacement (Directed along the zi-axis) , () units= m')
+    PtfmRoll = Bool(False, iotype='in', desc='Platform roll tilt angular (rotational) displacement. In ADAMS, it is output as an Euler angle computed as the 3rd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small rotational platform displacements, so that the rotation sequence does not matter. (About the xi-axis) , () units= deg')
+    PtfmPitch = Bool(False, iotype='in', desc='Platform pitch tilt angular (rotational) displacement. In ADAMS, it is output as an Euler angle computed as the 2nd rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small rotational platform displacements, so that the rotation sequence does not matter. (About the yi-axis) , () units= deg')
+    PtfmYaw = Bool(False, iotype='in', desc='Platform yaw angular (rotational) displacement. In ADAMS, it is output as an Euler angle computed as the 1st rotation in the yaw-pitch-roll rotation sequence. It is not output as an Euler angle in FAST, which assumes small rotational platform displacements, so that the rotation sequence does not matter. (About the zi-axis) , () units= deg')
+
+
+class BladeLoadsOut(VariableTree):
+
     # Blade 1 Root Loads
     RootFxc1 = Bool(False, iotype='in', desc='Blade 1 out-of-plane shear force at the blade root (Directed along the xc1-axis) , () units= kN')
     RootFyc1 = Bool(False, iotype='in', desc='Blade 1 in-plane shear force at the blade root (Directed along the yc1-axis) , () units= kN')
@@ -561,7 +672,6 @@ class FstOutput(VariableTree):
     RootMzc1 = Bool(False, iotype='in', desc='Blade 1 pitching moment at the blade root (About the zc1- and zb1-axes) , () units= kN*m')
     RootMxb1 = Bool(False, iotype='in', desc='Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb1-axis) , () units= kN*m')
     RootMyb1 = Bool(False, iotype='in', desc='Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb1-axis) , () units= kN*m')
-
     # Blade 2 Root Loads
     RootFxc2 = Bool(False, iotype='in', desc='Blade 2 out-of-plane shear force at the blade root (Directed along the xc2-axis) , () units= kN')
     RootFyc2 = Bool(False, iotype='in', desc='Blade 2 in-plane shear force at the blade root (Directed along the yc2-axis) , () units= kN')
@@ -573,7 +683,6 @@ class FstOutput(VariableTree):
     RootMzc2 = Bool(False, iotype='in', desc='Blade 2 pitching moment at the blade root (About the zc2- and zb2-axes) , () units= kN*m')
     RootMxb2 = Bool(False, iotype='in', desc='Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb2-axis) , () units= kN*m')
     RootMyb2 = Bool(False, iotype='in', desc='Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb2-axis) , () units= kN*m')
-
     # Blade 3 Root Loads
     RootFxc3 = Bool(False, iotype='in', desc='Blade 3 out-of-plane shear force at the blade root (Directed along the xc3-axis) , (NumBl < 3) units= kN')
     RootFyc3 = Bool(False, iotype='in', desc='Blade 3 in-plane shear force at the blade root (Directed along the yc3-axis) , (NumBl < 3) units= kN')
@@ -585,7 +694,6 @@ class FstOutput(VariableTree):
     RootMzc3 = Bool(False, iotype='in', desc='Blade 3 pitching moment at the blade root (About the zc3- and zb3-axes) , (NumBl < 3) units= kN*m')
     RootMxb3 = Bool(False, iotype='in', desc='Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb3-axis) , (NumBl < 3) units= kN*m')
     RootMyb3 = Bool(False, iotype='in', desc='Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb3-axis) , (NumBl < 3) units= kN*m')
-
     # Blade 1 Local Span Loads
     Spn1MLxb1 = Bool(False, iotype='in', desc='Blade 1 local edgewise moment at span station 1 (About the local xb1-axis) , (NBlGages < 1) units= kN*m')
     Spn1MLyb1 = Bool(False, iotype='in', desc='Blade 1 local flapwise moment at span station 1 (About the local yb1-axis) , (NBlGages < 1) units= kN*m')
@@ -641,7 +749,6 @@ class FstOutput(VariableTree):
     Spn9FLxb1 = Bool(False, iotype='in', desc='Blade 1 local flapwise shear force at span station 9 (Directed along the local xb1-axis) , (NBlGages < 9) units= kN')
     Spn9FLyb1 = Bool(False, iotype='in', desc='Blade 1 local edgewise shear force at span station 9 (Directed along the local yb1-axis) , (NBlGages < 9) units= kN')
     Spn9FLzb1 = Bool(False, iotype='in', desc='Blade 1 local axial force at span station 9 (Directed along the local zb1-axis) , (NBlGages < 9) units= kN')
-
     # Blade 2 Local Span Loads
     Spn1MLxb2 = Bool(False, iotype='in', desc='Blade 2 local edgewise moment at span station 1 (About the local xb2-axis) , (NBlGages < 1) units= kN*m')
     Spn1MLyb2 = Bool(False, iotype='in', desc='Blade 2 local flapwise moment at span station 1 (About the local yb2-axis) , (NBlGages < 1) units= kN*m')
@@ -697,7 +804,6 @@ class FstOutput(VariableTree):
     Spn9FLxb2 = Bool(False, iotype='in', desc='Blade 2 local flapwise shear force at span station 9 (Directed along the local xb2-axis) , (NBlGages < 9) units= kN')
     Spn9FLyb2 = Bool(False, iotype='in', desc='Blade 2 local edgewise shear force at span station 9 (Directed along the local yb2-axis) , (NBlGages < 9) units= kN')
     Spn9FLzb2 = Bool(False, iotype='in', desc='Blade 2 local axial force at span station 9 (Directed along the local zb2-axis) , (NBlGages < 9) units= kN')
-
     # Blade 3 Local Span Loads
     Spn1MLxb3 = Bool(False, iotype='in', desc='Blade 3 local edgewise moment at span station 1 (About the local xb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 1 )) units= kN*m')
     Spn1MLyb3 = Bool(False, iotype='in', desc='Blade 3 local flapwise moment at span station 1 (About the local yb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 1 )) units= kN*m')
@@ -754,6 +860,32 @@ class FstOutput(VariableTree):
     Spn9FLyb3 = Bool(False, iotype='in', desc='Blade 3 local edgewise shear force at span station 9 (Directed along the local yb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 9 )) units= kN')
     Spn9FLzb3 = Bool(False, iotype='in', desc='Blade 3 local axial force at span station 9 (Directed along the local zb3-axis) , (( NumBl < 3 ) .OR. ( NBlGages < 9 )) units= kN')
 
+    # Other Names
+    # Blade 1 Root Loads
+    RootFzb1 = Bool(False, iotype='in', desc='Blade 1 axial force at the blade root (Directed along the zc1- and zb1-axes) , () units= kN')
+    RootMIP1 = Bool(False, iotype='in', desc='Blade 1 in-plane moment (i.e., the moment caused by in-plane forces) at the blade root (About the xc1-axis) , () units= kN*m')
+    RootMOoP1 = Bool(False, iotype='in', desc='Blade 1 out-of-plane moment (i.e., the moment caused by out-of-plane forces) at the blade root (About the yc1-axis) , () units= kN*m')
+    RootMzb1 = Bool(False, iotype='in', desc='Blade 1 pitching moment at the blade root (About the zc1- and zb1-axes) , () units= kN*m')
+    RootMEdg1 = Bool(False, iotype='in', desc='Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb1-axis) , () units= kN*m')
+    RootMFlp1 = Bool(False, iotype='in', desc='Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb1-axis) , () units= kN*m')
+    # Blade 2 Root Loads
+    RootFzb2 = Bool(False, iotype='in', desc='Blade 2 axial force at the blade root (Directed along the zc2- and zb2-axes) , () units= kN')
+    RootMIP2 = Bool(False, iotype='in', desc='Blade 2 in-plane moment (i.e., the moment caused by in-plane forces) at the blade root (About the xc2-axis) , () units= kN*m')
+    RootMOoP2 = Bool(False, iotype='in', desc='Blade 2 out-of-plane moment (i.e., the moment caused by out-of-plane forces) at the blade root (About the yc2-axis) , () units= kN*m')
+    RootMzb2 = Bool(False, iotype='in', desc='Blade 2 pitching moment at the blade root (About the zc2- and zb2-axes) , () units= kN*m')
+    RootMEdg2 = Bool(False, iotype='in', desc='Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb2-axis) , () units= kN*m')
+    RootMFlp2 = Bool(False, iotype='in', desc='Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb2-axis) , () units= kN*m')
+    # Blade 3 Root Loads
+    RootFzb3 = Bool(False, iotype='in', desc='Blade 3 axial force at the blade root (Directed along the zc3- and zb3-axes) , (NumBl < 3) units= kN')
+    RootMIP3 = Bool(False, iotype='in', desc='Blade 3 in-plane moment (i.e., the moment caused by in-plane forces) at the blade root (About the xc3-axis) , (NumBl < 3) units= kN*m')
+    RootMOoP3 = Bool(False, iotype='in', desc='Blade 3 out-of-plane moment (i.e., the moment caused by out-of-plane forces) at the blade root (About the yc3-axis) , (NumBl < 3) units= kN*m')
+    RootMzb3 = Bool(False, iotype='in', desc='Blade 3 pitching moment at the blade root (About the zc3- and zb3-axes) , (NumBl < 3) units= kN*m')
+    RootMEdg3 = Bool(False, iotype='in', desc='Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root (About the xb3-axis) , (NumBl < 3) units= kN*m')
+    RootMFlp3 = Bool(False, iotype='in', desc='Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root (About the yb3-axis) , (NumBl < 3) units= kN*m')
+
+
+class HubNacelleLoadsOut(VariableTree):
+
     # Hub and Rotor Loads
     LSShftFxa = Bool(False, iotype='in', desc='Low-speed shaft thrust force (this is constant along the shaft and is equivalent to the rotor thrust force) (Directed along the xa- and xs-axes) , () units= kN')
     LSShftFya = Bool(False, iotype='in', desc='Rotating low-speed shaft shear force (this is constant along the shaft) (Directed along the ya-axis) , () units= kN')
@@ -771,13 +903,11 @@ class FstOutput(VariableTree):
     RotCq = Bool(False, iotype='in', desc='Rotor torque coefficient (this is equivalent to the low-speed shaft torque coefficient) (N/A) , (.NOT. CompAero) units= ')
     RotCp = Bool(False, iotype='in', desc='Rotor power coefficient (this is equivalent to the low-speed shaft power coefficient) (N/A) , (.NOT. CompAero) units= ')
     RotCt = Bool(False, iotype='in', desc='Rotor thrust coefficient (this is equivalent to the low-speed shaft thrust coefficient) (N/A) , (.NOT. CompAero) units= ')
-
     # Shaft Strain Gage Loads
     LSSGagMya = Bool(False, iotype='in', desc='Rotating low-speed shaft bending moment at the shafts strain gage (shaft strain gage located by input ShftGagL) (About the ya-axis) , () units= kN*m')
     LSSGagMza = Bool(False, iotype='in', desc='Rotating low-speed shaft bending moment at the shafts strain gage (shaft strain gage located by input ShftGagL) (About the za-axis) , () units= kN*m')
     LSSGagMys = Bool(False, iotype='in', desc='Nonrotating low-speed shaft bending moment at the shafts strain gage (shaft strain gage located by input ShftGagL) (About the ys-axis) , () units= kN*m')
     LSSGagMzs = Bool(False, iotype='in', desc='Nonrotating low-speed shaft bending moment at the shafts strain gage (shaft strain gage located by input ShftGagL) (About the zs-axis) , () units= kN*m')
-
     # Generator and High-Speed Shaft Loads
     HSShftTq = Bool(False, iotype='in', desc='High-speed shaft torque (this is constant along the shaft) (Same sign as LSShftTq / RotTorq / LSShftMxa / LSShftMxs / LSSGagMxa / LSSGagMxs) , () units= kN*m')
     HSShftPwr = Bool(False, iotype='in', desc='High-speed shaft power (Same sign as HSShftTq) , () units= kW')
@@ -788,13 +918,10 @@ class FstOutput(VariableTree):
     GenCq = Bool(False, iotype='in', desc='Electrical generator torque coefficient (N/A) , (.NOT. CompAero) units= ')
     GenCp = Bool(False, iotype='in', desc='Electrical generator power coefficient (N/A) , (.NOT. CompAero) units= ')
     HSSBrTq = Bool(False, iotype='in', desc='High-speed shaft brake torque (i.e., the moment applied to the high-speed shaft by the brake) (Always positive (indicating dissipation of power)) , () units= kN*m')
-
     # Rotor-Furl Bearing Loads
     RFrlBrM = Bool(False, iotype='in', desc='Rotor-furl bearing moment (About the rotor-furl axis) , () units= kN*m')
-
     # Tail-Furl Bearing Loads
     TFrlBrM = Bool(False, iotype='in', desc='Tail-furl bearing moment (About the tail-furl axis) , () units= kN*m')
-
     # Tail Fin Aerodynamic Loads
     TFinAlpha = Bool(False, iotype='in', desc='Tail fin angle of attack. This is the angle between the relative velocity of the wind-inflow at the tail fin center-of-pressure and the tail fin chordline. (About the tail fin z-axis, which is the axis in the tail fin plane normal to the chordline) , (.NOT. CompAero) units= deg')
     TFinCLift = Bool(False, iotype='in', desc='Tail fin dimensionless lift coefficient (N/A) , (.NOT. CompAero) units= ')
@@ -802,6 +929,34 @@ class FstOutput(VariableTree):
     TFinDnPrs = Bool(False, iotype='in', desc='Tail fin dynamic pressure, equal to 1/2*AirDens*Vrel^2 where Vrel is the relative velocity of the wind-inflow at the tail fin center-of-pressure (N/A) , (.NOT. CompAero) units= Pa')
     TFinCPFx = Bool(False, iotype='in', desc='Tangential aerodynamic force at the tail fin center-of-pressure (Directed along the tail fin x-axis, which is the axis along the chordline, positive towards the trailing edge) , (.NOT. CompAero) units= kN')
     TFinCPFy = Bool(False, iotype='in', desc='Normal aerodynamic force at the tail fin center-of-pressure (Directed along the tail fin y-axis, which is orthogonal to the tail fin plane) , (.NOT. CompAero) units= kN')
+
+    # Other Names
+    # Hub and Rotor Loads 
+    LSShftFxs = Bool(False, iotype='in', desc='Low-speed shaft thrust force (this is constant along the shaft and is equivalent to the rotor thrust force) (Directed along the xa- and xs-axes) , () units= kN')
+    LSSGagFya = Bool(False, iotype='in', desc='Rotating low-speed shaft shear force (this is constant along the shaft) (Directed along the ya-axis) , () units= kN')
+    LSSGagFza = Bool(False, iotype='in', desc='Rotating low-speed shaft shear force (this is constant along the shaft) (Directed along the za-axis) , () units= kN')
+    LSSGagFys = Bool(False, iotype='in', desc='Nonrotating low-speed shaft shear force (this is constant along the shaft) (Directed along the ys-axis) , () units= kN')
+    LSSGagFzs = Bool(False, iotype='in', desc='Nonrotating low-speed shaft shear force (this is constant along the shaft) (Directed along the zs-axis) , () units= kN')
+    LSShftMxs = Bool(False, iotype='in', desc='Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque) (About the xa- and xs-axes) , () units= kN*m')
+    CThrstArm = Bool(False, iotype='in', desc='Dimensionless radial (arm) location of the center of thrust. This is estimated using values of LSSTipMys, LSSTipMzs, and RotThrust. (nondimensionalized using the undeflected tip radius normal to the shaft and limited to values between 0 and 1 (inclusive)) (Always positive (directed radially outboard at azimuth angle CThrstAzm)) , () units= ')
+    LSShftPwr = Bool(False, iotype='in', desc='Rotor power (this is equivalent to the low-speed shaft power) (N/A) , () units= kW')
+    LSShftCq = Bool(False, iotype='in', desc='Rotor torque coefficient (this is equivalent to the low-speed shaft torque coefficient) (N/A) , (.NOT. CompAero) units= ')
+    LSShftCp = Bool(False, iotype='in', desc='Rotor power coefficient (this is equivalent to the low-speed shaft power coefficient) (N/A) , (.NOT. CompAero) units= ')
+    LSShftCt = Bool(False, iotype='in', desc='Rotor thrust coefficient (this is equivalent to the low-speed shaft thrust coefficient) (N/A) , (.NOT. CompAero) units= ')
+    # Hub and Rotor Loads 
+    LSSGagFxa = Bool(False, iotype='in', desc='Low-speed shaft thrust force (this is constant along the shaft and is equivalent to the rotor thrust force) (Directed along the xa- and xs-axes) , () units= kN')
+    LSSGagMxa = Bool(False, iotype='in', desc='Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque) (About the xa- and xs-axes) , () units= kN*m')
+    # Hub and Rotor Loads 
+    LSSGagFxs = Bool(False, iotype='in', desc='Low-speed shaft thrust force (this is constant along the shaft and is equivalent to the rotor thrust force) (Directed along the xa- and xs-axes) , () units= kN')
+    LSSGagMxs = Bool(False, iotype='in', desc='Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque) (About the xa- and xs-axes) , () units= kN*m')
+    # Hub and Rotor Loads 
+    RotThrust = Bool(False, iotype='in', desc='Low-speed shaft thrust force (this is constant along the shaft and is equivalent to the rotor thrust force) (Directed along the xa- and xs-axes) , () units= kN')
+    RotTorq = Bool(False, iotype='in', desc='Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque) (About the xa- and xs-axes) , () units= kN*m')
+    # Hub and Rotor Loads
+    LSShftTq = Bool(False, iotype='in', desc='Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque) (About the xa- and xs-axes) , () units= kN*m')
+
+
+class TowerSupportLoadsOut(VariableTree):
 
     # Tower-Top / Yaw Bearing Loads
     YawBrFxn = Bool(False, iotype='in', desc='Rotating (with nacelle) tower-top / yaw bearing shear force (Directed along the xn-axis) , () units= kN')
@@ -814,7 +969,6 @@ class FstOutput(VariableTree):
     YawBrMzn = Bool(False, iotype='in', desc='Tower-top / yaw bearing yaw moment (About the zn- and zp-axes) , () units= kN*m')
     YawBrMxp = Bool(False, iotype='in', desc='Nonrotating tower-top / yaw bearing roll moment (About the xp-axis) , () units= kN*m')
     YawBrMyp = Bool(False, iotype='in', desc='Nonrotating tower-top / yaw bearing pitch moment (About the yp-axis) , () units= kN*m')
-
     # Tower Base Loads
     TwrBsFxt = Bool(False, iotype='in', desc='Tower base fore-aft shear force (Directed along the xt-axis) , () units= kN')
     TwrBsFyt = Bool(False, iotype='in', desc='Tower base side-to-side shear force (Directed along the yt-axis) , () units= kN')
@@ -822,7 +976,6 @@ class FstOutput(VariableTree):
     TwrBsMxt = Bool(False, iotype='in', desc='Tower base roll (or side-to-side) moment (i.e., the moment caused by side-to-side forces) (About the xt-axis) , () units= kN*m')
     TwrBsMyt = Bool(False, iotype='in', desc='Tower base pitching (or fore-aft) moment (i.e., the moment caused by fore-aft forces) (About the yt-axis) , () units= kN*m')
     TwrBsMzt = Bool(False, iotype='in', desc='Tower base yaw (or torsional) moment (About the zt-axis) , () units= kN*m')
-
     # Local Tower Loads
     TwHt1MLxt = Bool(False, iotype='in', desc='Local tower roll (or side-to-side) moment of tower gage 1 (About the local xt-axis) , (NTwGages < 1) units= kN*m')
     TwHt1MLyt = Bool(False, iotype='in', desc='Local tower pitching (or fore-aft) moment of tower gage 1 (About the local yt-axis) , (NTwGages < 1) units= kN*m')
@@ -878,7 +1031,6 @@ class FstOutput(VariableTree):
     TwHt9FLxt = Bool(False, iotype='in', desc='Local tower roll (or side-to-side) force of tower gage 9 (About the local xt-axis) , (NTwGages < 9) units= kN')
     TwHt9FLyt = Bool(False, iotype='in', desc='Local tower pitching (or fore-aft) force of tower gage 9 (About the local yt-axis) , (NTwGages < 9) units= kN')
     TwHt9FLzt = Bool(False, iotype='in', desc='Local tower yaw (or torsional) force of tower gage 9 (About the local zt-axis) , (NTwGages < 9) units= kN')
-
     # Platform Loads
     PtfmFxt = Bool(False, iotype='in', desc='Platform horizontal surge shear force (Directed along the xt-axis) , () units= kN')
     PtfmFyt = Bool(False, iotype='in', desc='Platform horizontal sway shear force (Directed along the yt-axis) , () units= kN')
@@ -892,7 +1044,6 @@ class FstOutput(VariableTree):
     PtfmMxi = Bool(False, iotype='in', desc='Platform roll tilt moment (About the xi-axis) , () units= kN*m')
     PtfmMyi = Bool(False, iotype='in', desc='Platform pitch tilt moment (About the yi-axis) , () units= kN*m')
     PtfmMzi = Bool(False, iotype='in', desc='Platform yaw moment (About the zi-axis) , () units= kN*m')
-
     # Mooring Line Loads
     Fair1Ten = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NumLines < 1 )) units= kN')
     Fair1Ang = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NumLines < 1 )) units= deg')
@@ -930,6 +1081,16 @@ class FstOutput(VariableTree):
     Fair9Ang = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NumLines < 9 )) units= deg')
     Anch9Ten = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NumLines < 9 )) units= kN')
     Anch9Ang = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NumLines < 9 )) units= deg')
+
+    # Other Names
+    # Tower-Top / Yaw Bearing Loads 
+    YawBrFzp = Bool(False, iotype='in', desc='Tower-top / yaw bearing axial force (Directed along the zn- and zp-axes) , () units= kN')
+    YawBrMzp = Bool(False, iotype='in', desc='Tower-top / yaw bearing yaw moment (About the zn- and zp-axes) , () units= kN*m')
+    # Tower-Top / Yaw Bearing Loads 
+    YawMom = Bool(False, iotype='in', desc='Tower-top / yaw bearing yaw moment (About the zn- and zp-axes) , () units= kN*m')
+
+
+class WaveMotionsOut(VariableTree):
 
     # Wave Motions
     WaveElev = Bool(False, iotype='in', desc=' () , (.NOT. CompHydro) units= m')
@@ -987,6 +1148,8 @@ class FstOutput(VariableTree):
     Wave9Axi = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NWaveKin < 9 )) units= m/s**2')
     Wave9Ayi = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NWaveKin < 9 )) units= m/s**2')
     Wave9Azi = Bool(False, iotype='in', desc=' () , (( .NOT. CompHydro ) .OR. ( NWaveKin < 9 )) units= m/s**2')
+
+class DOFOut(VariableTree):
 
     # Internal Degrees of Freedom
     Q_B1E1 = Bool(False, iotype='in', desc='Displacement of 1st edgewise bending-mode DOF of blade 1 () , () units= m')
@@ -1064,3 +1227,22 @@ class FstOutput(VariableTree):
     QD2_R = Bool(False, iotype='in', desc='Acceleration of platform roll tilt rotation DOF () , () units= rad/s**2')
     QD2_P = Bool(False, iotype='in', desc='Acceleration of platform pitch tilt rotation DOF () , () units= rad/s**2')
     QD2_Y = Bool(False, iotype='in', desc='Acceleration of platform yaw rotation DOF () , () units= rad/s**2')
+
+# Output Variable Tree
+
+class FstOutput(VariableTree):
+
+    # Motion output channels    
+    wind_mot_vt = VarTree(WindMotionsOut(), desc='wind motions output channels')
+    blade_mot_vt = VarTree(BladeMotionsOut(), desc='blade motions output channels')
+    hub_nacelle_mot_vt = VarTree(HubNacelleMotionsOut(), desc='hub and nacelle system motions output channels')
+    tower_support_mot_vt = VarTree(TowerSupportMotionsOut(), desc='yaw bearing, tower and support motions output channels')
+    wave_mot_vt = VarTree(WaveMotionsOut(), desc='wave motions output channels')
+
+    # Loads output channels
+    blade_loads_vt = VarTree(BladeLoadsOut(), desc='blade loads output channels') 
+    hub_nacelle_loads_vt = VarTree(HubNacelleLoadsOut(), desc='hub and nacelle system loads output channels')
+    tower_support_loads_vt = VarTree(TowerSupportLoadsOut(), desc='tower and support loads output channels')
+
+    # Other output channels
+    dof_vt = VarTree(DOFOut(), desc='degree of freedom output channels')
