@@ -15,17 +15,18 @@ class FstExternalCode(ExternalCode):
 class FstWrapper(FstExternalCode):
 
     FSTexe = Str(io_type='in', desc='Path to executable')
-    FSTInputFile = Str(iotype='in', desc='Path to FAST input file (ext=.fst)')
+    FSTInputFile = Str(iotype='in', desc='FAST input file (ext=.fst)')
+    fst_directory = Str(iotype='in', desc='Path to fst directory files')
 
     def __init__(self):
         super(FstWrapper, self).__init__()
 
     def execute(self):
 
-        self.input_file = self.FSTInputFile
+        self.input_file = os.path.join(self.fst_directory, self.FSTInputFile)
 
         if (not os.path.exists(self.FSTexe)):
-            sys.stderr.write("Can't find FAST executable: {:}\n".format(ffname))
+            sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
             return 0
         print "calling ", self.FSTexe
         print "input file=", self.input_file
@@ -43,38 +44,29 @@ if __name__=="__main__":
     #fst.FSTInputFile = 'C:/Models/FAST/ModelFiles/FASTmodel.fst'
     #fst.execute()
 
-    #OC3 Example
+    # OC3 Example
     fst_input = FstInputReader()
     fst_writer = FstInputWriter()
 
-    ad_file    = 'NRELOffshrBsline5MW_AeroDyn.ipt'
-    ad_file_type = 1
-    blade_file = 'NRELOffshrBsline5MW_Blade.dat'
-    tower_file = 'NRELOffshrBsline5MW_Tower_Monopile_RF.dat'
-    platform_file = 'NRELOffshrBsline5MW_Platform_Monopile_RF.dat'
-    fst_file = 'NRELOffshrBsline5MW_Monopile_RF.fst'
-    fst_file_type = 1
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-    fst_input.fst_infile_vt.template_path= os.path.join(FAST_DIR,"OC3_Files")
-    ad_fname = os.path.join(fst_input.fst_infile_vt.template_path, ad_file)
-    bl_fname = os.path.join(fst_input.fst_infile_vt.template_path, blade_file)
-    tw_fname = os.path.join(fst_input.fst_infile_vt.template_path, tower_file)
-    pl_fname = os.path.join(fst_input.fst_infile_vt.template_path, platform_file)
-    fs_fname = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
 
-    fst_input.fst_infile_vt.ad_file = ad_fname
-    fst_input.fst_infile_vt.ad_file_type = ad_file_type
-    fst_input.fst_infile_vt.blade_file = bl_fname
-    fst_input.fst_infile_vt.tower_file = tw_fname
-    fst_input.fst_infile_vt.platform_file = pl_fname
-    fst_input.fst_infile_vt.fst_file = fs_fname
-    fst_input.fst_infile_vt.fst_file_type = fst_file_type
+    fst_input.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst'
+    fst_input.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
+    fst_input.ad_file_type = 1
+    fst_input.fst_file_type = 1
     fst_input.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
-    fst_writer.fst_infile_vt.template_path = os.path.join(FAST_DIR,"tmp")
-    fst_writer.execute()        
-    fst_file = fst_writer.fst_infile_vt.fst_file
+    fst_writer.fst_infile = 'FAST_Model.fst'
+    fst_writer.fst_directory = os.path.join(FAST_DIR,"tmp")
+    fst_writer.fst_vt.PtfmFile = "Platform.dat"
+    fst_writer.fst_vt.TwrFile = "Tower.dat"
+    fst_writer.fst_vt.BldFile1 = "Blade.dat"
+    fst_writer.fst_vt.BldFile2 = fst_writer.fst_vt.BldFile1 
+    fst_writer.fst_vt.BldFile3 = fst_writer.fst_vt.BldFile1 
+    fst_writer.fst_vt.ADFile = "Aerodyn.ipt"
+    fst_writer.execute()
     
-    fst.FSTInputFile = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
+    fst.FSTInputFile = fst_writer.fst_infile
+    fst.fst_directory = fst_writer.fst_directory
     fst.execute()

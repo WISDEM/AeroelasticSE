@@ -1,10 +1,12 @@
 
 from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
+from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict, Slot
 import os
 
-from FST_reader import FstInputReader, FstInputBase, FstInputFileVT
+from FST_reader import FstInputReader, FstInputBase
 from FST_vartrees import FstModel
+
+import copy
 
 # Builder
 
@@ -18,12 +20,96 @@ class FstInputBuilder(Component):
     fstIn = VarTree(FstModel(), iotype='in')
     fstS = VarTree(FstModel(), iotype='in')
     fstOut = VarTree(FstModel(), iotype='out')
+    
+    def __init__(self):
+        
+        super(FstInputBuilder,self).__init__()
+
+    def initialize_inputs(self):
+
+        self._logger.info('dublicating inputs')
+        self.fstS = self.fstIn.copy()
 
     def execute(self):
 
-        self.fstS = self.fstIn.copy()
-        # Do changes...
-        self.fstOut = self.fstS
+        self._logger.info('updating inputs')
+        # update outputs
+        self.fstOut = self.fstS.copy()
+
+class FUSEDWindInputBuilder(FstInputBuilder):
+    """
+    Component for translating FUSED-Wind input vartrees to HAWC2 inputs
+    """
+
+    inputs = Slot(iotype='in')
+    
+    def __init__(self):
+        
+        super(FUSEDWindInputBuilder,self).__init__()
+
+    def execute(self):
+        """
+        check which vartrees are passed in the case 
+        """
+
+        # connect all variables
+        if hasattr(self.inputs, 'environment') and hasattr(self.inputs, 'simulation'):
+
+            self._logger.info('setting wind and simulation inputs')
+
+            self.fstS.aero_vt.AirDens = self.inputs.environment.density
+            self.fstS.aero_vt.KinVisc = self.inputs.environment.viscosity
+            
+            # Ignore TI, kappa, z0 (TODO: turbsim input file structure)
+            self.fstS.simple_wind_vt.TimeSteps = 2
+
+            self.fstS.simple_wind_vt.HorSpd = [self.inputs.environment.vhub] * 2
+            self.fstS.simple_wind_vt.WindDir = [self.inputs.environment.direction] * 2
+            self.fstS.simple_wind_vt.VerSpd = [0.0] * 2 # TODO: include?
+            self.fstS.simple_wind_vt.HorShr = [0.0] * 2 # TODO: include?
+            if self.inputs.environment.inflow_type == 'constant':
+                self.fstS.simple_wind_vt.VerShr = [0.0] * 2
+                self.fstS.simple_wind_vt.LnVShr = [0.0] * 2
+            elif self.inputs.environment.inflow_type == 'log':
+                self.fstS.simple_wind_vt.VerShr = [0.0] * 2
+                self.fstS.simple_wind_vt.LnVShr = [0.0] * 2
+            elif self.inputs.environment.inflow_type == 'powerlaw':
+                self.fstS.simple_wind_vt.VerShr = [self.inputs.environment.shear_exp] * 2
+                self.fstS.simple_wind_vt.LnVShr = [0.0] * 2
+            elif self.inputs.environment.inflow_type == 'linear':
+                self.fstS.simple_wind_vt.VerShr = [0.0] * 2
+                self.fstS.simple_wind_vt.LnVShr = [0.0] * 2
+            else:
+                self.fstS.simple_wind_vt.VerShr = [0.0] * 2
+                self.fstS.simple_wind_vt.LnVShr = [0.0] * 2             
+
+            self.fstS.simple_wind_vt.GstSpd = [0.0] * 2 # TODO: include?
+
+            self.fstS.simple_wind_vt.Time = [None] * 2            
+            self.fstS.simple_wind_vt.Time[0] = self.inputs.simulation.time_start
+            self.fstS.simple_wind_vt.Time[1] = self.inputs.simulation.time_stop
+            self.fstS.aero_vt.DTAero = self.inputs.simulation.time_step
+
+        # call parent that simply copies Ps to Pout
+        super(FUSEDWindInputBuilder, self).execute()
+
+'''class FUSEDWindOutputBuilderBase(Component):
+    """
+    Component for converting HAWC2 outputs to FUSED-Wind outputs
+    """
+
+    output = Slot(iotype='in', desc='HAWC2 output object')
+    outputs = Slot(iotype='out', desc='FUSED-Wind output vartree')
+
+    def execute(self):
+
+        pass
+
+class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
+
+    def execute(self):
+
+        self._logger.info('Converting HAWC2 outputs to FUSED-Wind IEC outputs ..')'''
 
 # Writer
 
@@ -32,7 +118,14 @@ class FstInputWriter(FstInputBase):
     """
     fst_vt = VarTree(FstModel(), iotype='in')
 
-    fst_infile_vt = VarTree(FstInputFileVT(), iotype='out')
+    fst_infile = Str(iotype='in', desc='Master FAST file')
+    fst_directory = Str(iotype='in', desc='Directory of master FAST file set')
+    fst_file_type = Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
+    ad_file_type = Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+    
+    case_id = Str('DEFAULT', iotype='in', desc='Case ID if writer is used as part of a case analyzer analysis')
+
+    fst_file = Str(iotype='out', desc='Case FAST file')
 
     def __init__(self):
 
@@ -40,17 +133,18 @@ class FstInputWriter(FstInputBase):
     
     def execute(self):
 
-        self.fst_infile_vt.template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'tmp')
-
         self.WindWriter()
         self.AeroWriter()        
         self.BladeWriter()
         self.TowerWriter()
         self.PlatformWriter()
 
-        self.fst_infile_vt.fst_file = os.path.join(self.fst_infile_vt.template_path,'FASTmodel.fst')
-        ofh = open(self.fst_infile_vt.fst_file, 'w')
-        self.fst_infile_vt.fst_file_type = 1
+        if self.case_id == 'DEFAULT':
+            self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
+        else:
+            case_file = self.case_id + '_' + self.fst_infile
+            self.fst_file = os.path.join(self.fst_directory,case_file)
+        ofh = open(self.fst_file, 'w')
 
         # FAST Inputs
         ofh.write('---\n')
@@ -184,12 +278,10 @@ class FstInputWriter(FstInputBase):
         ofh.write('{:.5f}\n'.format(self.fst_vt.TEC_MR))
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.PtfmModel))
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.platform_file))
-        self.fst_vt.PtfmFile = "Platform.dat"
+        ofh.write('"{:}"\n'.format(self.fst_vt.PtfmFile))
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.TwrNodes))
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.tower_file))
-        self.fst_vt.TwrFile = "Tower.dat"
+        ofh.write('"{:}"\n'.format(self.fst_vt.TwrFile))
         ofh.write('---\n')
         ofh.write('{:.5f}\n'.format(self.fst_vt.YawSpr))
         ofh.write('{:.5f}\n'.format(self.fst_vt.YawDamp))
@@ -211,16 +303,11 @@ class FstInputWriter(FstInputBase):
         ofh.write('{:.5f}\n'.format(self.fst_vt.TBDrConD))
         ofh.write('{:.5f}\n'.format(self.fst_vt.TpBrDT))
         ofh.write('---\n')
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
-        self.fst_vt.BldFile1 = "Blade.dat" #TODO - different blade files
-        self.fst_vt.BldFile2 = "Blade.dat"
-        self.fst_vt.BldFile3 = "Blade.dat"
+        ofh.write('"{:}"\n'.format(self.fst_vt.BldFile1))
+        ofh.write('"{:}"\n'.format(self.fst_vt.BldFile2))
+        ofh.write('"{:}"\n'.format(self.fst_vt.BldFile3))
         ofh.write('---\n') 
-        ofh.write('"{:}"\n'.format(self.fst_infile_vt.ad_file))
-        self.fst_vt.ADFile = "AeroDynInput.ad"
-        self.fst_infile_vt.ad_file_type = 1
+        ofh.write('"{:}"\n'.format(self.fst_vt.ADFile))
         ofh.write('---\n')
         ofh.write('{:}\n'.format(self.fst_vt.NoiseFile))
         ofh.write('---\n')
@@ -347,8 +434,8 @@ class FstInputWriter(FstInputBase):
     
     def PlatformWriter(self):
       
-        self.fst_infile_vt.platform_file = os.path.join(self.fst_infile_vt.template_path,'Platform.dat')
-        ofh = open(self.fst_infile_vt.platform_file, 'w')
+        platform_file = os.path.join(self.fst_directory,self.fst_vt.PtfmFile)
+        ofh = open(platform_file, 'w')
         
         ofh.write('---\n')
         ofh.write('---\n')
@@ -441,8 +528,8 @@ class FstInputWriter(FstInputBase):
     
     def TowerWriter(self):
 
-        self.fst_infile_vt.tower_file = os.path.join(self.fst_infile_vt.template_path,'Tower.dat')
-        ofh = open(self.fst_infile_vt.tower_file, 'w')
+        tower_file = os.path.join(self.fst_directory,self.fst_vt.TwrFile)
+        ofh = open(tower_file, 'w')
 
         ofh.write('---\n')
         ofh.write('---\n')
@@ -499,8 +586,8 @@ class FstInputWriter(FstInputBase):
     
     def BladeWriter(self):
         
-        self.fst_infile_vt.blade_file = os.path.join(self.fst_infile_vt.template_path,'Blade.dat')
-        ofh = open(self.fst_infile_vt.blade_file, 'w')
+        blade_file = os.path.join(self.fst_directory,self.fst_vt.BldFile1)
+        ofh = open(blade_file, 'w')
         
         ofh.write('---\n')
         ofh.write('---\n')
@@ -555,14 +642,17 @@ class FstInputWriter(FstInputBase):
     
     def AeroWriter(self):
 
+        if not os.path.isdir(os.path.join(self.fst_directory,'AeroData')):
+            os.mkdir(os.path.join(self.fst_directory,'AeroData'))
+
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             af_name = os.path.join(self.fst_infile_vt.template_path, 'AeroData\\Airfoil' + str(i) + '.dat')
+             af_name = os.path.join(self.fst_directory, 'AeroData\\Airfoil' + str(i) + '.dat')
              self.fst_vt.aero_vt.blade_vt.FoilNm[i] = 'AeroData\\Airfoil' + str(i) + '.dat'
              self.writeAirfoilFile(af_name, i, 2)
 
-        self.fst_infile_vt.ad_file = os.path.join(self.fst_infile_vt.template_path,'AeroDynInput.ad')
-        ofh = open(self.fst_infile_vt.ad_file,'w')
+        ad_file = os.path.join(self.fst_directory,self.fst_vt.ADFile)
+        ofh = open(ad_file,'w')
         
         ofh.write('Aerodyn input file for FAST\n')
         
@@ -574,7 +664,7 @@ class FstInputWriter(FstInputBase):
         ofh.write('{:.3f}\n'.format(self.fst_vt.aero_vt.AToler))
         ofh.write('{:}\n'.format(self.fst_vt.aero_vt.TLModel))
         ofh.write('{:}\n'.format(self.fst_vt.aero_vt.HLModel))
-        ofh.write('{:}\n'.format(self.fst_vt.aero_vt.WindFile))  
+        ofh.write('"{:}"\n'.format(self.fst_vt.aero_vt.WindFile))  
         ofh.write('{:.1f}\n'.format(self.fst_vt.aero_vt.HH))  
         ofh.write('{:.1f}\n'.format(self.fst_vt.aero_vt.TwrShad))  
         ofh.write('{:.1f}\n'.format(self.fst_vt.aero_vt.ShadHWid))  
@@ -585,7 +675,7 @@ class FstInputWriter(FstInputBase):
 
         ofh.write('{:2}\n'.format(self.fst_vt.aero_vt.blade_vt.NumFoil))
         for i in range (self.fst_vt.aero_vt.blade_vt.NumFoil):
-            ofh.write('{:}\n'.format(self.fst_vt.aero_vt.blade_vt.FoilNm[i]))
+            ofh.write('"{:}"\n'.format(self.fst_vt.aero_vt.blade_vt.FoilNm[i]))
 
         ofh.write('{:2}\n'.format(self.fst_vt.aero_vt.blade_vt.BldNodes))
         rnodes = self.fst_vt.aero_vt.blade_vt.RNodes
@@ -633,7 +723,7 @@ class FstInputWriter(FstInputBase):
                 for a, cl, cd in zip(p.alpha, p.cl, p.cd):
                     print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a*R2D, cl, cd)
                 print >> f, 'EOT'
-                ## PG (1-19-13) added mode 2: coming from newer Aerodyn(?), but written for FAST 7 (?) ##   '''
+                ## PG (1-19-13) added mode 2: coming from newer Aerodyn(?), but written for FAST 7 (?) ##'''
         elif (mode == 2):
             print >> f, 'AeroDyn airfoil file.'
             print >> f, 'auto generated by airfoil.py (part of rotor TEAM)'
@@ -682,13 +772,12 @@ class FstInputWriter(FstInputBase):
       
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
     
-            self.fst_infile_vt.wind_file = os.path.join(self.fst_infile_vt.template_path,'WindFile.hh')
-            self.fst_vt.aero_vt.WindFile = "WindFile.hh"
-            ofh = open(self.fst_infile_vt.wind_file,'w')
+            wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
+            ofh = open(wind_file,'w')
         
-            '''ofh.write('{:}\n'.format(self.fst_vt.simple_wind_vt.description))
-            for i in range(6):
-                ofh.write('! \n')'''
+            #ofh.write('{:}\n'.format(self.fst_vt.simple_wind_vt.description))
+            #for i in range(6):
+            #    ofh.write('! \n')
             for i in range(self.fst_vt.simple_wind_vt.TimeSteps):
                 ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.format(\
                           self.fst_vt.simple_wind_vt.Time[i], self.fst_vt.simple_wind_vt.HorSpd[i], self.fst_vt.simple_wind_vt.WindDir[i],\
@@ -699,7 +788,7 @@ class FstInputWriter(FstInputBase):
         else:
            print "TODO: Other wind file types bts and wnd"
 
-def noise_example():
+'''def noise_example():
 
     # Noise example
     fst_input = FstInputReader()
@@ -730,43 +819,35 @@ def noise_example():
     fst_input.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
-    fst_writer.execute()
+    fst_writer.execute()'''
 
 def oc3_example():
 
-    # Noise example
+    # OC3 Example
     fst_input = FstInputReader()
     fst_writer = FstInputWriter()
 
-    ad_file    = 'NRELOffshrBsline5MW_AeroDyn.ipt'
-    ad_file_type = 1
-    blade_file = 'NRELOffshrBsline5MW_Blade.dat'
-    tower_file = 'NRELOffshrBsline5MW_Tower_Monopile_RF.dat'
-    platform_file = 'NRELOffshrBsline5MW_Platform_Monopile_RF.dat'
-    fst_file = 'NRELOffshrBsline5MW_Monopile_RF.fst'
-    fst_file_type = 1
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-    fst_input.fst_infile_vt.template_path= os.path.join(FAST_DIR,"OC3_Files")
-    ad_fname = os.path.join(fst_input.fst_infile_vt.template_path, ad_file)
-    bl_fname = os.path.join(fst_input.fst_infile_vt.template_path, blade_file)
-    tw_fname = os.path.join(fst_input.fst_infile_vt.template_path, tower_file)
-    pl_fname = os.path.join(fst_input.fst_infile_vt.template_path, platform_file)
-    fs_fname = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
 
-    fst_input.fst_infile_vt.ad_file = ad_fname
-    fst_input.fst_infile_vt.ad_file_type = ad_file_type
-    fst_input.fst_infile_vt.blade_file = bl_fname
-    fst_input.fst_infile_vt.tower_file = tw_fname
-    fst_input.fst_infile_vt.platform_file = pl_fname
-    fst_input.fst_infile_vt.fst_file = fs_fname
-    fst_input.fst_infile_vt.fst_file_type = fst_file_type
-    fst_input.fst_infile_vt.execute() 
+    fst_input.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst'
+    fst_input.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
+    fst_input.ad_file_type = 1
+    fst_input.fst_file_type = 1
+    fst_input.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
+    fst_writer.fst_infle = 'FAST_Model.fst'
+    fst_writer.fst_directory = os.path.join(FAST_DIR,"tmp")
+    fst_writer.fst_vt.PtfmFile = "Platform.dat"
+    fst_writer.fst_vt.TwrFile = "Tower.dat"
+    fst_writer.fst_vt.BldFile1 = "Blade.dat"
+    fst_writer.fst_vt.BldFile2 = fst_writer.fst_vt.BldFile1 
+    fst_writer.fst_vt.BldFile3 = fst_writer.fst_vt.BldFile1 
+    fst_writer.fst_vt.ADFile = "Aerodyn.ipt"
     fst_writer.execute()
 
 if __name__=="__main__":
 
-    noise_example()
+    #noise_example()
     
     oc3_example()
