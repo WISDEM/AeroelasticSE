@@ -1,9 +1,17 @@
 
 from openmdao.main.api import VariableTree, Container, Component
 from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
-import os
+import os,re
 
 from FST_vartrees import FstModel, ADAirfoil, ADAirfoilPolar
+
+def fix_path(name):
+    """ split a path, then reconstruct it using os.path.join """
+    name = re.split("\\\|/", name)
+    new = name[0]
+    for i in range(1,len(name)):
+        new = os.path.join(new, name[i])
+    return new
 
 class FstInputBase(Component):
 
@@ -746,6 +754,8 @@ class FstInputReader(FstInputBase):
         self.fst_vt.aero_vt.blade_vt.FoilNm = [None] * self.fst_vt.aero_vt.blade_vt.NumFoil
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
             af_filename = f.readline().split()[0]
+            af_filename = fix_path(af_filename)
+            print af_filename
             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = af_filename[1:-1]
         
         self.fst_vt.aero_vt.blade_vt.BldNodes = int(f.readline().split()[0])
@@ -769,7 +779,7 @@ class FstInputReader(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             self.fst_vt.aero_vt.blade_vt.af_data.append(self.initFromAerodynFile(self.fst_infile_vt.template_path + '\\' + self.fst_vt.aero_vt.blade_vt.FoilNm[i], self.fst_infile_vt.ad_file_type))
+             self.fst_vt.aero_vt.blade_vt.af_data.append(self.initFromAerodynFile(os.path.join(self.fst_infile_vt.template_path, self.fst_vt.aero_vt.blade_vt.FoilNm[i]), self.fst_infile_vt.ad_file_type))
 
 
     def initFromAerodynFile(self, aerodynFile, mode): # kld - added for fast noise
@@ -843,7 +853,7 @@ class FstInputReader(FstInputBase):
 
         #from airfoil import PolarByRe # only if creating airfoil variable trees
 
-        f = open(self.fst_infile_vt.template_path + '\\' + self.fst_infile_vt.wind_file)
+        f = open(os.path.join(self.fst_infile_vt.template_path, self.fst_infile_vt.wind_file))
 
         data = []
         while 1:

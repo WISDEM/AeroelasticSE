@@ -40,6 +40,7 @@ if __name__=="__main__":
 
     fst = FstWrapper()
     fst.FSTexe = 'C:/Models/FAST/FAST.exe'
+#    fst.FSTexe = '/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64'  ## OC3 version
     #fst.FSTInputFile = 'C:/Models/FAST/ModelFiles/FASTmodel.fst'
     #fst.execute()
 
