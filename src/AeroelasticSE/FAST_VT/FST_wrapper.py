@@ -41,6 +41,7 @@ if __name__=="__main__":
 
     fst = FstWrapper()
     fst.FSTexe = 'C:/Models/FAST/FAST.exe'
+#    fst.FSTexe = '/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64'  ## OC3 version
     #fst.FSTInputFile = 'C:/Models/FAST/ModelFiles/FASTmodel.fst'
     #fst.execute()
 
@@ -66,7 +67,7 @@ if __name__=="__main__":
     fst_writer.fst_vt.BldFile3 = fst_writer.fst_vt.BldFile1 
     fst_writer.fst_vt.ADFile = "Aerodyn.ipt"
     fst_writer.execute()
-    
+
     fst.FSTInputFile = fst_writer.fst_infile
     fst.fst_directory = fst_writer.fst_directory
     fst.execute()
