@@ -9,7 +9,7 @@ class FstInputBase(Component):
 
     model_name = Str('FAST Model')
 
-class FstInputReader(FstInputBase):
+class FstInputFileVT(VariableTree):
 
     fst_file = Str(iotype='in', desc='Master Fst file')
     fst_file_type = Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')
@@ -21,6 +21,10 @@ class FstInputReader(FstInputBase):
     platform_file = Str(iotype='in', desc='Master Platform file')
     template_path = Str(iotype='out', desc='template path')
 
+class FstInputReader(FstInputBase):
+
+    fst_infile_vt = VarTree(FstInputFileVT(), iotype='in')
+
     fst_vt = VarTree(FstModel(), iotype='out')
 
     def __init__(self):
@@ -28,7 +32,7 @@ class FstInputReader(FstInputBase):
 
     def execute(self):
 
-        f = open(self.fst_file)
+        f = open(self.fst_infile_vt.fst_file)
 
         # FAST Inputs
         f.readline()
@@ -322,7 +326,7 @@ class FstInputReader(FstInputBase):
             self.fst_vt.SumPrint = False
         else:
             self.fst_vt.SumPrint = True
-        if self.fst_file_type == 0:
+        if self.fst_infile_vt.fst_file_type == 0:
             ff = f.readline().split()[0]
             if ff == '1':
                 self.fst_vt.OutFileFmt = 1
@@ -408,7 +412,7 @@ class FstInputReader(FstInputBase):
     
     def PlatformReader(self):
 
-        f = open(self.platform_file)
+        f = open(self.fst_infile_vt.platform_file)
 
         f.readline()
         f.readline()
@@ -558,7 +562,7 @@ class FstInputReader(FstInputBase):
 
     def TowerReader(self):
         
-        f = open(self.tower_file)
+        f = open(self.fst_infile_vt.tower_file)
         
 
         f.readline()
@@ -633,7 +637,7 @@ class FstInputReader(FstInputBase):
     
     def BladeReader(self):
 
-        f = open(self.blade_file)
+        f = open(self.fst_infile_vt.blade_file)
         
         f.readline()
         f.readline()
@@ -710,7 +714,7 @@ class FstInputReader(FstInputBase):
 
         #from airfoil import PolarByRe # only if creating airfoil variable trees
 
-        f = open(self.ad_file)
+        f = open(self.fst_infile_vt.ad_file)
 
         # skip lines and check if nondimensional
         f.readline()
@@ -723,10 +727,10 @@ class FstInputReader(FstInputBase):
         self.fst_vt.aero_vt.TLModel = f.readline().split()[0]
         self.fst_vt.aero_vt.HLModel = f.readline().split()[0]
         self.fst_vt.aero_vt.WindFile = f.readline().split()[0]
-        self.wind_file = self.fst_vt.aero_vt.WindFile[1:-1]
-        if self.wind_file[-1] == 'h':
+        self.fst_infile_vt.wind_file = self.fst_vt.aero_vt.WindFile[1:-1]
+        if self.fst_infile_vt.wind_file[-1] == 'h':
             self.fst_vt.aero_vt.wind_file_type = 'hh'
-        elif self.wind_file[-1] == 's':
+        elif self.fst_infile_vt.wind_file[-1] == 's':
             self.fst_vt.aero_vt.wind_file_type = 'bts'
         else:
             self.fst_vt.aero_vt.wind_file_type = 'wnd'
@@ -765,7 +769,7 @@ class FstInputReader(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             self.fst_vt.aero_vt.blade_vt.af_data.append(self.initFromAerodynFile(self.template_path + '\\' + self.fst_vt.aero_vt.blade_vt.FoilNm[i], self.ad_file_type))
+             self.fst_vt.aero_vt.blade_vt.af_data.append(self.initFromAerodynFile(self.fst_infile_vt.template_path + '\\' + self.fst_vt.aero_vt.blade_vt.FoilNm[i], self.fst_infile_vt.ad_file_type))
 
 
     def initFromAerodynFile(self, aerodynFile, mode): # kld - added for fast noise
@@ -839,7 +843,7 @@ class FstInputReader(FstInputBase):
 
         #from airfoil import PolarByRe # only if creating airfoil variable trees
 
-        f = open(self.template_path + '\\' + self.wind_file)
+        f = open(self.fst_infile_vt.template_path + '\\' + self.fst_infile_vt.wind_file)
 
         data = []
         while 1:

@@ -3,7 +3,7 @@ from openmdao.main.api import VariableTree, Container, Component
 from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
 import os
 
-from FST_reader import FstInputReader, FstInputBase
+from FST_reader import FstInputReader, FstInputBase, FstInputFileVT
 from FST_vartrees import FstModel
 
 # Builder
@@ -32,13 +32,7 @@ class FstInputWriter(FstInputBase):
     """
     fst_vt = VarTree(FstModel(), iotype='in')
 
-    ad_file = Str(iotype='out', desc='Master Aerodyn file')
-    blade_file = Str(iotype='out', desc='Master Blade file')
-    tower_file = Str(iotype='out', desc='Master Tower file')
-    platform_file = Str(iotype='out', desc='Master Platform file')
-    wind_file = Str(iotype='out', desc='Master Wind file')
-    fst_file = Str(iotype='out', desc='Master FAST file')
-    template_path = Str(iotype='out', desc='template path')
+    fst_infile_vt = VarTree(FstInputFileVT(), iotype='out')
 
     def __init__(self):
 
@@ -46,7 +40,7 @@ class FstInputWriter(FstInputBase):
     
     def execute(self):
 
-        self.template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'tmp')
+        self.fst_infile_vt.template_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'tmp')
 
         self.WindWriter()
         self.AeroWriter()        
@@ -54,8 +48,9 @@ class FstInputWriter(FstInputBase):
         self.TowerWriter()
         self.PlatformWriter()
 
-        self.fst_file = os.path.join(self.template_path,'FASTmodel.fst')
-        ofh = open(self.fst_file, 'w')
+        self.fst_infile_vt.fst_file = os.path.join(self.fst_infile_vt.template_path,'FASTmodel.fst')
+        ofh = open(self.fst_infile_vt.fst_file, 'w')
+        self.fst_infile_vt.fst_file_type = 1
 
         # FAST Inputs
         ofh.write('---\n')
@@ -189,11 +184,11 @@ class FstInputWriter(FstInputBase):
         ofh.write('{:.5f}\n'.format(self.fst_vt.TEC_MR))
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.PtfmModel))
-        ofh.write('"{:}"\n'.format(self.platform_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.platform_file))
         self.fst_vt.PtfmFile = "Platform.dat"
         ofh.write('---\n')
         ofh.write('{:3}\n'.format(self.fst_vt.TwrNodes))
-        ofh.write('"{:}"\n'.format(self.tower_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.tower_file))
         self.fst_vt.TwrFile = "Tower.dat"
         ofh.write('---\n')
         ofh.write('{:.5f}\n'.format(self.fst_vt.YawSpr))
@@ -216,15 +211,16 @@ class FstInputWriter(FstInputBase):
         ofh.write('{:.5f}\n'.format(self.fst_vt.TBDrConD))
         ofh.write('{:.5f}\n'.format(self.fst_vt.TpBrDT))
         ofh.write('---\n')
-        ofh.write('"{:}"\n'.format(self.blade_file))
-        ofh.write('"{:}"\n'.format(self.blade_file))
-        ofh.write('"{:}"\n'.format(self.blade_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.blade_file))
         self.fst_vt.BldFile1 = "Blade.dat" #TODO - different blade files
         self.fst_vt.BldFile2 = "Blade.dat"
         self.fst_vt.BldFile3 = "Blade.dat"
         ofh.write('---\n') 
-        ofh.write('"{:}"\n'.format(self.ad_file))
+        ofh.write('"{:}"\n'.format(self.fst_infile_vt.ad_file))
         self.fst_vt.ADFile = "AeroDynInput.ad"
+        self.fst_infile_vt.ad_file_type = 1
         ofh.write('---\n')
         ofh.write('{:}\n'.format(self.fst_vt.NoiseFile))
         ofh.write('---\n')
@@ -261,8 +257,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Blade Motions
         out_list = []
@@ -271,8 +267,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Hub and Nacelle Motions
         out_list = []
@@ -281,8 +277,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Tower and Support Motions
         out_list = []
@@ -291,8 +287,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Wave Motions
         out_list = []
@@ -301,8 +297,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Blade Loads
         out_list = []
@@ -311,8 +307,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Hub and Nacelle Loads
         out_list = []
@@ -321,8 +317,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # Tower and Support Loads
         out_list = []
@@ -331,8 +327,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
         # DOF
         out_list = []
@@ -341,8 +337,8 @@ class FstInputWriter(FstInputBase):
                 out_list.append(i)
         ofh.write('"')
         for i in range(len(out_list)):
-        	  if out_list[i][0] != '_':
-        	      ofh.write('{:}, '.format(out_list[i]))
+            if out_list[i][0] != '_':
+                ofh.write('{:}, '.format(out_list[i]))
         ofh.write('"\n')
 
         ofh.write('END\n')
@@ -351,8 +347,8 @@ class FstInputWriter(FstInputBase):
     
     def PlatformWriter(self):
       
-        self.platform_file = os.path.join(self.template_path,'Platform.dat')
-        ofh = open(self.platform_file, 'w')
+        self.fst_infile_vt.platform_file = os.path.join(self.fst_infile_vt.template_path,'Platform.dat')
+        ofh = open(self.fst_infile_vt.platform_file, 'w')
         
         ofh.write('---\n')
         ofh.write('---\n')
@@ -445,8 +441,8 @@ class FstInputWriter(FstInputBase):
     
     def TowerWriter(self):
 
-        self.tower_file = os.path.join(self.template_path,'Tower.dat')
-        ofh = open(self.tower_file, 'w')
+        self.fst_infile_vt.tower_file = os.path.join(self.fst_infile_vt.template_path,'Tower.dat')
+        ofh = open(self.fst_infile_vt.tower_file, 'w')
 
         ofh.write('---\n')
         ofh.write('---\n')
@@ -503,8 +499,8 @@ class FstInputWriter(FstInputBase):
     
     def BladeWriter(self):
         
-        self.blade_file = os.path.join(self.template_path,'Blade.dat')
-        ofh = open(self.blade_file, 'w')
+        self.fst_infile_vt.blade_file = os.path.join(self.fst_infile_vt.template_path,'Blade.dat')
+        ofh = open(self.fst_infile_vt.blade_file, 'w')
         
         ofh.write('---\n')
         ofh.write('---\n')
@@ -561,12 +557,12 @@ class FstInputWriter(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             af_name = os.path.join(self.template_path, 'AeroData\\Airfoil' + str(i) + '.dat')
+             af_name = os.path.join(self.fst_infile_vt.template_path, 'AeroData\\Airfoil' + str(i) + '.dat')
              self.fst_vt.aero_vt.blade_vt.FoilNm[i] = 'AeroData\\Airfoil' + str(i) + '.dat'
              self.writeAirfoilFile(af_name, i, 2)
 
-        self.ad_file = os.path.join(self.template_path,'AeroDynInput.ad')
-        ofh = open(self.ad_file,'w')
+        self.fst_infile_vt.ad_file = os.path.join(self.fst_infile_vt.template_path,'AeroDynInput.ad')
+        ofh = open(self.fst_infile_vt.ad_file,'w')
         
         ofh.write('Aerodyn input file for FAST\n')
         
@@ -686,9 +682,9 @@ class FstInputWriter(FstInputBase):
       
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
     
-            self.wind_file = os.path.join(self.template_path,'WindFile.hh')
+            self.fst_infile_vt.wind_file = os.path.join(self.fst_infile_vt.template_path,'WindFile.hh')
             self.fst_vt.aero_vt.WindFile = "WindFile.hh"
-            ofh = open(self.wind_file,'w')
+            ofh = open(self.fst_infile_vt.wind_file,'w')
         
             '''ofh.write('{:}\n'.format(self.fst_vt.simple_wind_vt.description))
             for i in range(6):
@@ -717,25 +713,24 @@ def noise_example():
     fst_file = 'NREL5MW_Monopile_Rigid.v7.02.fst'
     fst_file_type = 0
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-    fst_input.template_path= os.path.join(FAST_DIR,"Noise_Files")
-    ad_fname = os.path.join(fst_input.template_path, ad_file)
-    bl_fname = os.path.join(fst_input.template_path, blade_file)
-    tw_fname = os.path.join(fst_input.template_path, tower_file)
-    pl_fname = os.path.join(fst_input.template_path, platform_file)
-    fs_fname = os.path.join(fst_input.template_path, fst_file)
+    fst_input.fst_infile_vt.template_path= os.path.join(FAST_DIR,"Noise_Files")
+    ad_fname = os.path.join(fst_input.fst_infile_vt.template_path, ad_file)
+    bl_fname = os.path.join(fst_input.fst_infile_vt.template_path, blade_file)
+    tw_fname = os.path.join(fst_input.fst_infile_vt.template_path, tower_file)
+    pl_fname = os.path.join(fst_input.fst_infile_vt.template_path, platform_file)
+    fs_fname = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
 
-    fst_input.ad_file = ad_fname
-    fst_input.ad_file_type = ad_file_type
-    fst_input.blade_file = bl_fname
-    fst_input.tower_file = tw_fname
-    fst_input.platform_file = pl_fname
-    fst_input.fst_file = fs_fname
-    fst_input.fst_file_type = fst_file_type
+    fst_input.fst_infile_vt.ad_file = ad_fname
+    fst_input.fst_infile_vt.ad_file_type = ad_file_type
+    fst_input.fst_infile_vt.blade_file = bl_fname
+    fst_input.fst_infile_vt.tower_file = tw_fname
+    fst_input.fst_infile_vt.platform_file = pl_fname
+    fst_input.fst_infile_vt.fst_file = fs_fname
+    fst_input.fst_infile_vt.fst_file_type = fst_file_type
     fst_input.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
-    fst_writer.execute()        
-    fst_file = fst_writer.ad_file
+    fst_writer.execute()
 
 def oc3_example():
 
@@ -751,28 +746,27 @@ def oc3_example():
     fst_file = 'NRELOffshrBsline5MW_Monopile_RF.fst'
     fst_file_type = 1
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-    fst_input.template_path= os.path.join(FAST_DIR,"OC3_Files")
-    ad_fname = os.path.join(fst_input.template_path, ad_file)
-    bl_fname = os.path.join(fst_input.template_path, blade_file)
-    tw_fname = os.path.join(fst_input.template_path, tower_file)
-    pl_fname = os.path.join(fst_input.template_path, platform_file)
-    fs_fname = os.path.join(fst_input.template_path, fst_file)
+    fst_input.fst_infile_vt.template_path= os.path.join(FAST_DIR,"OC3_Files")
+    ad_fname = os.path.join(fst_input.fst_infile_vt.template_path, ad_file)
+    bl_fname = os.path.join(fst_input.fst_infile_vt.template_path, blade_file)
+    tw_fname = os.path.join(fst_input.fst_infile_vt.template_path, tower_file)
+    pl_fname = os.path.join(fst_input.fst_infile_vt.template_path, platform_file)
+    fs_fname = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
 
-    fst_input.ad_file = ad_fname
-    fst_input.ad_file_type = ad_file_type
-    fst_input.blade_file = bl_fname
-    fst_input.tower_file = tw_fname
-    fst_input.platform_file = pl_fname
-    fst_input.fst_file = fs_fname
-    fst_input.fst_file_type = fst_file_type
-    fst_input.execute() 
+    fst_input.fst_infile_vt.ad_file = ad_fname
+    fst_input.fst_infile_vt.ad_file_type = ad_file_type
+    fst_input.fst_infile_vt.blade_file = bl_fname
+    fst_input.fst_infile_vt.tower_file = tw_fname
+    fst_input.fst_infile_vt.platform_file = pl_fname
+    fst_input.fst_infile_vt.fst_file = fs_fname
+    fst_input.fst_infile_vt.fst_file_type = fst_file_type
+    fst_input.fst_infile_vt.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
-    fst_writer.execute()        
-    fst_file = fst_writer.ad_file
+    fst_writer.execute()
 
 if __name__=="__main__":
 
-    #noise_example()
+    noise_example()
     
     oc3_example()

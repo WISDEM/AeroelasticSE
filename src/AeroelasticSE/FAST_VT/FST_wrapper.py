@@ -55,26 +55,26 @@ if __name__=="__main__":
     fst_file = 'NRELOffshrBsline5MW_Monopile_RF.fst'
     fst_file_type = 1
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-    fst_input.template_path= os.path.join(FAST_DIR,"OC3_Files")
-    ad_fname = os.path.join(fst_input.template_path, ad_file)
-    bl_fname = os.path.join(fst_input.template_path, blade_file)
-    tw_fname = os.path.join(fst_input.template_path, tower_file)
-    pl_fname = os.path.join(fst_input.template_path, platform_file)
-    fs_fname = os.path.join(fst_input.template_path, fst_file)
+    fst_input.fst_infile_vt.template_path= os.path.join(FAST_DIR,"OC3_Files")
+    ad_fname = os.path.join(fst_input.fst_infile_vt.template_path, ad_file)
+    bl_fname = os.path.join(fst_input.fst_infile_vt.template_path, blade_file)
+    tw_fname = os.path.join(fst_input.fst_infile_vt.template_path, tower_file)
+    pl_fname = os.path.join(fst_input.fst_infile_vt.template_path, platform_file)
+    fs_fname = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
 
-    fst_input.ad_file = ad_fname
-    fst_input.ad_file_type = ad_file_type
-    fst_input.blade_file = bl_fname
-    fst_input.tower_file = tw_fname
-    fst_input.platform_file = pl_fname
-    fst_input.fst_file = fs_fname
-    fst_input.fst_file_type = fst_file_type
+    fst_input.fst_infile_vt.ad_file = ad_fname
+    fst_input.fst_infile_vt.ad_file_type = ad_file_type
+    fst_input.fst_infile_vt.blade_file = bl_fname
+    fst_input.fst_infile_vt.tower_file = tw_fname
+    fst_input.fst_infile_vt.platform_file = pl_fname
+    fst_input.fst_infile_vt.fst_file = fs_fname
+    fst_input.fst_infile_vt.fst_file_type = fst_file_type
     fst_input.execute() 
 
     fst_writer.fst_vt = fst_input.fst_vt
-    fst_writer.template_path = os.path.join(FAST_DIR,"tmp")
+    fst_writer.fst_infile_vt.template_path = os.path.join(FAST_DIR,"tmp")
     fst_writer.execute()        
-    fst_file = fst_writer.fst_file
+    fst_file = fst_writer.fst_infile_vt.fst_file
     
-    fst.FSTInputFile = os.path.join(fst_input.template_path, fst_file)
+    fst.FSTInputFile = os.path.join(fst_input.fst_infile_vt.template_path, fst_file)
     fst.execute()
