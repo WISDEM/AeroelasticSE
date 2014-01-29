@@ -885,3 +885,12 @@ class FstInputReader(FstInputBase):
             self.fst_vt.simple_wind_vt.GstSpd[i] = float(data[i][7])
 
         f.close()
+
+if __name__=="__main__":
+    path = "this\\was\\a\\windows\\path"
+    new = fix_path(path)
+    print "path, newpath", path, new
+    path = "this/was/a/linux/path"
+    new = fix_path(path)
+    print "path, newpath", path, new
+
