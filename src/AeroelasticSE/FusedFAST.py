@@ -1,0 +1,246 @@
+import os,glob,shutil
+
+from openmdao.main.api import Component, Assembly, FileMetadata
+from openmdao.lib.components.external_code import ExternalCode
+from openmdao.main.datatypes.slot import Slot
+from openmdao.main.datatypes.instance import Instance
+from openmdao.main.datatypes.api import Array, Float
+
+
+from newrunFAST import runFAST
+from runTurbSim import runTurbSim
+
+from FusedFASTrunCase import FASTRunCaseBuilder, FASTRunCase, FASTRunResult
+
+from fusedwind.runSuite.runAero import openAeroCode
+from fusedwind.runSuite.runCase import GenericRunCase, RunCase, RunResult
+
+
+
+
+class openFAST(openAeroCode):
+
+    def __init__(self, filedict):
+        self.runfast = runFASText(filedict)
+
+        ## this is repeated in runFASText, should consolodate
+        self.basedir = os.path.join(os.getcwd(),"all_runs")
+        if 'run_dir' in filedict:
+            self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+
+        super(openFAST, self).__init__()
+        print "openFAST __init__"
+
+    def getRunCaseBuilder(self):
+        return FASTRunCaseBuilder()
+
+    def configure(self):
+        print "openFAST configure"
+        self.add('runner', self.runfast)
+        self.driver.workflow.add(['runner'])
+        self.connect('input', 'runner.input')
+        self.connect('runner.output', 'output')        
+
+    def execute(self):
+        print "openFAST.execute(), case = ", self.input
+        run_case_builder = self.getRunCaseBuilder()
+        dlc = self.input 
+        self.input = run_case_builder.buildRunCase(dlc)
+        super(openFAST, self).execute()
+
+    def getResults(self, keys, results_dir, operation=max):
+        myfast = self.runfast.rawfast        
+        col = myfast.getOutputValues(keys, results_dir)
+#        print "getting output for keys=", keys
+        vals = []
+        for i in range(len(col)):
+            c = col[i]
+            try:
+                val = operation(c)
+            except:
+                val = None
+            vals.append(val)
+        return vals
+
+    def setOutput(self, output_params):
+        self.runfast.set_fast_outputs(output_params['output_keys'])
+        print "set FAST output:", output_params['output_keys']
+
+
+class runFASText(Component):
+    """ 
+        this is an ExternalCode class to take advantage of file copying stuff.
+        then it finally calls the real (openMDAO-free) FAST wrapper 
+    """
+    input = Instance(GenericRunCase, iotype='in')
+    output = Instance(RunResult, iotype='out')  ## never used, never even set
+
+    ## just a template, meant to be reset by caller
+    fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
+                    'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten'] 
+
+    def __init__(self, filedict):
+        super(runFASText,self).__init__()
+        self.rawfast = runFAST()
+        self.rawts = runTurbSim()
+
+        print "runFASText init(), filedict = ", filedict
+
+        # probably overridden by caller
+        self.rawfast.setOutputs(self.fast_outputs)
+
+        
+        # if True, results will be copied back to basedir+casename.
+        # In context of global file system, this is not necessary.  Instead, leave False and postprocess directly from run_dirs.
+        self.copyback_files = False
+ 
+        have_tags = all([tag in filedict for tag in ["fst_exe", "fst_dir", "fst_file", "ts_exe", "ts_dir", "ts_file"]])
+        if (not have_tags):
+            print "Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST"
+            raise ValueError, "Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST"
+
+        self.rawfast.fst_exe = filedict['fst_exe']
+        self.rawfast.fst_dir = filedict['fst_dir']
+        self.rawfast.fst_file = filedict['fst_file']
+        self.rawts.ts_exe = filedict['ts_exe']
+        self.rawts.ts_dir = filedict['ts_dir']
+        self.rawts.ts_file = filedict['ts_file']
+        self.run_name = self.rawfast.fst_file.split(".")[0]
+        self.rawts.run_name = self.run_name
+        self.rawfast.run_name = self.run_name
+
+        self.basedir = os.path.join(os.getcwd(),"all_runs")
+        if 'run_dir' in filedict:
+            self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+        if (not os.path.exists(self.basedir)):
+            os.mkdir(self.basedir)
+
+    def set_fast_outputs(self,fst_out):
+        self.fast_outputs = fst_out
+        self.rawfast.setOutputs(self.fast_outputs)
+                
+    def execute(self):
+        case = self.input
+
+        ws=case.fst_params['Vhub']
+        tmax = 2  ## should not be hard default ##
+        if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
+            tmax = case.fst_params['TMax']
+
+        # run TurbSim to generate the wind:        
+        ### Turbsim: this should be higher up the chain in the "assembly": TODO
+        run_dir = os.path.join(self.basedir, case.name)
+        self.rawts.run_dir = run_dir
+        self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
+        self.rawts.execute() ## cheating to not use assembly ##
+        # here we link turbsim -> fast
+        tswind_file = os.path.join(self.rawts.run_dir, "%s.wnd" % self.rawts.run_name)
+        self.rawfast.set_wind_file(os.path.abspath(tswind_file))
+        ### but look how easy it is just to stick it here ?!
+
+        ### actually execute FAST (!!) 
+        print "RUNNING FAST WITH RUN_DIR", run_dir
+        self.rawfast.run_dir = run_dir
+        self.rawfast.set_dict(case.fst_params)
+        # FAST object write its inputs in execute()
+        self.rawfast.execute()
+        ###
+
+        # gather output directly
+        self.output = FASTRunResult(self)
+        
+        # also, copy all the output and input back "home"
+        if (self.copyback_files):
+            self.results_dir = os.path.join(self.basedir, case.name)
+            try:
+                os.mkdir(self.results_dir)
+            except:
+                # print 'error creating directory', results_dir
+                # print 'it probably already exists, so no problem'
+                pass
+
+            # Is this supposed to do what we're doing by hand here?
+            # self.copy_results_dirs(results_dir, '', overwrite=True)
+
+            files = glob.glob( "%s.*" % os.path.join(self.rawfast.run_dir, self.rawfast.run_name))
+            files += glob.glob( "%s.*" % os.path.join(self.rawts.run_dir, self.rawts.run_name))
+            
+            for filename in files:
+#                print "wanting to copy %s to %s" % (filename, results_dir) ## for debugging, don't clobber stuff you care about!
+                shutil.copy(filename, self.results_dir)
+
+
+
+class designFAST(openFAST):        
+    """ base class for cases where we have parametric design (e.g. dakota),
+    corresponding to a driver that are for use within a Driver that "has_parameters" """
+    x = Array(iotype='in')   ## exact size of this gets filled in study.setup_cases(), which call create_x, below
+    f = Float(iotype='out')
+    # need some mapping back and forth
+    param_names = []
+
+    def __init__(self,geom,atm,filedict):
+        super(designFAST, self).__init__(geom,atm,filedict)
+
+    def create_x(self, size):
+        """ just needs to exist and be right size to use has_parameters stuff """
+        self.x = [0 for i in range(size)]
+
+    def dlc_from_params(self,x):
+        print x, self.param_names, self.dlc.name
+        case = FASTRunCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
+        print case.fst_params
+        return case
+
+    def execute(self):
+        # build DLC from x, if we're using it
+        print "in design code. execute()", self.x
+        self.input = self.dlc_from_params(self.x)
+        super(designFAST, self).execute()
+        myfast = self.runfast.rawfast
+        self.f = myfast.getMaxOutputValue('TwrBsMxt', directory=os.getcwd())
+
+
+
+def designFAST_test():
+    w = designFAST()
+
+    ## sort of hacks to save this info
+    w.param_names = ['Vhub']
+    w.dlc = FASTRunCase("runAero-testcase", {}, None)
+    print "set aerocode dlc"
+    ##
+
+    res = []
+    for x in range(10,16,2):
+        w.x = [x]
+        w.execute()
+        res.append([ w.dlc.name, w.param_names, w.x, w.f])
+    for r in res:
+        print r
+
+
+def openFAST_test():
+    # in real life these come from an input file:
+    filedict = {'ts_exe' : "/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64",
+                'ts_dir' : "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim",
+                'ts_file' : "TurbSim.inp",
+                'fst_exe' : "/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64",
+                'fst_dir' : "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig",
+                'fst_file' : "NRELOffshrBsline5MW_Floating_OC3Hywind.fst",
+                'run_dir' : "run_dir"}
+
+    w = openFAST(filedict)
+    tmax = 5
+    res = []
+    for x in [10,16,20]:
+        dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
+#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, None)
+        w.input = dlc
+        w.execute()
+
+
+
+if __name__=="__main__":
+    openFAST_test()
+#    designFAST_test()
