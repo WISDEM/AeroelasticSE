@@ -2,7 +2,7 @@ import numpy as np
 from math import pi
 import copy
 
-from fusedwind.runSuite.runCase import RunCaseBuilder, RunCase, RunResult
+from fusedwind.runSuite.runCase import RunCaseBuilder,  RunResult, GenericRunCase
 
 def myfixangle(theta):
     # maybe convert from radians
@@ -13,6 +13,7 @@ def myfixangle(theta):
         v += 360
     if (v > 180):
         v -= 360
+    print "YOU ARE STUPID v,theta", v, theta
     v = max(v,-179.99)
     v = min(v, 179.99)
     return v
@@ -54,6 +55,7 @@ def sample2FASTparams(sample):
                 ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
         # but Jason's study just considers misalignment.  I start there, meaning no yaw changes yet
         params['WaveDir'] = myfixangle(sample['WaveDir'])
+        print "oh yeah, setting WaveDir!!" , params['WaveDir'], sample['WaveDir']
     return params
 
 
@@ -83,35 +85,37 @@ class FASTRunCaseBuilder(RunCaseBuilder):
     def buildRunCase_x(x, names, dlc):
         sample = {names[i]:x[i] for i in range(len(x))}
 
-        name = dlc.name
+        name = dlc.case_name
         print "setting up dlc name %s" % name
 
         params = sample2FASTparams(sample)
         print "got params", params
         print "from sample", sample
-        subcase = FASTRunCase(dlc.name, params, sample)
+        subcase = FASTRunCase(dlc.case_name, params, sample)
         return subcase
 
 
     @staticmethod
     def buildRunCase(dlc):
         sample = dlc.sample
-        name = dlc.name
+        name = dlc.case_name
         print "setting up dlc name %s" % name
 
         params = sample2FASTparams(sample)
         print "got params", params
         print "from sample", sample
-        subcase = FASTRunCase(dlc.name, params, sample)
+        origname = dlc.case_name
+        subcase = FASTRunCase(dlc.case_name, params, sample)
+        subcase.case_name = origname
         return subcase
 
 
 
-class FASTRunCase(RunCase):
+class FASTRunCase(GenericRunCase):
     """ FAST specific single run of FAST.
     """
     def __init__(self, basename, fst_params, generic_sample):
-        super(FASTRunCase,self).__init__(basename, generic_sample)
+        super(FASTRunCase,self).__init__(basename, generic_sample.keys(), generic_sample.values())
         self.fst_params = copy.deepcopy(fst_params) # dict of FAST keywords/values to override
         # override name for uniqueness
 #        for p in fst_params:

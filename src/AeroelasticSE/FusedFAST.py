@@ -13,12 +13,14 @@ from runTurbSim import runTurbSim
 from FusedFASTrunCase import FASTRunCaseBuilder, FASTRunCase, FASTRunResult
 
 from fusedwind.runSuite.runAero import openAeroCode
-from fusedwind.runSuite.runCase import GenericRunCase, RunCase, RunResult
+from fusedwind.runSuite.runCase import GenericRunCase, RunCase, RunResult, IECRunCaseBaseVT
 
 
 
 
 class openFAST(openAeroCode):
+    
+    code_input = Instance(FASTRunCase, iotype='in')
 
     def __init__(self, filedict):
         self.runfast = runFASText(filedict)
@@ -38,14 +40,15 @@ class openFAST(openAeroCode):
         print "openFAST configure"
         self.add('runner', self.runfast)
         self.driver.workflow.add(['runner'])
-        self.connect('input', 'runner.input')
-        self.connect('runner.output', 'output')        
+        self.connect('code_input', 'runner.inputs')
+        self.connect('runner.outputs', 'outputs')        
 
     def execute(self):
-        print "openFAST.execute(), case = ", self.input
+        print "openFAST.execute(), case = ", self.inputs
         run_case_builder = self.getRunCaseBuilder()
-        dlc = self.input 
-        self.input = run_case_builder.buildRunCase(dlc)
+        dlc = self.inputs 
+        print "I AM HUMAN IN execute", dlc.case_name
+        self.code_input = run_case_builder.buildRunCase(dlc)
         super(openFAST, self).execute()
 
     def getResults(self, keys, results_dir, operation=max):
@@ -72,8 +75,9 @@ class runFASText(Component):
         this is an ExternalCode class to take advantage of file copying stuff.
         then it finally calls the real (openMDAO-free) FAST wrapper 
     """
-    input = Instance(GenericRunCase, iotype='in')
-    output = Instance(RunResult, iotype='out')  ## never used, never even set
+    inputs = Instance(IECRunCaseBaseVT, iotype='in')
+#    input = Instance(GenericRunCase, iotype='in')
+    outputs = Instance(RunResult, iotype='out')  ## never used, never even set
 
     ## just a template, meant to be reset by caller
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
@@ -89,7 +93,6 @@ class runFASText(Component):
         # probably overridden by caller
         self.rawfast.setOutputs(self.fast_outputs)
 
-        
         # if True, results will be copied back to basedir+casename.
         # In context of global file system, this is not necessary.  Instead, leave False and postprocess directly from run_dirs.
         self.copyback_files = False
@@ -120,7 +123,7 @@ class runFASText(Component):
         self.rawfast.setOutputs(self.fast_outputs)
                 
     def execute(self):
-        case = self.input
+        case = self.inputs
 
         ws=case.fst_params['Vhub']
         tmax = 2  ## should not be hard default ##
@@ -129,7 +132,8 @@ class runFASText(Component):
 
         # run TurbSim to generate the wind:        
         ### Turbsim: this should be higher up the chain in the "assembly": TODO
-        run_dir = os.path.join(self.basedir, case.name)
+        run_dir = os.path.join(self.basedir, case.case_name)
+        print "running FASTFASTFAST in " , run_dir, case.case_name
         self.rawts.run_dir = run_dir
         self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
         self.rawts.execute() ## cheating to not use assembly ##
@@ -151,7 +155,7 @@ class runFASText(Component):
         
         # also, copy all the output and input back "home"
         if (self.copyback_files):
-            self.results_dir = os.path.join(self.basedir, case.name)
+            self.results_dir = os.path.join(self.basedir, case.case_name)
             try:
                 os.mkdir(self.results_dir)
             except:
@@ -187,7 +191,7 @@ class designFAST(openFAST):
         self.x = [0 for i in range(size)]
 
     def dlc_from_params(self,x):
-        print x, self.param_names, self.dlc.name
+        print x, self.param_names, self.dlc.case_name
         case = FASTRunCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
         print case.fst_params
         return case
@@ -195,7 +199,7 @@ class designFAST(openFAST):
     def execute(self):
         # build DLC from x, if we're using it
         print "in design code. execute()", self.x
-        self.input = self.dlc_from_params(self.x)
+        self.inputs = self.dlc_from_params(self.x)
         super(designFAST, self).execute()
         myfast = self.runfast.rawfast
         self.f = myfast.getMaxOutputValue('TwrBsMxt', directory=os.getcwd())
@@ -215,7 +219,7 @@ def designFAST_test():
     for x in range(10,16,2):
         w.x = [x]
         w.execute()
-        res.append([ w.dlc.name, w.param_names, w.x, w.f])
+        res.append([ w.dlc.case_name, w.param_names, w.x, w.f])
     for r in res:
         print r
 
@@ -235,8 +239,8 @@ def openFAST_test():
     res = []
     for x in [10,16,20]:
         dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
-#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, None)
-        w.input = dlc
+#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
+        w.inputs = dlc
         w.execute()
 
 
