@@ -1,0 +1,33 @@
+
+
+*********** BEGIN NEW LOG ************** (2014-02-11 21:59:56.223000) PID=7376
+
+Feb 11 21:59:57 I root: configuring dispatcher
+Feb 11 21:59:57 I root: dispatcher configured
+Feb 11 21:59:57 I root: Adding case wsp10.0_TI10.0
+Feb 11 21:59:57 I root: Adding case wsp12.0_TI10.0
+Feb 11 21:59:57 I runner,builder: dublicating inputs
+Feb 11 21:59:58 I runner,builder: updating inputs
+Feb 11 21:59:58 I case_driver: Start sequential evaluation.
+Feb 11 21:59:58 D case_driver: server None state empty
+Feb 11 21:59:58 D case_driver:     load_model
+Feb 11 21:59:58 D case_driver: server None state loading
+Feb 11 21:59:58 D case_driver:     run startup case
+Feb 11 21:59:58 I runner,builder: setting wind and simulation inputs
+Feb 11 21:59:58 I runner,builder: updating inputs
+Feb 11 21:59:58 I runner,wrapper: executing ['C:/Models/FAST/FAST.exe', 'C:\\Python27\\NREL-Models\\WISDEM\\AeroelasticSE\\src\\AeroelasticSE\\FAST_VT\\IEC_case\\wsp10.0_TI10.0_FAST_Model.fst']...
+Feb 11 21:59:58 D runner,wrapper: PID = 5392
+Feb 11 22:01:43 I runner,wrapper: elapsed time: 104.9 sec.
+Feb 11 22:01:43 D case_driver: server None state executing
+Feb 11 22:01:43 D case_driver:     no more cases
+Feb 11 22:01:43 D case_driver: server None state empty
+Feb 11 22:01:43 D case_driver:     load_model
+Feb 11 22:01:43 D case_driver: server None state loading
+Feb 11 22:01:43 D case_driver:     run startup case
+Feb 11 22:01:43 I runner,builder: setting wind and simulation inputs
+Feb 11 22:01:43 I runner,builder: updating inputs
+Feb 11 22:01:43 I runner,wrapper: executing ['C:/Models/FAST/FAST.exe', 'C:\\Python27\\NREL-Models\\WISDEM\\AeroelasticSE\\src\\AeroelasticSE\\FAST_VT\\IEC_case\\wsp10.0_TI10.0_FAST_Model.fst', 'C:/Models/FAST/FAST.exe', 'C:\\Python27\\NREL-Models\\WISDEM\\AeroelasticSE\\src\\AeroelasticSE\\FAST_VT\\IEC_case\\wsp12.0_TI10.0_FAST_Model.fst']...
+Feb 11 22:01:43 D runner,wrapper: PID = 1012
+Feb 11 22:03:29 I runner,wrapper: elapsed time: 106.2 sec.
+Feb 11 22:03:29 D case_driver: server None state executing
+Feb 11 22:03:29 D case_driver:     no more cases
