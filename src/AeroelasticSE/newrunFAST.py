@@ -76,6 +76,11 @@ class runFAST(object):
     fst_dir = None
     run_dir = None
 
+    ## these should be supplied
+    fst_file_type = None
+    fst_exe_type = None
+#ala Katherine's:    fst_file_type = Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
+
 
     def __init__(self):
         """ Initialization of a runFAST object
@@ -84,6 +89,11 @@ class runFAST(object):
         self.fstDict = {}
 
         self.output_list = None
+
+    ## these should be supplied
+        self.fst_file_type = 0  # 0:v7.01 file, 1:v7.02 file
+        self.fst_exe_type = 1 # 0:v7.01 exe, v7.02 exe
+#ala Katherine's:    fst_file_type = Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
 
         ## new way: basic assumption is that .fst file is self contained, ie we could just run FAST on it. 
         #read everything from templates, modify them selectively, then write them back out in "run_dir"
@@ -693,9 +703,13 @@ class runFAST(object):
                 # special case to deal with either V7.1 OR v7.2
                 ofh.write(line)
                 nextln = self.lines_fast[iln+1].split()
-                if nextln[1] != "OutFileFmt":
-                    ofh.write("1           OutFileFmt  - Format for tabular (time-marching) output file(s) (1: text file [<RootName>.out], 2: binary\n")            
-    
+                if (self.fst_file_type == 0 and self.fst_exe_type == 1):
+                    if nextln[1] != "OutFileFmt":  ## this check should not be necessary if fst_xxx_type are correct
+                        ofh.write("1           OutFileFmt  - Format for tabular (time-marching) output file(s) (1: text file [<RootName>.out], 2: binary\n")        
+                elif (self.fst_file_type == 1 and self.fst_exe_type == 0):
+                    if nextln[1] != "OutFileFmt":  ## this check should not be necessary if fst_xxx_type are correct
+                        # skip line 
+                        iln += 1
             elif (len(flds) > 0 and flds[0] == "END"):
                 # uh oh, better back up and write the outputs!
                 if self.output_list != None:
@@ -720,7 +734,7 @@ def example():
     case = 1
     if (case==1):
     #    fast.fst_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/"  ## either abs or rel path ok.
-        fast.fst_dir = "FAST_VT/OC3_Files/"
+        fast.fst_dir = "ModelFiles/OC3_Files/"
         fast.fst_file = "NRELOffshrBsline5MW_Monopile_RF.fst"  ## should _not_ be full path
     else:
         fast.fst_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig"
