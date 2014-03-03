@@ -52,7 +52,8 @@ if __name__=="__main__":
     FAST_DIR = os.path.dirname(os.path.realpath(__file__))
 
     fst_input.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst'
-    fst_input.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
+    #fst_input.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
+    fst_input.fst_directory = "C:/Python27/NREL-Models/WISDEM/AeroelasticSE/src/AeroelasticSE/ModelFiles/OC3_Files"
     fst_input.ad_file_type = 1
     fst_input.fst_file_type = 1
     fst_input.execute() 

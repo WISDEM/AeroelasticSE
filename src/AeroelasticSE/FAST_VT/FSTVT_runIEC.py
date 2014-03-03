@@ -31,7 +31,8 @@ class FUSEDFSTCaseRunner(FUSEDIECBase):
         self.driver.workflow.add('reader')
         #self.connect('fst_infile_vt', 'reader.fst_infile_vt')
         #OC3 Example
-        FAST_DIR = os.path.dirname(os.path.realpath(__file__))
+        #FAST_DIR = os.path.dirname(os.path.realpath(__file__))
+        FAST_DIR = "C:/Python27/NREL-Models/WISDEM/AeroelasticSE/src/AeroelasticSE/ModelFiles"
     
         self.reader.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst' #replace with master fast file
         self.reader.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
