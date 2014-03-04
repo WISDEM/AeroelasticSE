@@ -4,7 +4,8 @@ import os
 from fusedwind.runSuite.runCase import GenericRunCaseTable
 from fusedwind.runSuite.runBatch import get_options, parse_input, CaseAnalyzer
 
-from PeregrineClusterAllocator import ClusterAllocator
+from peregrineallocators import ClusterAllocator
+from openmdao.main.resource import ResourceAllocationManager as RAM
 
 from FusedFAST import openFAST 
 
@@ -40,7 +41,9 @@ def rundlcs():
     # work in progress; running efficiently at NREL.
     if (options.cluster_allocator):
         cluster=ClusterAllocator()
-        RAM.insert_allocator(0,cluster)
+        RAM.remove_allocator('LocalHost')
+        RAM.add_allocator(cluster)
+#        RAM.insert_allocator(0,cluster)
             
     ###  using "factory" functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)
     # Then we use these to create the cases...
