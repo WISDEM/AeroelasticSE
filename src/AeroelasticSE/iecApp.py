@@ -20,7 +20,7 @@ def rf(col):
     return val
 
 ## main function that opens input, runs cases, writes output, ie. whole thing.
-def rundlcs():
+def rundlcs(envcmd = None):
     """ 
     run the whole process, including startup and shutdown
     to do:
@@ -31,6 +31,8 @@ def rundlcs():
     send cases and app to dispatcher
     run cases
     collect and save output
+
+    envcmd: a text string cmd (e.g. 'source env.sh') to set up the environment for the cluster allocator
     """    
 
     options, arg = get_options()
@@ -40,7 +42,20 @@ def rundlcs():
 
     # work in progress; running efficiently at NREL.
     if (options.cluster_allocator):
-        cluster=ClusterAllocator()
+#        cluster=ClusterAllocator()
+### never had the guts to try this yet!
+#        env = os.environ
+#        fname = "%s/.env.sh" % (env['HOME'])
+#        fout = file(fname, "w")
+#        for key in env:
+#            fout.write("export %s=%s\n" % (key,env[key]))
+#        fout.close()
+###
+        if envcmd == None:
+            cluster=ClusterAllocator()
+        else:
+            cluster=ClusterAllocator(use_modules=False, beforestart=envcmd)        
+#        cluster=ClusterAllocator(use_modules=False, beforestart=". %s;" % fname)        
         RAM.remove_allocator('LocalHost')
         RAM.add_allocator(cluster)
 #        RAM.insert_allocator(0,cluster)
