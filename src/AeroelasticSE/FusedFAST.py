@@ -4,7 +4,7 @@ from openmdao.main.api import Component, Assembly, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot
 from openmdao.main.datatypes.instance import Instance
-from openmdao.main.datatypes.api import Array, Float
+from openmdao.main.datatypes.api import Array, Float, Str
 
 
 from newrunFAST import runFAST
@@ -24,6 +24,7 @@ class openFAST(openAeroCode):
 
     def __init__(self, filedict):
         self.runfast = runFASText(filedict)
+        self.runts = runTurbSimext(filedict)
 
         ## this is repeated in runFASText, should consolodate
         self.basedir = os.path.join(os.getcwd(),"all_runs")
@@ -38,16 +39,20 @@ class openFAST(openAeroCode):
 
     def configure(self):
         print "openFAST configure"
+        self.add('tsrunner', self.runts)
+        self.driver.workflow.add(['tsrunner'])
         self.add('runner', self.runfast)
         self.driver.workflow.add(['runner'])
         self.connect('code_input', 'runner.inputs')
+        self.connect('code_input', 'tsrunner.inputs')
         self.connect('runner.outputs', 'outputs')        
+        self.connect('tsrunner.tswind_file', 'runner.tswind_file')
 
     def execute(self):
         print "openFAST.execute(), case = ", self.inputs
         run_case_builder = self.getRunCaseBuilder()
         dlc = self.inputs 
-        print "I AM HUMAN IN execute", dlc.case_name
+#        print "executing", dlc.case_name
         self.code_input = run_case_builder.buildRunCase(dlc)
         super(openFAST, self).execute()
 
@@ -70,14 +75,73 @@ class openFAST(openAeroCode):
         print "set FAST output:", output_params['output_keys']
 
 
+class runTurbSimext(Component):
+    """ a component to run TurbSim.
+        will try to make it aware of whether the wind file already exists"""
+    
+    inputs = Instance(IECRunCaseBaseVT, iotype='in')
+    tswind_file = Str(iotype='out')
+
+    def __init__(self, filedict):
+        super(runTurbSimext,self).__init__()
+        self.rawts = runTurbSim()
+    
+        self.rawts.ts_exe = filedict['ts_exe']
+        self.rawts.ts_dir = filedict['ts_dir']
+        self.rawts.ts_file = filedict['ts_file']
+#        self.rawts.run_name = self.run_name
+
+        self.basedir = os.path.join(os.getcwd(),"allts_runs")
+        if 'run_dir' in filedict:
+            self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+        if (not os.path.exists(self.basedir)):
+            os.mkdir(self.basedir)
+
+    def execute(self):
+        case = self.inputs
+        ws=case.fst_params['Vhub']
+        tmax = 2  ## should not be hard default ##
+        if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
+            tmax = case.fst_params['TMax']
+
+        # run TurbSim to generate the wind:        
+        # for now, turbsim params we mess with are possibly: TMax, RandomSeed, Tmax.  These should generate
+        # new runs, otherwise we should just use wind file we already have
+            # for now, just differentiate by wind speed
+        ts_case_name = "TurbSim-Vhub%.4f" % ws
+
+        run_dir = os.path.join(self.basedir, ts_case_name)
+        print "running TurbSim in " , run_dir
+        self.rawts.run_dir = run_dir
+        self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
+        tsoutname = self.rawts.ts_file.replace("inp", "wnd")
+        tsoutname = os.path.join(run_dir, tsoutname)
+        reused_run = False
+        if (os.path.isfile(tsoutname)):
+            # maybe there's an old results we can use:
+            tssumname = tsoutname.replace("wnd", "sum")
+            ln = file(tssumname).readlines()[-1]
+            if (ln != None and ln != "" and len(ln) > 0 and ln.split(".")[0] == "Processing complete"):
+                print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
+                reused_run = True
+        
+        if (not reused_run):
+            self.rawts.execute() 
+
+        # here we link turbsim -> fast
+        self.tswind_file = tsoutname
+
+
 class runFASText(Component):
     """ 
-        this is an ExternalCode class to take advantage of file copying stuff.
-        then it finally calls the real (openMDAO-free) FAST wrapper 
+        this used to be an ExternalCode class to take advantage of file copying stuff.
+        But now it relies on the global file system instead.
+        it finally calls the real (openMDAO-free) FAST wrapper 
     """
     inputs = Instance(IECRunCaseBaseVT, iotype='in')
 #    input = Instance(GenericRunCase, iotype='in')
     outputs = Instance(RunResult, iotype='out')  ## never used, never even set
+    tswind_file = Str(iotype='in')
 
     ## just a template, meant to be reset by caller
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
@@ -86,7 +150,6 @@ class runFASText(Component):
     def __init__(self, filedict):
         super(runFASText,self).__init__()
         self.rawfast = runFAST()
-        self.rawts = runTurbSim()
 
         print "runFASText init(), filedict = ", filedict
 
@@ -105,11 +168,7 @@ class runFASText(Component):
         self.rawfast.fst_exe = filedict['fst_exe']
         self.rawfast.fst_dir = filedict['fst_dir']
         self.rawfast.fst_file = filedict['fst_file']
-        self.rawts.ts_exe = filedict['ts_exe']
-        self.rawts.ts_dir = filedict['ts_dir']
-        self.rawts.ts_file = filedict['ts_file']
         self.run_name = self.rawfast.fst_file.split(".")[0]
-        self.rawts.run_name = self.run_name
         self.rawfast.run_name = self.run_name
 
         self.basedir = os.path.join(os.getcwd(),"all_runs")
@@ -130,17 +189,12 @@ class runFASText(Component):
         if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
             tmax = case.fst_params['TMax']
 
-        # run TurbSim to generate the wind:        
-        ### Turbsim: this should be higher up the chain in the "assembly": TODO
+        # TurbSim has already been run to generate the wind, it's output is
+        # connected as tswind_file
+        self.rawfast.set_wind_file(self.tswind_file)
+
         run_dir = os.path.join(self.basedir, case.case_name)
         print "running FASTFASTFAST in " , run_dir, case.case_name
-        self.rawts.run_dir = run_dir
-        self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
-        self.rawts.execute() ## cheating to not use assembly ##
-        # here we link turbsim -> fast
-        tswind_file = os.path.join(self.rawts.run_dir, "%s.wnd" % self.rawts.run_name)
-        self.rawfast.set_wind_file(os.path.abspath(tswind_file))
-        ### but look how easy it is just to stick it here ?!
 
         ### actually execute FAST (!!) 
         print "RUNNING FAST WITH RUN_DIR", run_dir
