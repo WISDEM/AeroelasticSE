@@ -4,7 +4,7 @@ import os
 from fusedwind.runSuite.runCase import GenericRunCaseTable
 from fusedwind.runSuite.runBatch import get_options, parse_input, CaseAnalyzer
 
-from peregrineallocators import ClusterAllocator
+#from peregrineallocators import ClusterAllocator
 from openmdao.main.resource import ResourceAllocationManager as RAM
 
 from FusedFAST import openFAST 
