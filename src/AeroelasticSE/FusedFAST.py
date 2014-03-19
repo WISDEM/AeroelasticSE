@@ -1,4 +1,4 @@
-import os,glob,shutil
+import os,glob,shutil, time
 
 from openmdao.main.api import Component, Assembly, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
@@ -16,6 +16,8 @@ from fusedwind.runSuite.runAero import openAeroCode
 from fusedwind.runSuite.runCase import GenericRunCase, RunCase, RunResult, IECRunCaseBaseVT
 
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 class openFAST(openAeroCode):
@@ -111,21 +113,31 @@ class runTurbSimext(Component):
         ts_case_name = "TurbSim-Vhub%.4f" % ws
 
         run_dir = os.path.join(self.basedir, ts_case_name)
+        self._logger.info("running TurbSim in %s " % run_dir)
         print "running TurbSim in " , run_dir
         self.rawts.run_dir = run_dir
         self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
         tsoutname = self.rawts.ts_file.replace("inp", "wnd")
         tsoutname = os.path.join(run_dir, tsoutname)
-        reused_run = False
-        if (os.path.isfile(tsoutname)):
+        tssumname = tsoutname.replace("wnd", "sum")
+        reuse_run = False
+        if (os.path.isfile(tsoutname) and os.path.isfile(tssumname)):
             # maybe there's an old results we can use:
-            tssumname = tsoutname.replace("wnd", "sum")
-            ln = file(tssumname).readlines()[-1]
-            if (ln != None and ln != "" and len(ln) > 0 and ln.split(".")[0] == "Processing complete"):
-                print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
-                reused_run = True
+            while (not reuse_run):
+                ln = file(tssumname).readlines()
+                if (ln != None and len(ln) > 0):
+                    ln = ln[-1] # check last line
+                    ln = ln.split(".")
+                    if (len(ln) > 0 and ln[0] == "Processing complete"):
+                        print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
+                        reuse_run = True
+                if (not reuse_run):
+                    time.sleep(2)
+                    print "waiting for ", tsoutname
+                    self._logger.info("waiting for %s" % tsoutname)
+            self._logger.info("DONE waiting for %s" % tsoutname)
         
-        if (not reused_run):
+        if (not reuse_run):
             self.rawts.execute() 
 
         # here we link turbsim -> fast
