@@ -5,6 +5,7 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot
 from openmdao.main.datatypes.instance import Instance
 from openmdao.main.datatypes.api import Array, Float, Str
+import numpy as np
 
 
 from newrunFAST import runFAST
@@ -303,12 +304,35 @@ def openFAST_test():
     w = openFAST(filedict)
     tmax = 5
     res = []
-    for x in [10,16,20]:
-        dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
-#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
-        w.inputs = dlc
-        w.execute()
 
+    case = 2
+    if (case == 1):
+        for x in [10,16,20]:
+            dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
+        #        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
+            w.inputs = dlc
+            w.execute()
+    elif case == 2:
+        res = []
+        vhub = 20
+#        xs=[.10,.4,1.0]   # radians!, wave angle
+#        xs=[10,20,30]   # m/s!, vhub
+        xs = [0,30,60, 90]  # degrees, platform angle
+        for x in xs:
+            #            dlc = GenericRunCase("runAero-testcase%d" % x, ['WaveDir','AnalTime', 'Vhub'], [x,tmax,vhub])
+            dlc = GenericRunCase("runAero-testcase%d" % x, ['PlatformDir','AnalTime', 'Vhub'], [x,tmax,vhub])
+#            dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
+#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
+            w.inputs = dlc
+            w.execute()
+            results_dir = os.path.join(filedict['run_dir'],dlc.case_name)
+            print "name", results_dir
+            rr = w.getResults(["RotPwr", "TwrBsMxt"], results_dir, operation=np.std)
+            res.append(rr)
+        for i in range(len(xs)):
+            print xs[i], res[i]
+    elif case == 3:
+        pass
 
 
 if __name__=="__main__":

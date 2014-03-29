@@ -67,7 +67,7 @@ class runTurbSim(object):
                 val = self.tsDict[flds[1]]
                 # hack to prevent wind so low that TurbSim crashes
                 if (flds[1] == "URef"):
-                    val = max(0.1, val)
+                    val = max(0.01, val)
                 f0 = '{:.12f}    '.format(val)
                 oline = ' '.join([f0] + flds[1:])
 #                oline = "%.12f    %s" % (val, flds[1])

@@ -561,14 +561,22 @@ class runFAST(object):
 
         Parameters
         ----------
+        self.lines_ptfm are the unmodified lines of the platform file
 
         """
 
         ofname = self.ptfm_file
         ofh = open(ofname,'w')
+#        print "writing platform file  ", ofname
 
-        for line in self.lines_ptfm:
+#        for line in self.lines_ptfm:
+#        for iln in range(len(self.lines_ptfm)):
+        iln = 0
+        while iln < len(self.lines_ptfm):
+
+            line = self.lines_ptfm[iln]
             flds = line.strip().split()
+#            print "copying line %d:" % iln, line
 
             """ If the second field in the line is present in the dictionary,
                   write the new value
@@ -576,6 +584,45 @@ class runFAST(object):
                   write the original line """
             if (len(flds) > 1 and flds[1] == 'WAMITFile'):
                 ofh.write("\"%s\"   WAMITFile   location and root file name of WAMIT spar files\n" % self.wamit_path)
+            elif (len(flds) > 1 and flds[1] == 'NumLines' and 'PlatformDir' in fstDict):
+                # process/augment the mooring lines description IF our dict has a 'PlatformDir' entry #
+                """
+                ---------------------- MOORING LINES -------------------------------------------
+                3        NumLines    - Number of mooring lines (-)
+                1        LineMod     - Mooring line model {1: standard quasi-static, 2: user-defined from routine UserLine} (switch) [used only when NumLines>0]
+                LRadAnch  LAngAnch  LDpthAnch  LRadFair  LAngFair   LDrftFair  LUnstrLen  LDiam   LMassDen  LEAStff    LSeabedCD  LTenTol [used only when NumLines>0 and LineMod=1]
+                (m)       (deg)     (m)        (m)       (deg)      (m)        (m)        (m)     (kg/m)    (N)        (-)        (-)     [used only when NumLines>0 and LineMod=1]
+                853.87     0.0     320.0      5.2         0.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001
+                853.87   120.0     320.0      5.2       120.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001
+                853.87   240.0     320.0      5.2       240.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001
+                """
+                
+                
+#                print "I am re-writing the mooring section"
+                ptfm_dir = float(fstDict['PlatformDir'])
+                nlines = int(flds[0])            
+                for iskip in range(4):
+                    # copy next 4 lines
+                    line = self.lines_ptfm[iln+iskip]
+#                    print "header line", line
+                    ofh.write(line)  # NumLines,LineMod, labels, units
+                iln += 4
+                for irope in range(nlines):
+                    # replace the angles by adding the input platform orientation
+                    line = self.lines_ptfm[iln+irope]
+#                    print "rope line", line
+                    ln = line.split()
+                    val = float(ln[1])
+                    val += ptfm_dir
+                    ln[1] = "%f"%val  ## see above, 2nd and 5th entries are the angles
+                    val = float(ln[4])
+                    val += ptfm_dir
+                    ln[4] = "%f"%val
+                    line  = ' '.join(ln) + "\n"
+                    ofh.write(line)                     
+                iln += nlines-1
+#                print "wrote mooring iln = %d" % iln
+
             elif (len(flds) > 1 and flds[1] in fstDict):
                 f0 = '{:.6f}    '.format(fstDict[flds[1]])
                 oline = ' '.join([f0] + flds[1:])
@@ -583,6 +630,9 @@ class runFAST(object):
                 ofh.write('\n')
             else:
                 ofh.write(line)
+            
+            iln += 1 ## finally, increment the loop counter
+            
         ofh.close()
 
         # make sure the wamit path exists:
@@ -750,6 +800,9 @@ def example():
     fast.fstDict['RotSpeed'] = 12.03
     fast.fstDict['TMax'] = 2.0
     fast.fstDict['TStart'] = 0.0
+
+    fast.fstDict['PlatformDir'] = 30.0
+
     fast.setOutputs(['RotPwr'])
 
     fast.execute()
