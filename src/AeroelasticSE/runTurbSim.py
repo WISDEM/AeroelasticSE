@@ -9,6 +9,7 @@ import sys, os
 import numpy as np
 import subprocess
 import platform
+import random
 
 
 class runTurbSim(object):
@@ -69,6 +70,8 @@ class runTurbSim(object):
                 if (flds[1] == "URef"):
                     val = max(0.01, val)
                 f0 = '{:.12f}    '.format(val)
+                if (flds[1] == "RandSeed1"):
+                    f0 = '%d' % val                    
                 oline = ' '.join([f0] + flds[1:])
 #                oline = "%.12f    %s" % (val, flds[1])
                 ofh.write(oline)
@@ -88,7 +91,9 @@ class runTurbSim(object):
         ret : integer
             return code from subprocess.call()
         """
-
+        
+        if 'RandSeed1' not in self.tsDict:
+            self.tsDict['RandSeed1'] = random.randrange(-2147483648,2147483648)
         self.write_inputs()  ## assumes self.tsDict already set        
         input_name = os.path.join(self.run_dir, self.ts_file)    
 
