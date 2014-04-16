@@ -22,7 +22,11 @@ def sample2FASTparams(sample):
     """ the key FAST-specific function that converts purported univsersal input 
     variables into a python dictionary that maps 1-to-1 with actual FAST input
     parameters """
-    params = {}
+
+#    params = {}
+    params = {key:sample[key] for key in sample}  # default is just pass options through
+    print "building run case from sample:", sample
+
     if ('Vhub' in sample):
         w = sample['Vhub']
         blpitch1 = FASTRunCaseBuilder.GetPitch(w)
@@ -55,7 +59,11 @@ def sample2FASTparams(sample):
                 ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
         # but Jason's study just considers misalignment.  I start there, meaning no yaw changes yet
         params['WaveDir'] = myfixangle(sample['WaveDir'])
-        print "oh yeah, setting WaveDir!!" , params['WaveDir'], sample['WaveDir']
+
+    if ('PlatformDir' in sample):
+        # orientation of platform w.r.t. wind
+        params['PlatformDir'] = myfixangle(sample['PlatformDir'])
+
     return params
 
 
