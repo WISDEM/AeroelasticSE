@@ -127,9 +127,11 @@ class runTurbSimext(Component):
             while (not reuse_run):
                 ln = file(tssumname).readlines()
                 if (ln != None and len(ln) > 0):
-                    ln = ln[-1] # check last line
-                    ln = ln.split(".")
-                    if (len(ln) > 0 and ln[0] == "Processing complete"):
+                    ln1 = ln[-1] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
+                    ln1 = ln.split(".")
+                    ln2 = ln[-2] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
+                    ln2 = ln.split(".")
+                    if ((len(ln1) > 0 and ln1[0] == "Processing complete") or (len(ln2) > 0 and ln2[0] == "Processing complete")):
                         print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
                         reuse_run = True
                 if (not reuse_run):
