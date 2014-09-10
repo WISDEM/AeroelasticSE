@@ -29,7 +29,6 @@ from openmdao.units import units
 #from aero_cst_assembly import GeometryAero, Atmosphere
 
 #sys.path.append('D:/SystemsEngr/Noise') # geometry needs airfoil.py (new version)
-from rotor_cst_component import GeometryAero, Atmosphere
 
 from runFAST import runFAST
 
@@ -55,6 +54,9 @@ class FAST_component(Component):
     # ---- Design Variables ----------
 
     #drivetrain = Slot(DrivetrainEfficiencyModel, iotype = 'in', desc= "drivetrain efficiency model", required=True)
+
+
+    from rotor_cst_component import GeometryAero, Atmosphere
 
     geometryaero = Slot(GeometryAero, iotype = 'in')
     atmosphere   = Slot(Atmosphere,   iotype = 'in')
@@ -196,6 +198,7 @@ class FAST_iter_component(FAST_component):
 
 
 if __name__=="__main__":
+    from rotor_cst_component import GeometryAero, Atmosphere
 
     #import mkgeom
     #geometry, atm = mkgeom.makeGeometry() # geometry, atm : dictionaries

@@ -1,9 +1,44 @@
 # runFAST.py
 # 2012 10 30
 
-# FAST model - called by FAST_component
-# Runs FAST
-#   - does not use OpenMDAO
+"""
+This file implements a python wrapper for the aeroelastic code `FAST <https://wind.nrel.gov/designcodes/simulators/fast/>`_, 
+from the National Renewable Energy Lab's
+National Wind Technology Center.
+
+The approach used here is that of "template-based" input files.  That is, the user supplies a working set of
+FAST input files.  These are parsed into python dictionaries by the wrapper.  The user is then free to modify 
+any of the values in the python dictionary representation of the FAST inputs.  Then these are written
+back to files, and FAST is executed using them.  This approach provides a python-programmatic interface to
+FAST that is a very short step from the normal usage of FAST.  It is thus a very easy first step into
+programmatically driving FAST.
+
+This code does not use `openMDAO <http://openmdao.org>`_.
+The other code WISDEM/fusedwind code that uses FAST _and_ openMDAO _calls_ to this code.
+
+"""
+
+# Format for numpydoc style comments:
+#       Parameters
+#        ----------
+#        alpha : float (rad)
+#            angle of attack
+#        Re : float
+#            Reynolds number
+#
+#        Returns
+#        -------
+#        cl : float
+#            lift coefficient
+#        cd : float
+#            drag coefficient
+#
+#        Notes
+#        -----
+#        This method uses a spline so that the output is continuously differentiable, and
+#        also uses a small amount of smoothing to help remove spurious multiple solutions.
+
+
 
 import sys, os, re, shutil
 import numpy as np
@@ -83,8 +118,7 @@ class runFAST(object):
 
 
     def __init__(self):
-        """ Initialization of a runFAST object
-
+        """ Initialization of a runFAST object, sets various file names to None
         """
         self.fstDict = {}
 
@@ -116,36 +150,46 @@ class runFAST(object):
 
     #---------------------------
     def getBin(self):
+        """ Get the name of the FAST executable """
         return self.fst_exe
+
     def getafNames(self):
+        """ Get the names of the airfoil files parsed out of the FAST input deck """
         names = [self.af_dict['polar_files'][i] for i in range(len(self.af_dict['polar_files']))]
-        print "In getafnames, names=", names
         return names
 
     def computeMaxPower(self):
+        """ Compute and store the maximum value of RotPwr (mainly for testing). Subsequently fetched by
+        `getMaxPower`
+        """
         self.max_power = max(self.getOutputValue("RotPwr"))
+
     def getMaxPower(self):
-        # note; we have to assume it's already computed here, because we might be grabbing it at the end of a bunch of 
-        # runs that have since overwritten the output file corresponding to this object
+        """ retrieve self.max_power (mainly for testing).
+         note: we have to assume self.max_power is already set, because we might be grabbing it at the end of a bunch of 
+         runs that have since overwritten the output file corresponding to this object
+         """
         return self.max_power
 
     #---------------------------
 
     
-## setters
     def set_wind_file(self,wind_file):
+        """ set the name of the wind file """
         self.wind_file = wind_file
     def setFastFile(self,fname):
+        """ set the name of the FAST (.inp) input file """
         self.fst_file = fname
     def setOutputs(self, output_list):
+        """ set the list of which FAST "sensors" to include in output results """
         self.output_list = output_list
     def set_dict(self, fst_dict):
+        """ set the main FAST key/value dictionary that will augment properties in the given input file deck """
         self.fstDict = fst_dict
         
-##
 
     def read_inputs(self):
-        """ read from template files """
+        """ read from template files, calls readFST, readNoise, readAD, readBlade, and readPtfm """
         curdir = os.getcwd()
         os.chdir(self.fst_dir)
         rstat = self.readFST()
@@ -160,7 +204,14 @@ class runFAST(object):
         os.chdir(curdir)
 
     def write_inputs(self, extraFstDict={}):
-        """ writes the <xxx>.fst file and associated files"""
+        """ writes the <xxx>.fst file and associated files
+
+        self.run_dir will be created if it does not exist.
+        This function will first read the inputs, then apply the entries in self.fstDist and the optional argument
+        extraFstDict, then write the input files in self.run_dir.
+
+        This function is called by self.execute immediately prior to the actual FAST run.
+        """
 
         if (self.run_dir == self.fst_dir):
             raise ValueError, "run_dir == fst_dir, you cannot run directly in the template directory"
@@ -179,8 +230,6 @@ class runFAST(object):
         for key in extraFstDict:
             self.fstDict[key] = extraFstDict[key]
 
-        print "writing FAST input files NOW"
-
         curdir = os.getcwd()
         os.chdir (self.run_dir)  ###note, change to run_dir
 
@@ -197,11 +246,10 @@ class runFAST(object):
     # the real execute (no args)
     def execute(self):
         """ use subprocess to run **FAST**
+        Calls write_input first (which calls read input), which applies new parameters by key/values in
+        self.fst_dict.
 
-        Returns
-        -------
-        ret : integer
-            return code from subprocess.call()
+        Returns return code from subprocess.call()
         """
 
         self.write_inputs()
@@ -221,11 +269,9 @@ class runFAST(object):
     #---------------------------
 
     def getSPL(self):
-        """ Extract and return the maximum sound pressure level from noise output file
-
-        Returns
-        -------
-        maxspl : float
+        """ Extract and return the maximum sound pressure level from noise output file (.spl)
+        
+        Returns maxspl : float,
             largest value of SPL found in noise output file
         """
 
@@ -242,6 +288,7 @@ class runFAST(object):
 
     #---------------------------
     def getRotPwr(self):
+        """ get max rotor power from output (mainly for testing) """
         out = self.getOutputValue("RotPwr")
         pwr = max(out)
         return pwr
@@ -249,6 +296,10 @@ class runFAST(object):
     #---------------------------
 
     def parseFASTout(self, directory = None):
+        """ reads the FAST output file (.out) into a numpy array.  Returns
+
+        - hdr: list of fields in the output
+        - out: table of values over time """
         fname = self.run_name + '.out'
         if directory == None:
             fname = os.path.join(self.run_dir, fname)
@@ -274,11 +325,13 @@ class runFAST(object):
     #---------------------------
 
     def getMaxOutputValue(self, paramname, directory=None, out=None, hdr=None):
+        """ gets maximum value of an output sensor.  See :py:meth:`getOutputValue` """
         col = self.getOutputValue(paramname, directory, out, hdr)
         val = max(col)
         return val
 
     def getMaxOutputValueStdDev(self, paramname, directory=None, out=None, hdr=None):
+        """ gets standard deviation of an output sensor.  See :py:meth:`getOutputValue` """
         col = self.getOutputValue(paramname, directory, out, hdr)
         try:
             val = np.std(col)
@@ -287,6 +340,14 @@ class runFAST(object):
         return val
 
     def getOutputValue(self, paramname,  directory=None, out=None, hdr=None):
+        """ gets output value (whole time series) of a particular FAST sensor.
+        Arguments:
+
+        - paramname: sensor of interest
+        - directory (optional): where output lives
+        - out (optional): table of pre-read output (will not reparse from file in this case)
+        - hdr (optional): list of sensorsin out; must be given also if out is given
+        """
         if out == None:
             hdr, out = self.parseFASTout(directory)
             if (out == None):
@@ -305,6 +366,7 @@ class runFAST(object):
 
 
     def getMaxOutputValues(self, paramname, directory=None, out=None, hdr=None):
+        """ gets maximum value of multiple output sensors in one call.  See :py:meth:`getOutputValues` """
         col = self.getOutputValues(paramname, directory, out, hdr)
         vals = []
         for i in range(len(col)):
@@ -314,6 +376,7 @@ class runFAST(object):
         return vals
 
     def getMaxOutputValueStdDevs(self, paramname, directory=None, out=None, hdr=None):
+        """ gets standard deviations of multiple output sensors in one call.  See :py:meth:`getOutputValues` """
         col = self.getOutputValues(paramname, directory, out, hdr)
         vals = []
         for i in range(len(col)):
@@ -326,6 +389,14 @@ class runFAST(object):
         return vals
 
     def getOutputValues(self, paramnames,  directory=None, out=None, hdr=None):
+        """ gets output value (whole time series) of multiple FAST sensors in one call.
+        Arguments:
+
+        - paramnames: list of sensors of interest
+        - directory (optional): where output lives
+        - out (optional): table of pre-read output (will not reparse from file in this case)
+        - hdr (optional): list of sensorsin out; must be given also if out is given
+        """
         if out == None:
             hdr, out = self.parseFASTout(directory)  # throw exception if file not found
 
@@ -347,7 +418,7 @@ class runFAST(object):
     #---------------------------
 
     def readNoise(self):
-        """ read noise input file and save lines """
+        """ read noise input file and save lines in self.lines_noise """
 
         fname = self.noise_file
         print "reading noise file", fname
@@ -362,7 +433,7 @@ class runFAST(object):
     #---------------------------
 
     def readBlade(self):
-        """ read blade input file and save lines """
+        """ read blade input file and save lines in self.lines_blade"""
 
         fname = self.blade1_file  ## note, assuming they're all the same
         print "reading blade file ", fname
@@ -378,7 +449,11 @@ class runFAST(object):
     #---------------------------
 
     def readAD(self):
-        """ read AD input file and save lines """
+        """ read AD input file and save lines self.lines_ad.
+        Note: in this function we also find and potentially modify the names of the airfoil files.
+        The reason is that openmdao needs to be able to copy all relevant files to the run directory (for parallel runs).
+        Also, for running on a mac using template created for windows, we need to fix the paths (and vice versa).
+        """
 
         fname = self.ad_file
         print "reading ad file ", fname, " curdir = ", os.getcwd()
@@ -390,9 +465,6 @@ class runFAST(object):
             sys.stdout.write ("Error opening {:}\n".format(fname))
             return 0
 
-        ## we need to find the names of the airfoil files.
-        # the reason is that openmdao needs to be able to copy all relevant files to the run directory (for parallel runs)
-        # also, for running on a mac using template created for windows, we need to fix the paths (and vice versa)
         for i in range(len(self.lines_ad)):
             ln = self.lines_ad[i].split()            
             if (len(ln) >1):
@@ -417,7 +489,8 @@ class runFAST(object):
     #---------------------------
 
     def readPtfm(self):
-        """ read AD input file and save lines """
+        """ read platform input file and save lines in self.lines_ptfm.
+        Also stores name of WAMITFile path in self.wamit_path."""
 
         fname = self.ptfm_file
         print "reading platform file from ", fname
@@ -437,7 +510,8 @@ class runFAST(object):
     #---------------------------
 
     def readFST(self):
-        """ read **FAST** input file and save lines """
+        """ read main **FAST** input file and save lines in self.lines_fast.
+        also save platform, tower, blade, aerodyne, and noise file names for future reference"""
 
         fname = self.fst_file
         print "reading FAST template file", fname
@@ -479,39 +553,26 @@ class runFAST(object):
     #------------------------------------------------------------
 
     def writeWnd(self):
-        """ Write the new hub-height wind file
-
-        Parameters
-        ----------
-        none, all part of "self" 
+        """ Write the new hub-height wind file.
+        WindFile can be in fstDict, that means we probably ran TurbSim and want to point to file we generated.
+        Otherwise we just need the wind file the template is pointing at.  We won't rewrite it here.
         """
-
-        # can be in fstDict, that means we probably ran TurbSim and want to point to file we generated
-        # otherwise we just need the wind file the template is pointing at.  we won't rewrite it here
         if ("WindFile" in self.fstDict):
             src0 = self.fstDict["WindFile"]
         else:
             src0 = self.wind_file
 
-        print "src1", src0
         if not os.path.isabs(src0):
             src = os.path.join(self.fst_dir, src0)
-            print "src2", src
             src = fix_path(src)  # deal with slashes
-            print "src3" , src
-            shutil.copyfile(src,src0)    
-
-            
+            shutil.copyfile(src,src0)        
             
 
     #------------------------------------------------------------
 
     def writeNoise(self):
-        """ Write the new noise file
-
-        Parameters
-        ----------
-
+        """ Write the noise input file for potentially new tip radius and/or tower height
+        uses info in self.fstDict        
         """
 
         if (self.noise_file == None or self.noise_file == ""):
@@ -558,11 +619,10 @@ class runFAST(object):
 
     def writePtfm(self, fstDict):
         """ Write the new platform file
-
         Parameters
-        ----------
-        self.lines_ptfm are the unmodified lines of the platform file
 
+        self.lines_ptfm are the unmodified lines of the platform file
+        fstDict may contain location of WAMITFile, also may contain "PlatformDir" to change angle of platform
         """
 
         ofname = self.ptfm_file
@@ -660,11 +720,7 @@ class runFAST(object):
     #------------------------------------------------------------
 
     def writeAD(self):
-        """ Write the new AeroDyn file
-
-        Parameters
-        ----------
-
+        """ Write the new AeroDyn file and copy airfoil files to appropriate location if necessary
         """
         ofname = self.ad_file
         ofh = open(ofname,'w')
@@ -696,16 +752,12 @@ class runFAST(object):
     #---------------------------
 
     def writeFST(self,ofname,fstDict):
-        """ write output file with substitutions for names in fstDict
-            Only floating-point values can be substituted, and they are written to 2 decimal places.
+        """ Write FAST input file (.inp) with substitutions for names in fstDict.
+        Otherwise, only floating-point values can be substituted, and they are written to 2 decimal places.
+        Parameters:
 
-        Parameters
-        ----------
-        ofname :
-            name of FAST file (newname.fst) to write
-        fstDict : dictionary
-            dictionary containing new values which will override those found in self.lines_fast
-
+        - ofname: name of FAST file (newname.fst) to write
+        - fstDict: dictionary containing new values which will override those found in self.lines_fast
         """
         try:
             ofh = open(ofname,'w')
@@ -714,10 +766,9 @@ class runFAST(object):
             return 0
 
 
-        """ writing FAST input: If the second field in the line is present in the dictionary,
-        write the new value
-        Otherwise
-        write the original line.  special case for the file name fields """
+        # writing FAST input: If the second field in the line is present in the dictionary,
+        # write the new value. Otherwise
+        # write the original line.  special case for the file name fields """
         for iln in range(len(self.lines_fast)):
             line = self.lines_fast[iln]
             flds = line.strip().split()
@@ -777,7 +828,7 @@ class runFAST(object):
 #---------------------------------
 
 def example():
-
+    """ A simple example of running FAST one time """
     fast = runFAST()
     fast.fst_exe = "/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64"
 
@@ -790,8 +841,8 @@ def example():
         fast.fst_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig"
         fast.fst_file = "NRELOffshrBsline5MW_Floating_OC3Hywind.fst"
 
-#    fast.run_dir = "run_dir"  ## either abs or rel path ok
-    fast.run_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir"
+    fast.run_dir = "new_run_dir"  ## either abs or rel path ok
+#    fast.run_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir"
 
 
     ## all changes to FAST input params go through dict
@@ -813,6 +864,7 @@ def example():
     print max(out)
 
 def turbsim_example():
+    """ A simple example of first running `TurbSim`, then running FAST """ 
     # run TurbSim
     from runTurbSim import runTurbSim
 
@@ -869,6 +921,7 @@ def turbsim_example():
     print max(out)
 
 def get_options():
+    """ allows choosing just FAST example or TurbSim+FAST example """
     from optparse import OptionParser
     parser = OptionParser()    
     parser.add_option("-t", "--turbsim", dest="run_turbsim", help="run turbsim too", action="store_true", default=False)
@@ -878,7 +931,7 @@ def get_options():
 
 
 if __name__=="__main__":
-
+    """ simple main, just runs an example """
     options, args = get_options()
     
     if (not options.run_turbsim):

@@ -5,6 +5,11 @@
 # Runs TurbSim
 #   - does not use OpenMDAO
 
+"""
+This module is a simple wrapper for `TurbSim <https://wind.nrel.gov/designcodes/preprocessors/turbsim/>`_
+
+"""
+
 import sys, os
 import numpy as np
 import subprocess
@@ -24,6 +29,7 @@ class runTurbSim(object):
     tsDict = {}
 
     def write_inputs(self):
+        """ read TurbSim templates, then write TurbSim inputs """
         if (self.run_dir == self.ts_dir):
             raise ValueError, "run_dir == fst_dir, you cannot run directly in the template directory"
         if (not os.path.isdir(self.run_dir)):
@@ -44,6 +50,8 @@ class runTurbSim(object):
             return 0
 
     def writeInput(self):
+        """ write the input file, using self.tsDict to override values in template inputs.
+        """
         self.run_name = self.ts_file.split(".")[0]
         try:
             fname = os.path.join(self.run_dir, self.ts_file)    
@@ -84,11 +92,10 @@ class runTurbSim(object):
 
     # the real execute (no args)
     def execute(self):
-        """ use subprocess to run **TurbSim**
-
+        """ use subprocess to run **TurbSim**.
         Returns
-        -------
-        ret : integer
+
+        - ret (integer)
             return code from subprocess.call()
         """
         
@@ -110,10 +117,20 @@ class runTurbSim(object):
         self.tsDict = ts_dict
 
 if __name__=="__main__":
+    """ simple example usage """
+    from AeroelasticSE.runTurbSim import runTurbSim
+
     ts = runTurbSim()
     ts.ts_exe = "/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64"
-    ts.ts_dir = "TurbSimTest"
-    ts.ts_file = "turbsim_template.inp"
+
+    #abs path
+    ts.ts_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim"
+    ts.ts_file = "TurbSim.inp"
+
+    #relative path
+#    ts.ts_dir = "TurbSimTest"
+#    ts.ts_file = "turbsim_template.inp"
+
     ts.run_dir = "turbsim_test_run"
 
     ws = 12.34

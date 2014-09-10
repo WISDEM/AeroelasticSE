@@ -8,7 +8,7 @@ from openmdao.main.datatypes.api import Array, Float, Str
 import numpy as np
 
 
-from newrunFAST import runFAST
+from runFAST import runFAST
 from runTurbSim import runTurbSim
 
 from FusedFASTrunCase import FASTRunCaseBuilder, FASTRunCase, FASTRunResult
