@@ -216,7 +216,7 @@ class runFAST(object):
         if (self.run_dir == self.fst_dir):
             raise ValueError, "run_dir == fst_dir, you cannot run directly in the template directory"
 
-        self.run_name = self.fst_file.split(".")[0]
+        self.run_name, ext = os.path.splitext(self.fst_file)
 
         if (not os.path.isdir(self.run_dir)):
             os.mkdir(self.run_dir)

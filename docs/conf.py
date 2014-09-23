@@ -33,8 +33,10 @@ release = '0.1.0'
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
-              'numpydoc', 'sphinx.ext.autosummary', 'sphinxcontrib.bibtex', 'exts.numfig',
-              'sphinxcontrib.zopeext.autointerface', 'sphinx.ext.intersphinx']
+              'numpydoc', 'sphinx.ext.autosummary', 'exts.numfig',
+             'sphinx.ext.intersphinx']
+
+# 'sphinxcontrib.bibtex',  'sphinxcontrib.zopeext.autointerface', 
 
 autosummary_generate = True  # generate the autosummary pages automatically
 numpydoc_show_class_members = False  # don't let numpydoc generate autosummary b/c it messes up toctree
@@ -142,7 +144,7 @@ html_theme_path = ['.']
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

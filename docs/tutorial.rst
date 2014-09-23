@@ -40,5 +40,20 @@ running FusedFAST
     :start-after: def openFAST_test
 
 
+running FAST_component
+----------------------
+
+.. literalinclude:: ../src/AeroelasticSE/FAST_component.py
+    :start-after: def FAST_component_test
+    :end-before: end FAST_component_test
+
+
+running FAST_iter_component
+---------------------------
+
+.. literalinclude:: ../src/AeroelasticSE/FAST_component.py
+    :start-after: def FAST_iter_component_test
+    :end-before: end FAST_iter_component_test
+
 
 

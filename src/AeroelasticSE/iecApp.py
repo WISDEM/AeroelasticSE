@@ -10,7 +10,7 @@ from openmdao.main.resource import ResourceAllocationManager as RAM
 from FusedFAST import openFAST 
 
 # this is a callback function used in processing output.
-# see runBatch.py "output_operations"
+# see fusedwind.runSuite.runBatch.py, "output_operations"
 def rf(col):
     # import python version of rainflow algorithm
     from rainflow import rain_one
