@@ -1,0 +1,253 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>AeroelasticSE.FAST_component &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for AeroelasticSE.FAST_component</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">FAST_componentpy -- simple openMDAO wrapper for template-file based interface to FAST,</span>
+<span class="sd">as implemented in runFAST.py</span>
+
+<span class="sd">The component defined here has no inputs and outputs but only manages the calls to the runFAST object.</span>
+<span class="sd">We include to demonstration/helper classes.</span>
+
+<span class="sd">1) MyFAST_component--implements an openMDAO component for computing RotPwr(Vhub, RotSpeed) (ie rotor speed</span>
+<span class="sd">as a function of wind speed and rotor speed) once..</span>
+<span class="sd">1) MyFAST_iter_component--implements an openMDAO component for computing simple power curves.</span>
+<span class="sd"> </span>
+<span class="sd">In this interface to FAST, the basic turbine structure is delivered to FAST via a working set of </span>
+<span class="sd">FAST input &quot;template&quot; files.  These are stored internally as python dictionaries.  The openMDAO</span>
+<span class="sd">Component then selectively (according to its inputs) modifies this dictionary, and selectively</span>
+<span class="sd">(according to its outputs) queries the results of the run.</span>
+
+<span class="sd">Copyright (c) NREL. All rights reserved.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">openmdao.units</span> <span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.api</span> <span class="kn">import</span> <span class="n">Component</span><span class="p">,</span> <span class="n">Assembly</span><span class="p">,</span> <span class="n">set_as_top</span><span class="p">,</span> <span class="n">VariableTree</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.datatypes.api</span> <span class="kn">import</span> <span class="n">Int</span><span class="p">,</span> <span class="n">Bool</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">VarTree</span><span class="p">,</span> <span class="n">Slot</span>
+<span class="kn">from</span> <span class="nn">openmdao.units</span> <span class="kn">import</span> <span class="n">units</span>
+
+<span class="kn">from</span> <span class="nn">runFAST</span> <span class="kn">import</span> <span class="n">runFAST</span>
+
+<div class="viewcode-block" id="FAST_component"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.FAST_component">[docs]</a><span class="k">class</span> <span class="nc">FAST_component</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; An OpenMDAO Component for running NREL&#39;s FAST code</span>
+
+<span class="sd">    This class is a thin wrapper of runFAST.</span>
+<span class="sd">    It is a base class for running FAST within openMDAO.  User is expected to subclass this class to enable</span>
+<span class="sd">    openMDAO-style connectivity to FAST variables of interest.  See MyFAST_component and example(), below.</span>
+
+<span class="sd">    Return value is via call to self.myModel, the underlying runFAST object. in particular, to its getOutputValue() fn.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FAST_component</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span> <span class="o">=</span> <span class="n">runFAST</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">fst_exe</span> <span class="o">=</span> <span class="n">fst_exe</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="n">fst_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="n">fst_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="n">run_dir</span>
+        
+
+<div class="viewcode-block" id="FAST_component.execute"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.FAST_component.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; execute the `runFAST` model </span>
+<span class="sd">         assumes everything is ready to go, just run it! &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        
+    </div></div>
+<div class="viewcode-block" id="MyFAST_component"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.MyFAST_component">[docs]</a><span class="k">class</span> <span class="nc">MyFAST_component</span><span class="p">(</span><span class="n">FAST_component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; An openMDAO component implementing an interface to compute rotor power as a function</span>
+<span class="sd">    of wind speed and rotorspeed&quot;&quot;&quot;</span>
+    <span class="n">TMax</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;length of analysis&#39;</span><span class="p">)</span> 
+    <span class="n">TStart</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;start of analysis&#39;</span><span class="p">)</span> 
+    <span class="n">Vhub</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;hub height wind speed in mps&#39;</span><span class="p">)</span>
+    <span class="n">RotSpeed</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;rotor speed&#39;</span><span class="p">)</span>
+    <span class="n">RotPwr</span>    <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;generato power in Watts&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MyFAST_component</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fstDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vhub</span>
+        <span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;RotSpeed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RotSpeed</span>
+        <span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TMax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TMax</span>
+        <span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TStart&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TStart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">setOutputs</span><span class="p">([</span><span class="s">&#39;RotPwr&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">fstDict</span> <span class="o">=</span> <span class="n">fstDict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RotPwr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">myfast</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="s">&quot;RotPwr&quot;</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="MyFAST_iter_component"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.MyFAST_iter_component">[docs]</a><span class="k">class</span> <span class="nc">MyFAST_iter_component</span><span class="p">(</span><span class="n">MyFAST_component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; An OpenMDAO Component for running NREL&#39;s FAST code.</span>
+<span class="sd">    This component knows how to run FAST multiple times with different wind speeds and rotor rpm&#39;s.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># ------------ Inputs ----------------</span>
+    <span class="c"># the array of wind and rotor speeds</span>
+    <span class="n">rotorSpeedCurve</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">4.0</span><span class="p">,</span><span class="mf">7.0</span><span class="p">],[</span><span class="mf">13.0</span><span class="p">,</span><span class="mf">12.5</span><span class="p">]]),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;rpm by wind speed [rpm vs. m/s]&#39;</span><span class="p">)</span>
+    
+    <span class="c"># ------------- Outputs --------------</span>
+    <span class="n">rotorPowerCurve</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span> <span class="s">&#39;power by wind speed [watts vs. m/s]&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MyFAST_iter_component</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+
+<span class="c">#   - - - - -</span>
+
+<div class="viewcode-block" id="MyFAST_iter_component.execute"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.MyFAST_iter_component.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; execute the `runFAST` model and look up the power &quot;&quot;&quot;</span>
+        <span class="c"># run the model</span>
+        <span class="n">nspeeds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rotorSpeedCurve</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotorPowerCurve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nspeeds</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspeeds</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Vhub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotorSpeedCurve</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RotSpeed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotorSpeedCurve</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">MyFAST_iter_component</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rotorPowerCurve</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RotPwr</span>
+
+</div></div>
+<div class="viewcode-block" id="FAST_component_test"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.FAST_component_test">[docs]</a><span class="k">def</span> <span class="nf">FAST_component_test</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; A simple example of running FAST one time</span>
+<span class="sd">    This component could now be used in an openMDAO Assembly that took </span>
+<span class="sd">    wind and rotor speed as input, delivered power production at that wind/rotor speed as output.&quot;&quot;&quot;</span>
+    <span class="n">fst_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;</span>
+    <span class="c">#    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.</span>
+    <span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;ModelFiles/OC3_Files/&quot;</span>
+    <span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span>  <span class="c">## should _not_ be full path</span>
+
+    <span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;new_run_dir&quot;</span>  <span class="c">## either abs or rel path ok</span>
+<span class="c">#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;</span>
+
+    <span class="n">myfast</span> <span class="o">=</span> <span class="n">MyFAST_component</span><span class="p">(</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">Vhub</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">RotSpeed</span> <span class="o">=</span> <span class="mf">12.03</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">TMax</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">TStart</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">print</span> <span class="s">&quot;Vhub   RotPwr&quot;</span>
+    <span class="k">print</span> <span class="n">myfast</span><span class="o">.</span><span class="n">Vhub</span><span class="p">,</span> <span class="n">myfast</span><span class="o">.</span><span class="n">RotPwr</span>
+
+<span class="c"># end FAST_component_test():</span>
+
+</div>
+<div class="viewcode-block" id="FAST_iter_component_test"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FAST_component.FAST_iter_component_test">[docs]</a><span class="k">def</span> <span class="nf">FAST_iter_component_test</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; This example uses the MyFAST_iter_component to create a simple power curve.</span>
+<span class="sd">    This component could now be used in an openMDAO Assembly that dealt with</span>
+<span class="sd">    wind/rotor-speed curves as input, and power-curves as output.&quot;&quot;&quot;</span>
+
+    <span class="n">fst_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;</span>
+    <span class="c">#    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.</span>
+    <span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;ModelFiles/OC3_Files/&quot;</span>
+    <span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span>  <span class="c">## should _not_ be full path</span>
+
+    <span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;new_run_dir&quot;</span>  <span class="c">## either abs or rel path ok</span>
+<span class="c">#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;</span>
+
+    <span class="n">myfast</span> <span class="o">=</span> <span class="n">MyFAST_iter_component</span><span class="p">(</span><span class="n">fst_exe</span><span class="p">,</span> <span class="n">fst_dir</span><span class="p">,</span> <span class="n">fst_file</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">TMax</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">TStart</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">myfast</span><span class="o">.</span><span class="n">rotorSpeedCurve</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">11.0</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span>  <span class="mf">9.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">11.0</span><span class="p">,</span> <span class="mf">12.0</span><span class="p">,</span> <span class="mf">12.5</span><span class="p">,</span> <span class="mf">12.5</span><span class="p">]]</span>
+
+    <span class="n">myfast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">print</span> <span class="s">&quot;Vhub   RotSpeed    RotPwr&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">myfast</span><span class="o">.</span><span class="n">rotorPowerCurve</span><span class="p">)):</span>
+        <span class="k">print</span> <span class="n">myfast</span><span class="o">.</span><span class="n">rotorSpeedCurve</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>  <span class="n">myfast</span><span class="o">.</span><span class="n">rotorSpeedCurve</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>  <span class="n">myfast</span><span class="o">.</span><span class="n">rotorPowerCurve</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="c">#end FAST_iter_component_test():</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c"># test 1</span>
+    <span class="k">print</span> <span class="s">&quot;TEST1-run once&quot;</span>
+    <span class="n">FAST_component_test</span><span class="p">()</span>
+    
+    <span class="c"># test 2</span>
+    <span class="k">print</span> <span class="s">&quot;TEST2-simple power curve&quot;</span>
+    <span class="n">FAST_iter_component_test</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Sep 23, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

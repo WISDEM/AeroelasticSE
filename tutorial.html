@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Tutorial &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="3. Documentation" href="documentation.html" />
+    <link rel="prev" title="1. Installation" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="3. Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="1. Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<span id="tutorial-label"></span><h1>2. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>The following examples are called as test cases in the modules  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runFAST" title="AeroelasticSE.runFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runFAST</span></tt></a>),   (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runTurbSim" title="AeroelasticSE.runTurbSim"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runTurbSim</span></tt></a>),  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.FusedFAST" title="AeroelasticSE.FusedFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FusedFAST</span></tt></a>),  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.iecApp" title="AeroelasticSE.iecApp"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.iecApp</span></tt></a>),</p>
+<div class="section" id="running-fast-one-time">
+<h2>2.1. running FAST one time<a class="headerlink" href="#running-fast-one-time" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time &quot;&quot;&quot;
+    fast = runFAST()
+    fast.fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+
+    case = 1
+    if (case==1):
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+        fast.fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+        fast.fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path
+    else:
+        fast.fst_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;
+        fast.fst_file = &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;
+
+    fast.run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#    fast.run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+
+    ## all changes to FAST input params go through dict
+    ## unless you want to change the name of the template for the sub-files (e.g. subst a different aerodyn file).  Those go through actual fields (&quot;fast.ad_file&quot;)
+    fast.fstDict[&#39;Vhub&#39;]=8.0
+    fast.fstDict[&#39;RotSpeed&#39;] = 12.03
+    fast.fstDict[&#39;TMax&#39;] = 2.0
+    fast.fstDict[&#39;TStart&#39;] = 0.0
+
+    fast.fstDict[&#39;PlatformDir&#39;] = 30.0
+
+    fast.setOutputs([&#39;RotPwr&#39;])
+
+    fast.execute()
+    out = fast.getOutputValue(&quot;RotPwr&quot;)
+
+    print fast
+    print &quot;max power&quot;
+    print max(out)
+</pre></div>
+</div>
+<p>This will print something like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">max</span> <span class="n">power</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mf">11840.0</span>
+</pre></div>
+</div>
+<p>Run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python runFAST.py --help
+</pre></div>
+</div>
+<p>to see options for this example.</p>
+</div>
+<div class="section" id="running-turbsim-one-time">
+<h2>2.2. running TurbSim one time<a class="headerlink" href="#running-turbsim-one-time" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; simple example usage &quot;&quot;&quot;
+    from AeroelasticSE.runTurbSim import runTurbSim
+
+    ts = runTurbSim()
+    ts.ts_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;
+
+    #abs path
+    ts.ts_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;
+    ts.ts_file = &quot;TurbSim.inp&quot;
+
+    #relative path
+#    ts.ts_dir = &quot;TurbSimTest&quot;
+#    ts.ts_file = &quot;turbsim_template.inp&quot;
+
+    ts.run_dir = &quot;turbsim_test_run&quot;
+
+    ws = 12.34
+    tmax = 2
+    ts.set_dict({&quot;URef&quot;: ws, &quot;AnalysisTime&quot;:tmax, &quot;UsableTime&quot;:tmax})
+    ts.execute()
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-fusedfast">
+<h2>2.3. running FusedFAST<a class="headerlink" href="#running-fusedfast" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>    # in real life these come from an input file:
+    filedict = {&#39;ts_exe&#39; : &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;,
+                &#39;ts_dir&#39; : &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;,
+                &#39;ts_file&#39; : &quot;TurbSim.inp&quot;,
+                &#39;fst_exe&#39; : &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;,
+                &#39;fst_dir&#39; : &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;,
+                &#39;fst_file&#39; : &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;,
+                &#39;run_dir&#39; : &quot;run_dir&quot;}
+
+    w = openFAST(filedict)
+    tmax = 5
+    res = []
+
+    case = 2
+    if (case == 1):
+        for x in [10,16,20]:
+            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])
+        #        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})
+            w.inputs = dlc
+            w.execute()
+    elif case == 2:
+        res = []
+        vhub = 20
+#        xs=[.10,.4,1.0]   # radians!, wave angle
+#        xs=[10,20,30]   # m/s!, vhub
+        xs = [0,30,60, 90]  # degrees, platform angle
+        for x in xs:
+            #            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;WaveDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])
+            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;PlatformDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])
+#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])
+#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})
+            w.inputs = dlc
+            w.execute()
+            results_dir = os.path.join(filedict[&#39;run_dir&#39;],dlc.case_name)
+            print &quot;name&quot;, results_dir
+            rr = w.getResults([&quot;RotPwr&quot;, &quot;TwrBsMxt&quot;], results_dir, operation=np.std)
+            res.append(rr)
+        for i in range(len(xs)):
+            print xs[i], res[i]
+    elif case == 3:
+        pass
+
+
+if __name__==&quot;__main__&quot;:
+    openFAST_test()
+#    designFAST_test()
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-fast-component">
+<h2>2.4. running FAST_component<a class="headerlink" href="#running-fast-component" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time
+    This component could now be used in an openMDAO Assembly that took 
+    wind and rotor speed as input, delivered power production at that wind/rotor speed as output.&quot;&quot;&quot;
+    fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+    fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+    fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path
+
+    run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+    myfast = MyFAST_component(fst_exe, fst_dir, fst_file, run_dir)
+    myfast.Vhub = 8
+    myfast.RotSpeed = 12.03
+    myfast.TMax = 2
+    myfast.TStart = 0
+    myfast.execute()
+
+    print &quot;Vhub   RotPwr&quot;
+    print myfast.Vhub, myfast.RotPwr
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-fast-iter-component">
+<h2>2.5. running FAST_iter_component<a class="headerlink" href="#running-fast-iter-component" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; This example uses the MyFAST_iter_component to create a simple power curve.
+    This component could now be used in an openMDAO Assembly that dealt with
+    wind/rotor-speed curves as input, and power-curves as output.&quot;&quot;&quot;
+
+    fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+    fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+    fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path
+
+    run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+    myfast = MyFAST_iter_component(fst_exe, fst_dir, fst_file, run_dir)
+    myfast.TMax = 2
+    myfast.TStart = 0
+    myfast.rotorSpeedCurve = [[4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0],
+                              [7.0, 8.0,  9.0, 10.0, 11.0, 12.0, 12.5, 12.5]]
+
+    myfast.execute()
+
+    print &quot;Vhub   RotSpeed    RotPwr&quot;
+    for i in range(len(myfast.rotorPowerCurve)):
+        print myfast.rotorSpeedCurve[0][i],  myfast.rotorSpeedCurve[1][i],  myfast.rotorPowerCurve[i]
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. Tutorial</a><ul>
+<li><a class="reference internal" href="#running-fast-one-time">2.1. running FAST one time</a></li>
+<li><a class="reference internal" href="#running-turbsim-one-time">2.2. running TurbSim one time</a></li>
+<li><a class="reference internal" href="#running-fusedfast">2.3. running FusedFAST</a></li>
+<li><a class="reference internal" href="#running-fast-component">2.4. running FAST_component</a></li>
+<li><a class="reference internal" href="#running-fast-iter-component">2.5. running FAST_iter_component</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">1. Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="documentation.html"
+                        title="next chapter">3. Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="3. Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="1. Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Sep 23, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

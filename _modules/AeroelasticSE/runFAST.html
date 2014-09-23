@@ -1,0 +1,1028 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>AeroelasticSE.runFAST &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for AeroelasticSE.runFAST</h1><div class="highlight"><pre>
+<span class="c"># runFAST.py</span>
+<span class="c"># 2012 10 30</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This file implements a python wrapper for the aeroelastic code `FAST &lt;https://wind.nrel.gov/designcodes/simulators/fast/&gt;`_, </span>
+<span class="sd">from the National Renewable Energy Lab&#39;s</span>
+<span class="sd">National Wind Technology Center.</span>
+
+<span class="sd">The approach used here is that of &quot;template-based&quot; input files.  That is, the user supplies a working set of</span>
+<span class="sd">FAST input files.  These are parsed into python dictionaries by the wrapper.  The user is then free to modify </span>
+<span class="sd">any of the values in the python dictionary representation of the FAST inputs.  Then these are written</span>
+<span class="sd">back to files, and FAST is executed using them.  This approach provides a python-programmatic interface to</span>
+<span class="sd">FAST that is a very short step from the normal usage of FAST.  It is thus a very easy first step into</span>
+<span class="sd">programmatically driving FAST.</span>
+
+<span class="sd">This code does not use `openMDAO &lt;http://openmdao.org&gt;`_.</span>
+<span class="sd">The other code WISDEM/fusedwind code that uses FAST _and_ openMDAO _calls_ to this code.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c"># Format for numpydoc style comments:</span>
+<span class="c">#       Parameters</span>
+<span class="c">#        ----------</span>
+<span class="c">#        alpha : float (rad)</span>
+<span class="c">#            angle of attack</span>
+<span class="c">#        Re : float</span>
+<span class="c">#            Reynolds number</span>
+<span class="c">#</span>
+<span class="c">#        Returns</span>
+<span class="c">#        -------</span>
+<span class="c">#        cl : float</span>
+<span class="c">#            lift coefficient</span>
+<span class="c">#        cd : float</span>
+<span class="c">#            drag coefficient</span>
+<span class="c">#</span>
+<span class="c">#        Notes</span>
+<span class="c">#        -----</span>
+<span class="c">#        This method uses a spline so that the output is continuously differentiable, and</span>
+<span class="c">#        also uses a small amount of smoothing to help remove spurious multiple solutions.</span>
+
+
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+
+<span class="c">#-----------------------------------------</span>
+
+<div class="viewcode-block" id="myloadtxt"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.myloadtxt">[docs]</a><span class="k">def</span> <span class="nf">myloadtxt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">skiprows</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; like np.loadtxt, but handles stuff that can&#39;t be converted to a float &quot;&quot;&quot;</span>
+    <span class="n">fin</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">skiprows</span><span class="p">):</span>
+        <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">ln</span> <span class="o">=</span> <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">lns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">ln</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">thisln</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ln</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">thisln</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">lns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thisln</span><span class="p">)</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lns</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="unsplit"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.unsplit">[docs]</a><span class="k">def</span> <span class="nf">unsplit</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; join a list of strings, adds a linefeed &quot;&quot;&quot;</span>
+    <span class="n">ln</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="n">ln</span> <span class="o">=</span> <span class="n">ln</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">return</span> <span class="n">ln</span>
+</div>
+<div class="viewcode-block" id="fix_path"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.fix_path">[docs]</a><span class="k">def</span> <span class="nf">fix_path</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; split a path, then reconstruct it using os.path.join &quot;&quot;&quot;</span>
+    <span class="n">saveslash</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;/&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s">&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">\|/&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">name</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">saveslash</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new</span>
+
+<span class="c">#-----------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST">[docs]</a><span class="k">class</span> <span class="nc">runFAST</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A class for running FAST from openMDAO</span>
+
+<span class="sd">    The class itself is independent of openMDAO, but an object of</span>
+<span class="sd">    type *runFAST* is the model within a `FAST_component`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fastexe : str</span>
+<span class="sd">        Name of FAST executable</span>
+<span class="sd">    fastpath : str</span>
+<span class="sd">        Absolute path of folder containing FAST executable</span>
+<span class="sd">    template_path : str</span>
+<span class="sd">        Absolute path of folder containing template files</span>
+<span class="sd">    model_path : str</span>
+<span class="sd">        Absolute path of folder containing model files (TwrFile and PtfmFile)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">## these need to be supplied:</span>
+    <span class="n">fst_exe</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">fst_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">fst_dir</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">run_dir</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">## these should be supplied</span>
+    <span class="n">fst_file_type</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">fst_exe_type</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="c">#ala Katherine&#39;s:    fst_file_type = Enum(0, (0,1),iotype=&#39;in&#39;, desc=&#39;Fst file type, 0=old FAST, 1 = new FAST&#39;)    </span>
+
+
+<div class="viewcode-block" id="runFAST.__init__"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialization of a runFAST object, sets various file names to None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_list</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">## these should be supplied</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fst_file_type</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># 0:v7.01 file, 1:v7.02 file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fst_exe_type</span> <span class="o">=</span> <span class="mi">1</span> <span class="c"># 0:v7.01 exe, v7.02 exe</span>
+<span class="c">#ala Katherine&#39;s:    fst_file_type = Enum(0, (0,1),iotype=&#39;in&#39;, desc=&#39;Fst file type, 0=old FAST, 1 = new FAST&#39;)    </span>
+
+        <span class="c">## new way: basic assumption is that .fst file is self contained, ie we could just run FAST on it. </span>
+        <span class="c">#read everything from templates, modify them selectively, then write them back out in &quot;run_dir&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blade2_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blade3_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span> <span class="o">=</span> <span class="bp">None</span>
+                    
+        <span class="bp">self</span><span class="o">.</span><span class="n">exec_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># we need to ensure the template file are not overwritten.  run_dir can&#39;t be same as fst_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="s">&#39;run_dir&#39;</span>
+        
+
+    <span class="c">#---------------------------</span></div>
+<div class="viewcode-block" id="runFAST.getBin"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getBin">[docs]</a>    <span class="k">def</span> <span class="nf">getBin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get the name of the FAST executable &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_exe</span>
+</div>
+<div class="viewcode-block" id="runFAST.getafNames"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getafNames">[docs]</a>    <span class="k">def</span> <span class="nf">getafNames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get the names of the airfoil files parsed out of the FAST input deck &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_files&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_files&#39;</span><span class="p">]))]</span>
+        <span class="k">return</span> <span class="n">names</span>
+</div>
+<div class="viewcode-block" id="runFAST.computeMaxPower"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.computeMaxPower">[docs]</a>    <span class="k">def</span> <span class="nf">computeMaxPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Compute and store the maximum value of RotPwr (mainly for testing). Subsequently fetched by</span>
+<span class="sd">        `getMaxPower`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_power</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="s">&quot;RotPwr&quot;</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="runFAST.getMaxPower"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getMaxPower">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; retrieve self.max_power (mainly for testing).</span>
+<span class="sd">         note: we have to assume self.max_power is already set, because we might be grabbing it at the end of a bunch of </span>
+<span class="sd">         runs that have since overwritten the output file corresponding to this object</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_power</span>
+
+    <span class="c">#---------------------------</span>
+
+    </div>
+<div class="viewcode-block" id="runFAST.set_wind_file"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.set_wind_file">[docs]</a>    <span class="k">def</span> <span class="nf">set_wind_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wind_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; set the name of the wind file &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span> <span class="o">=</span> <span class="n">wind_file</span></div>
+<div class="viewcode-block" id="runFAST.setFastFile"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.setFastFile">[docs]</a>    <span class="k">def</span> <span class="nf">setFastFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; set the name of the FAST (.inp) input file &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="n">fname</span></div>
+<div class="viewcode-block" id="runFAST.setOutputs"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.setOutputs">[docs]</a>    <span class="k">def</span> <span class="nf">setOutputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; set the list of which FAST &quot;sensors&quot; to include in output results &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_list</span> <span class="o">=</span> <span class="n">output_list</span></div>
+<div class="viewcode-block" id="runFAST.set_dict"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.set_dict">[docs]</a>    <span class="k">def</span> <span class="nf">set_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fst_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; set the main FAST key/value dictionary that will augment properties in the given input file deck &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span> <span class="o">=</span> <span class="n">fst_dict</span>
+        
+</div>
+<div class="viewcode-block" id="runFAST.read_inputs"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.read_inputs">[docs]</a>    <span class="k">def</span> <span class="nf">read_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read from template files, calls readFST, readNoise, readAD, readBlade, and readPtfm &quot;&quot;&quot;</span>
+        <span class="n">curdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">)</span>
+        <span class="n">rstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readFST</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rstat</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">curdir</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="c"># the names of the next files are either set by caller or come from the reading the FAST file</span>
+        <span class="n">rstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readNoise</span><span class="p">()</span>
+        <span class="n">rstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readAD</span><span class="p">()</span>
+        <span class="n">rstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readBlade</span><span class="p">()</span>
+        <span class="n">rstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readPtfm</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">curdir</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="runFAST.write_inputs"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.write_inputs">[docs]</a>    <span class="k">def</span> <span class="nf">write_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extraFstDict</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot; writes the &lt;xxx&gt;.fst file and associated files</span>
+
+<span class="sd">        self.run_dir will be created if it does not exist.</span>
+<span class="sd">        This function will first read the inputs, then apply the entries in self.fstDist and the optional argument</span>
+<span class="sd">        extraFstDict, then write the input files in self.run_dir.</span>
+
+<span class="sd">        This function is called by self.execute immediately prior to the actual FAST run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;run_dir == fst_dir, you cannot run directly in the template directory&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_name</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exec_count</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">):</span> <span class="c"># Is 0 when invoked by main()</span>
+                                   <span class="c"># Is 1 when invoked by Assembly ???</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_inputs</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">extraFstDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">extraFstDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">curdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>  <span class="c">###note, change to run_dir</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeFST</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeAD</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeBlade</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeWnd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeNoise</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writePtfm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyTwr</span><span class="p">()</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">curdir</span><span class="p">)</span> <span class="c">## restore dir</span>
+
+    <span class="c"># the real execute (no args)</span></div>
+<div class="viewcode-block" id="runFAST.execute"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; use subprocess to run **FAST**</span>
+<span class="sd">        Calls write_input first (which calls read input), which applies new parameters by key/values in</span>
+<span class="sd">        self.fst_dict.</span>
+
+<span class="sd">        Returns return code from subprocess.call()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_inputs</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_exe</span><span class="p">)):</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;Can&#39;t find FAST executable: {:}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_exe</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">print</span> <span class="s">&quot;calling &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_exe</span>
+        <span class="k">print</span> <span class="s">&quot;input file=&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span>
+        <span class="n">curdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">)</span>  <span class="c">###note, change to run_dir</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_exe</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span><span class="p">]</span> <span class="p">)</span> <span class="c">#### actual call to FAST !! </span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">curdir</span><span class="p">)</span> <span class="c">## restore dir</span>
+
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.getSPL"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getSPL">[docs]</a>    <span class="k">def</span> <span class="nf">getSPL</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Extract and return the maximum sound pressure level from noise output file (.spl)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns maxspl : float,</span>
+<span class="sd">            largest value of SPL found in noise output file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">run_name</span> <span class="o">+</span> <span class="s">&#39;.spl&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">)):</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&#39;getMaxSPL: {:} does not exist</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="n">spl</span> <span class="o">=</span> <span class="n">myloadtxt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">maxspl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">spl</span><span class="p">[:,</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="k">return</span> <span class="n">maxspl</span>
+
+    
+
+    <span class="c">#---------------------------</span></div>
+<div class="viewcode-block" id="runFAST.getRotPwr"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getRotPwr">[docs]</a>    <span class="k">def</span> <span class="nf">getRotPwr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; get max rotor power from output (mainly for testing) &quot;&quot;&quot;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="s">&quot;RotPwr&quot;</span><span class="p">)</span>
+        <span class="n">pwr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pwr</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.parseFASTout"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.parseFASTout">[docs]</a>    <span class="k">def</span> <span class="nf">parseFASTout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; reads the FAST output file (.out) into a numpy array.  Returns</span>
+
+<span class="sd">        - hdr: list of fields in the output</span>
+<span class="sd">        - out: table of values over time &quot;&quot;&quot;</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_name</span> <span class="o">+</span> <span class="s">&#39;.out&#39;</span>
+        <span class="k">if</span> <span class="n">directory</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">)):</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&#39;parseFASTout: {:} does not exist</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        
+        <span class="n">fin</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span> <span class="c">## skip</span>
+        <span class="n">hdr</span> <span class="o">=</span> <span class="n">fin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">fin</span><span class="o">.</span><span class="n">close</span>
+
+        <span class="c"># let numpy do the rest</span>
+        <span class="n">warmup</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c">## also skip this many outputs, so np.loadtxt doesn&#39;t complain about &quot;*****&quot; entries in Fortran output </span>
+                      <span class="c">#(but why are they there?)  ### this should not happen, means your FAST input/FAST version are out of whack</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">myloadtxt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">8</span><span class="o">+</span><span class="n">warmup</span><span class="p">)</span>  <span class="c"># (8 is lines before data starts)</span>
+        <span class="k">return</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">out</span>
+
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.getMaxOutputValue"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getMaxOutputValue">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxOutputValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets maximum value of an output sensor.  See :py:meth:`getOutputValue` &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="runFAST.getMaxOutputValueStdDev"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getMaxOutputValueStdDev">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxOutputValueStdDev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets standard deviation of an output sensor.  See :py:meth:`getOutputValue` &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="runFAST.getOutputValue"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getOutputValue">[docs]</a>    <span class="k">def</span> <span class="nf">getOutputValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramname</span><span class="p">,</span>  <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets output value (whole time series) of a particular FAST sensor.</span>
+<span class="sd">        Arguments:</span>
+
+<span class="sd">        - paramname: sensor of interest</span>
+<span class="sd">        - directory (optional): where output lives</span>
+<span class="sd">        - out (optional): table of pre-read output (will not reparse from file in this case)</span>
+<span class="sd">        - hdr (optional): list of sensorsin out; must be given also if out is given</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parseFASTout</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">out</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runname</span> <span class="o">+</span> <span class="s">&#39;.out&#39;</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;output param </span><span class="si">%s</span><span class="s"> does not exist in </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">paramname</span><span class="p">,</span> <span class="n">fname</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span>
+
+        <span class="c"># out contains header info. find our guy, then give back the whole column</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hdr</span><span class="p">)):</span>
+<span class="c">#            print &quot;hdr_i , paramname&quot;, hdr[i].strip(), paramname</span>
+            <span class="k">if</span> <span class="n">hdr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">paramname</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">out</span>
+        <span class="k">print</span>  <span class="s">&quot;param </span><span class="si">%s</span><span class="s"> not found in output&quot;</span> <span class="o">%</span> <span class="n">paramname</span>
+        <span class="k">raise</span> <span class="ne">Exception</span>
+
+</div>
+<div class="viewcode-block" id="runFAST.getMaxOutputValues"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getMaxOutputValues">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxOutputValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets maximum value of multiple output sensors in one call.  See :py:meth:`getOutputValues` &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputValues</span><span class="p">(</span><span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vals</span>
+</div>
+<div class="viewcode-block" id="runFAST.getMaxOutputValueStdDevs"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getMaxOutputValueStdDevs">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxOutputValueStdDevs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets standard deviations of multiple output sensors in one call.  See :py:meth:`getOutputValues` &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputValues</span><span class="p">(</span><span class="n">paramname</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vals</span>
+</div>
+<div class="viewcode-block" id="runFAST.getOutputValues"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.getOutputValues">[docs]</a>    <span class="k">def</span> <span class="nf">getOutputValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramnames</span><span class="p">,</span>  <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets output value (whole time series) of multiple FAST sensors in one call.</span>
+<span class="sd">        Arguments:</span>
+
+<span class="sd">        - paramnames: list of sensors of interest</span>
+<span class="sd">        - directory (optional): where output lives</span>
+<span class="sd">        - out (optional): table of pre-read output (will not reparse from file in this case)</span>
+<span class="sd">        - hdr (optional): list of sensorsin out; must be given also if out is given</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parseFASTout</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>  <span class="c"># throw exception if file not found</span>
+
+        <span class="c"># out contains header info. find our guy, then give back the whole column</span>
+        <span class="n">all_out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">foundme</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">paramnames</span><span class="p">))]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">paramnames</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hdr</span><span class="p">)):</span>
+ <span class="c">#               print &quot;hdr_i , paramname&quot;, hdr[i].strip(), paramnames</span>
+                <span class="k">if</span> <span class="n">hdr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">paramnames</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">foundme</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+<span class="c">#                    print &quot;grabbing key: &quot;, paramnames[j], hdr[i], i, j</span>
+                    <span class="n">out2</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">all_out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out2</span><span class="p">)</span>
+                    <span class="n">foundme</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">foundme</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;params not found in output&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">paramnames</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">foundme</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_out</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.readNoise"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.readNoise">[docs]</a>    <span class="k">def</span> <span class="nf">readNoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read noise input file and save lines in self.lines_noise &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span>
+        <span class="k">print</span> <span class="s">&quot;reading noise file&quot;</span><span class="p">,</span> <span class="n">fname</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_noise</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening {:}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.readBlade"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.readBlade">[docs]</a>    <span class="k">def</span> <span class="nf">readBlade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read blade input file and save lines in self.lines_blade&quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span>  <span class="c">## note, assuming they&#39;re all the same</span>
+        <span class="k">print</span> <span class="s">&quot;reading blade file &quot;</span><span class="p">,</span> <span class="n">fname</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_blade</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening {:}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.readAD"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.readAD">[docs]</a>    <span class="k">def</span> <span class="nf">readAD</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read AD input file and save lines self.lines_ad.</span>
+<span class="sd">        Note: in this function we also find and potentially modify the names of the airfoil files.</span>
+<span class="sd">        The reason is that openmdao needs to be able to copy all relevant files to the run directory (for parallel runs).</span>
+<span class="sd">        Also, for running on a mac using template created for windows, we need to fix the paths (and vice versa).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span>
+        <span class="k">print</span> <span class="s">&quot;reading ad file &quot;</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="s">&quot; curdir = &quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening {:}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span><span class="p">)):</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>            
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span> <span class="o">&gt;</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;NumFoil&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nSeg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;WindFile&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span> <span class="o">=</span> <span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_idx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nSeg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_files&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nSeg</span>
+        <span class="k">print</span> <span class="s">&quot;ln, nSeg, i&quot;</span><span class="p">,</span> <span class="n">ln</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSeg</span><span class="p">,</span> <span class="n">i</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nSeg</span><span class="p">):</span>
+            <span class="n">lnidx</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">j</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span><span class="p">[</span><span class="n">lnidx</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">afpath</span> <span class="o">=</span> <span class="n">fix_path</span><span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\&#39;</span><span class="s">&quot;</span><span class="p">))</span>
+            <span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">afpath</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span><span class="p">[</span><span class="n">lnidx</span><span class="p">]</span> <span class="o">=</span> <span class="n">unsplit</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_idx&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_files&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">afpath</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.readPtfm"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.readPtfm">[docs]</a>    <span class="k">def</span> <span class="nf">readPtfm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read platform input file and save lines in self.lines_ptfm.</span>
+<span class="sd">        Also stores name of WAMITFile path in self.wamit_path.&quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span>
+        <span class="k">print</span> <span class="s">&quot;reading platform file from &quot;</span><span class="p">,</span> <span class="n">fname</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening {:}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span><span class="p">:</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;WAMITFile&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span> <span class="o">=</span> <span class="n">fix_path</span><span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.readFST"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.readFST">[docs]</a>    <span class="k">def</span> <span class="nf">readFST</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; read main **FAST** input file and save lines in self.lines_fast.</span>
+<span class="sd">        also save platform, tower, blade, aerodyne, and noise file names for future reference&quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_file</span>
+        <span class="k">print</span> <span class="s">&quot;reading FAST template file&quot;</span><span class="p">,</span> <span class="n">fname</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lines_fast</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening master FAST input file </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_fast</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PtfmFile&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;TwrFile&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(1)&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(2)&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade2_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blade2_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(3)&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade3_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blade3_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;ADFile&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;NoiseFile&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                
+        <span class="k">print</span> <span class="s">&quot;FAST subfiles:&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;ptfm &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span>
+        <span class="k">print</span> <span class="s">&quot;twr &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span>
+        <span class="k">print</span> <span class="s">&quot;blades &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade2_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade3_file</span>
+        <span class="k">print</span> <span class="s">&quot;ad &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span>
+        <span class="k">print</span> <span class="s">&quot;noise &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span>
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writeWnd"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writeWnd">[docs]</a>    <span class="k">def</span> <span class="nf">writeWnd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the new hub-height wind file.</span>
+<span class="sd">        WindFile can be in fstDict, that means we probably ran TurbSim and want to point to file we generated.</span>
+<span class="sd">        Otherwise we just need the wind file the template is pointing at.  We won&#39;t rewrite it here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s">&quot;WindFile&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">):</span>
+            <span class="n">src0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&quot;WindFile&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">src0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">src0</span><span class="p">):</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">,</span> <span class="n">src0</span><span class="p">)</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">fix_path</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>  <span class="c"># deal with slashes</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">src</span><span class="p">,</span><span class="n">src0</span><span class="p">)</span>        
+            
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writeNoise"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writeNoise">[docs]</a>    <span class="k">def</span> <span class="nf">writeNoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the noise input file for potentially new tip radius and/or tower height</span>
+<span class="sd">        uses info in self.fstDict        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">ofname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span>
+        <span class="n">ofh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="c"># these have to be there as long as we&#39;ve read the FAST file already</span>
+        <span class="c">## not true: we don&#39;t store these in the dict.</span>
+        <span class="n">have_data</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s">&quot;TipRad&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span> <span class="ow">and</span> <span class="s">&#39;TowerHt&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span> <span class="ow">and</span> <span class="s">&#39;Twr2Shft&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">):</span>
+            <span class="n">tiprad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TipRad&#39;</span><span class="p">]</span>
+            <span class="n">towerht</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TowerHt&#39;</span><span class="p">]</span>
+            <span class="n">twr2shft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;Twr2Shft&#39;</span><span class="p">]</span>
+            <span class="n">have_data</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_noise</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">have_data</span> <span class="ow">and</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;Observer location&#39;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">xdist</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">tiprad</span> <span class="o">+</span> <span class="p">(</span><span class="n">towerht</span> <span class="o">+</span> <span class="n">twr2shft</span><span class="p">))</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;{:.1f} 0.0 0.0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xdist</span><span class="p">))</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;  (x,y,z) Observer location in tower-base coordinate system.  Use -(RotRad+HubHt)</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">ofh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writeBlade"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writeBlade">[docs]</a>    <span class="k">def</span> <span class="nf">writeBlade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the new blade file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ofname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span>  <span class="c">### note, assuming they&#39;re all the same</span>
+        <span class="n">ofh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_blade</span><span class="p">:</span>
+            <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">ofh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writePtfm"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writePtfm">[docs]</a>    <span class="k">def</span> <span class="nf">writePtfm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fstDict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the new platform file</span>
+<span class="sd">        Parameters</span>
+
+<span class="sd">        self.lines_ptfm are the unmodified lines of the platform file</span>
+<span class="sd">        fstDict may contain location of WAMITFile, also may contain &quot;PlatformDir&quot; to change angle of platform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ofname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span>
+        <span class="n">ofh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="c">#        print &quot;writing platform file  &quot;, ofname</span>
+
+<span class="c">#        for line in self.lines_ptfm:</span>
+<span class="c">#        for iln in range(len(self.lines_ptfm)):</span>
+        <span class="n">iln</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">iln</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span><span class="p">):</span>
+
+            <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span><span class="p">[</span><span class="n">iln</span><span class="p">]</span>
+            <span class="n">flds</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="c">#            print &quot;copying line %d:&quot; % iln, line</span>
+
+            <span class="sd">&quot;&quot;&quot; If the second field in the line is present in the dictionary,</span>
+<span class="sd">                  write the new value</span>
+<span class="sd">                Otherwise</span>
+<span class="sd">                  write the original line &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;WAMITFile&#39;</span><span class="p">):</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">   WAMITFile   location and root file name of WAMIT spar files</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;NumLines&#39;</span> <span class="ow">and</span> <span class="s">&#39;PlatformDir&#39;</span> <span class="ow">in</span> <span class="n">fstDict</span><span class="p">):</span>
+                <span class="c"># process/augment the mooring lines description IF our dict has a &#39;PlatformDir&#39; entry #</span>
+                <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                ---------------------- MOORING LINES -------------------------------------------</span>
+<span class="sd">                3        NumLines    - Number of mooring lines (-)</span>
+<span class="sd">                1        LineMod     - Mooring line model {1: standard quasi-static, 2: user-defined from routine UserLine} (switch) [used only when NumLines&gt;0]</span>
+<span class="sd">                LRadAnch  LAngAnch  LDpthAnch  LRadFair  LAngFair   LDrftFair  LUnstrLen  LDiam   LMassDen  LEAStff    LSeabedCD  LTenTol [used only when NumLines&gt;0 and LineMod=1]</span>
+<span class="sd">                (m)       (deg)     (m)        (m)       (deg)      (m)        (m)        (m)     (kg/m)    (N)        (-)        (-)     [used only when NumLines&gt;0 and LineMod=1]</span>
+<span class="sd">                853.87     0.0     320.0      5.2         0.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001</span>
+<span class="sd">                853.87   120.0     320.0      5.2       120.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001</span>
+<span class="sd">                853.87   240.0     320.0      5.2       240.0      70.0       902.2      0.09    77.7066   384.243E6  0.0        0.0000001</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                
+                
+<span class="c">#                print &quot;I am re-writing the mooring section&quot;</span>
+                <span class="n">ptfm_dir</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;PlatformDir&#39;</span><span class="p">])</span>
+                <span class="n">nlines</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>            
+                <span class="k">for</span> <span class="n">iskip</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                    <span class="c"># copy next 4 lines</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span><span class="p">[</span><span class="n">iln</span><span class="o">+</span><span class="n">iskip</span><span class="p">]</span>
+<span class="c">#                    print &quot;header line&quot;, line</span>
+                    <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>  <span class="c"># NumLines,LineMod, labels, units</span>
+                <span class="n">iln</span> <span class="o">+=</span> <span class="mi">4</span>
+                <span class="k">for</span> <span class="n">irope</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nlines</span><span class="p">):</span>
+                    <span class="c"># replace the angles by adding the input platform orientation</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ptfm</span><span class="p">[</span><span class="n">iln</span><span class="o">+</span><span class="n">irope</span><span class="p">]</span>
+<span class="c">#                    print &quot;rope line&quot;, line</span>
+                    <span class="n">ln</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">val</span> <span class="o">+=</span> <span class="n">ptfm_dir</span>
+                    <span class="n">ln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">val</span>  <span class="c">## see above, 2nd and 5th entries are the angles</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ln</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                    <span class="n">val</span> <span class="o">+=</span> <span class="n">ptfm_dir</span>
+                    <span class="n">ln</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">val</span>
+                    <span class="n">line</span>  <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                    <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>                     
+                <span class="n">iln</span> <span class="o">+=</span> <span class="n">nlines</span><span class="o">-</span><span class="mi">1</span>
+<span class="c">#                print &quot;wrote mooring iln = %d&quot; % iln</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fstDict</span><span class="p">):</span>
+                <span class="n">f0</span> <span class="o">=</span> <span class="s">&#39;{:.6f}    &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fstDict</span><span class="p">[</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="n">oline</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">f0</span><span class="p">]</span> <span class="o">+</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">oline</span><span class="p">)</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            
+            <span class="n">iln</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c">## finally, increment the loop counter</span>
+            
+        <span class="n">ofh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># make sure the wamit path exists:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wamit_path</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span><span class="p">)</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c"># tmp is now root of relative path to spar files, ie top of wamit path</span>
+                <span class="n">dst</span> <span class="o">=</span> <span class="n">tmp</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">,</span> <span class="n">tmp</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&quot;copying wamit files from &quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="s">&quot;TO &quot;</span><span class="p">,</span> <span class="n">dst</span>
+                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">)):</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+            
+
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.copyTwr"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.copyTwr">[docs]</a>    <span class="k">def</span> <span class="nf">copyTwr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; just copy tower file, so far not changing it &quot;&quot;&quot;</span>
+        <span class="c"># this is executing during write_input, so curdir is run_dir</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span><span class="p">)</span>
+
+    <span class="c">#------------------------------------------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writeAD"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writeAD">[docs]</a>    <span class="k">def</span> <span class="nf">writeAD</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write the new AeroDyn file and copy airfoil files to appropriate location if necessary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ofname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span>
+        <span class="n">ofh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_ad</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;WindFile&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">):</span>
+                    <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">wind_file</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">&quot;</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">unsplit</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+        <span class="n">ofh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># now also copy relevant airfoil files, if path is relative</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">af_dict</span><span class="p">[</span><span class="s">&#39;polar_files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c"># tmp is now root of relative path to airfoils</span>
+            <span class="n">dst</span> <span class="o">=</span> <span class="n">tmp</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_dir</span><span class="p">,</span> <span class="n">tmp</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;copying aerodata from &quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="s">&quot;TO &quot;</span><span class="p">,</span> <span class="n">dst</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst</span><span class="p">)):</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+
+        <span class="c"># copy of relevant wind file in separate function writeWnd</span>
+
+    <span class="c">#---------------------------</span>
+</div>
+<div class="viewcode-block" id="runFAST.writeFST"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.runFAST.writeFST">[docs]</a>    <span class="k">def</span> <span class="nf">writeFST</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ofname</span><span class="p">,</span><span class="n">fstDict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Write FAST input file (.inp) with substitutions for names in fstDict.</span>
+<span class="sd">        Otherwise, only floating-point values can be substituted, and they are written to 2 decimal places.</span>
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        - ofname: name of FAST file (newname.fst) to write</span>
+<span class="sd">        - fstDict: dictionary containing new values which will override those found in self.lines_fast</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ofh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span> <span class="p">(</span><span class="s">&quot;Error opening </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ofname</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+
+        <span class="c"># writing FAST input: If the second field in the line is present in the dictionary,</span>
+        <span class="c"># write the new value. Otherwise</span>
+        <span class="c"># write the original line.  special case for the file name fields &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">iln</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_fast</span><span class="p">)):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_fast</span><span class="p">[</span><span class="n">iln</span><span class="p">]</span>
+            <span class="n">flds</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span> <span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;PtfmFile&#39;</span><span class="p">,</span><span class="s">&#39;TwrFile&#39;</span><span class="p">,</span><span class="s">&#39;BldFile(1)&#39;</span><span class="p">,</span><span class="s">&#39;BldFile(2)&#39;</span><span class="p">,</span><span class="s">&#39;BldFile(3)&#39;</span><span class="p">,</span> <span class="s">&#39;ADfile&#39;</span><span class="p">,</span><span class="s">&#39;NoiseFile&#39;</span><span class="p">]):</span>
+                <span class="c"># substituting possibly modified file names for subfiles</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PtfmFile&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptfm_file</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;TwrFile&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">twr_file</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(1)&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade1_file</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(2)&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade2_file</span> 
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;BldFile(3)&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blade3_file</span> 
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;ADfile&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ad_file</span> 
+                <span class="k">if</span> <span class="p">(</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;NoiseFile&#39;</span><span class="p">):</span>
+                    <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> 
+                <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c">## put the quote back on</span>
+                <span class="n">oline</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">oline</span><span class="p">)</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fstDict</span><span class="p">):</span>
+                <span class="c"># replacing this entry with something from fstDict</span>
+                <span class="n">f0</span> <span class="o">=</span> <span class="s">&#39;{:.2f}    &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fstDict</span><span class="p">[</span><span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="n">oline</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">f0</span><span class="p">]</span> <span class="o">+</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">oline</span><span class="p">)</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;SumPrint&quot;</span><span class="p">):</span>
+                <span class="c"># special case to deal with either V7.1 OR v7.2</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">nextln</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines_fast</span><span class="p">[</span><span class="n">iln</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_file_type</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_exe_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">nextln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;OutFileFmt&quot;</span><span class="p">:</span>  <span class="c">## this check should not be necessary if fst_xxx_type are correct</span>
+                        <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;1           OutFileFmt  - Format for tabular (time-marching) output file(s) (1: text file [&lt;RootName&gt;.out], 2: binary</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>        
+                <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fst_file_type</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fst_exe_type</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">nextln</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;OutFileFmt&quot;</span><span class="p">:</span>  <span class="c">## this check should not be necessary if fst_xxx_type are correct</span>
+                        <span class="c"># skip line </span>
+                        <span class="n">iln</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">flds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;END&quot;</span><span class="p">):</span>
+                <span class="c"># uh oh, better back up and write the outputs!</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_list</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">out</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_list</span><span class="p">:</span>
+                        <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">)</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># just write the line unmodified</span>
+                <span class="n">ofh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+        <span class="n">ofh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="mi">1</span>
+
+<span class="c">#---------------------------------</span>
+</div></div>
+<div class="viewcode-block" id="example"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.example">[docs]</a><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; A simple example of running FAST one time &quot;&quot;&quot;</span>
+    <span class="n">fast</span> <span class="o">=</span> <span class="n">runFAST</span><span class="p">()</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fst_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;</span>
+
+    <span class="n">case</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">case</span><span class="o">==</span><span class="mi">1</span><span class="p">):</span>
+    <span class="c">#    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;ModelFiles/OC3_Files/&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span>  <span class="c">## should _not_ be full path</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;new_run_dir&quot;</span>  <span class="c">## either abs or rel path ok</span>
+<span class="c">#    fast.run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;</span>
+
+
+    <span class="c">## all changes to FAST input params go through dict</span>
+    <span class="c">## unless you want to change the name of the template for the sub-files (e.g. subst a different aerodyn file).  Those go through actual fields (&quot;fast.ad_file&quot;)</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span><span class="o">=</span><span class="mf">8.0</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;RotSpeed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">12.03</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TMax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TStart&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;PlatformDir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">30.0</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">setOutputs</span><span class="p">([</span><span class="s">&#39;RotPwr&#39;</span><span class="p">])</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">fast</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="s">&quot;RotPwr&quot;</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="n">fast</span>
+    <span class="k">print</span> <span class="s">&quot;max power&quot;</span>
+    <span class="k">print</span> <span class="nb">max</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="turbsim_example"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.turbsim_example">[docs]</a><span class="k">def</span> <span class="nf">turbsim_example</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; A simple example of first running `TurbSim`, then running FAST &quot;&quot;&quot;</span> 
+    <span class="c"># run TurbSim</span>
+    <span class="kn">from</span> <span class="nn">runTurbSim</span> <span class="kn">import</span> <span class="n">runTurbSim</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">runTurbSim</span><span class="p">()</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">ts_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;turbsim_test_run&quot;</span>
+    <span class="n">tscase</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tscase</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">ts_dir</span> <span class="o">=</span> <span class="s">&quot;TurbSimTest&quot;</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">ts_file</span> <span class="o">=</span> <span class="s">&quot;turbsim_template.inp&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">ts_dir</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">ts_file</span> <span class="o">=</span> <span class="s">&quot;TurbSim.inp&quot;</span>
+        
+    <span class="n">tmax</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">ws</span><span class="o">=</span><span class="mf">20.0</span> <span class="c"># wind speed</span>
+
+    <span class="n">ts</span><span class="o">.</span><span class="n">set_dict</span><span class="p">({</span><span class="s">&quot;URef&quot;</span><span class="p">:</span> <span class="n">ws</span><span class="p">,</span> <span class="s">&quot;AnalysisTime&quot;</span><span class="p">:</span><span class="n">tmax</span><span class="p">,</span> <span class="s">&quot;UsableTime&quot;</span><span class="p">:</span><span class="n">tmax</span><span class="p">})</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="c"># then run FAST</span>
+    <span class="n">fast</span> <span class="o">=</span> <span class="n">runFAST</span><span class="p">()</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fst_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;</span>
+    <span class="n">case</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">case</span><span class="o">==</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;FAST_VT/OC3_Files/&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span> 
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;InputFilesToWrite/&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NREL5MW_Monopile_Rigid.v7.02.fst&quot;</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;tsfast_test_run_dir&quot;</span>  <span class="c">## either abs or rel path ok</span>
+
+    <span class="c"># here we link turbsim -&gt; fast</span>
+    <span class="n">tswind_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">ts_dir</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.wnd&quot;</span> <span class="o">%</span> <span class="n">ts</span><span class="o">.</span><span class="n">run_name</span><span class="p">)</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">set_wind_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">tswind_file</span><span class="p">))</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">ws</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;RotSpeed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">12.03</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&quot;TMax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmax</span>
+    <span class="n">fast</span><span class="o">.</span><span class="n">fstDict</span><span class="p">[</span><span class="s">&#39;TStart&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">setOutputs</span><span class="p">([</span><span class="s">&#39;RotPwr&#39;</span><span class="p">])</span>
+
+    <span class="n">fast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">fast</span><span class="o">.</span><span class="n">getOutputValue</span><span class="p">(</span><span class="s">&quot;RotPwr&quot;</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;TurbSim example complete:&quot;</span>
+    <span class="k">print</span> <span class="s">&quot;max power&quot;</span>
+    <span class="k">print</span> <span class="nb">max</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_options"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.runFAST.get_options">[docs]</a><span class="k">def</span> <span class="nf">get_options</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; allows choosing just FAST example or TurbSim+FAST example &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">optparse</span> <span class="kn">import</span> <span class="n">OptionParser</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">OptionParser</span><span class="p">()</span>    
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&quot;-t&quot;</span><span class="p">,</span> <span class="s">&quot;--turbsim&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&quot;run_turbsim&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run turbsim too&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    
+    <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">options</span><span class="p">,</span> <span class="n">args</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; simple main, just runs an example &quot;&quot;&quot;</span>
+    <span class="n">options</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">get_options</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">options</span><span class="o">.</span><span class="n">run_turbsim</span><span class="p">):</span>
+        <span class="n">example</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">turbsim_example</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Sep 23, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>AeroelasticSE.FusedFAST &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for AeroelasticSE.FusedFAST</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">glob</span><span class="o">,</span><span class="nn">shutil</span><span class="o">,</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">openmdao.main.api</span> <span class="kn">import</span> <span class="n">Component</span><span class="p">,</span> <span class="n">Assembly</span><span class="p">,</span> <span class="n">FileMetadata</span>
+<span class="kn">from</span> <span class="nn">openmdao.lib.components.external_code</span> <span class="kn">import</span> <span class="n">ExternalCode</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.datatypes.slot</span> <span class="kn">import</span> <span class="n">Slot</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.datatypes.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.datatypes.api</span> <span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">Str</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+
+<span class="kn">from</span> <span class="nn">runFAST</span> <span class="kn">import</span> <span class="n">runFAST</span>
+<span class="kn">from</span> <span class="nn">runTurbSim</span> <span class="kn">import</span> <span class="n">runTurbSim</span>
+
+<span class="kn">from</span> <span class="nn">FusedFASTrunCase</span> <span class="kn">import</span> <span class="n">FASTRunCaseBuilder</span><span class="p">,</span> <span class="n">FASTRunCase</span><span class="p">,</span> <span class="n">FASTRunResult</span>
+
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runAero</span> <span class="kn">import</span> <span class="n">openAeroCode</span>
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runCase</span> <span class="kn">import</span> <span class="n">GenericRunCase</span><span class="p">,</span> <span class="n">RunCase</span><span class="p">,</span> <span class="n">RunResult</span><span class="p">,</span> <span class="n">IECRunCaseBaseVT</span>
+
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">openFAST</span><span class="p">(</span><span class="n">openAeroCode</span><span class="p">):</span>
+    
+    <span class="n">code_input</span> <span class="o">=</span> <span class="n">Instance</span><span class="p">(</span><span class="n">FASTRunCase</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filedict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runfast</span> <span class="o">=</span> <span class="n">runFASText</span><span class="p">(</span><span class="n">filedict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runts</span> <span class="o">=</span> <span class="n">runTurbSimext</span><span class="p">(</span><span class="n">filedict</span><span class="p">)</span>
+
+        <span class="c">## this is repeated in runFASText, should consolodate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="s">&quot;all_runs&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;run_dir&#39;</span> <span class="ow">in</span> <span class="n">filedict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="n">filedict</span><span class="p">[</span><span class="s">&#39;run_dir&#39;</span><span class="p">])</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">openFAST</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;openFAST __init__&quot;</span>
+
+    <span class="k">def</span> <span class="nf">getRunCaseBuilder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FASTRunCaseBuilder</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;openFAST configure&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;tsrunner&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">runts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;tsrunner&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;runner&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">runfast</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="s">&#39;runner&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&#39;code_input&#39;</span><span class="p">,</span> <span class="s">&#39;runner.inputs&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&#39;code_input&#39;</span><span class="p">,</span> <span class="s">&#39;tsrunner.inputs&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&#39;runner.outputs&#39;</span><span class="p">,</span> <span class="s">&#39;outputs&#39;</span><span class="p">)</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&#39;tsrunner.tswind_file&#39;</span><span class="p">,</span> <span class="s">&#39;runner.tswind_file&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;openFAST.execute(), case = &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span>
+        <span class="n">run_case_builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRunCaseBuilder</span><span class="p">()</span>
+        <span class="n">dlc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span> 
+<span class="c">#        print &quot;executing&quot;, dlc.case_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code_input</span> <span class="o">=</span> <span class="n">run_case_builder</span><span class="o">.</span><span class="n">buildRunCase</span><span class="p">(</span><span class="n">dlc</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">openFAST</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">getResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">results_dir</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="nb">max</span><span class="p">):</span>
+        <span class="n">myfast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runfast</span><span class="o">.</span><span class="n">rawfast</span>        
+        <span class="n">col</span> <span class="o">=</span> <span class="n">myfast</span><span class="o">.</span><span class="n">getOutputValues</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">results_dir</span><span class="p">)</span>
+<span class="c">#        print &quot;getting output for keys=&quot;, keys</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">col</span><span class="p">)):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">operation</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vals</span>
+
+    <span class="k">def</span> <span class="nf">setOutput</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runfast</span><span class="o">.</span><span class="n">set_fast_outputs</span><span class="p">(</span><span class="n">output_params</span><span class="p">[</span><span class="s">&#39;output_keys&#39;</span><span class="p">])</span>
+        <span class="k">print</span> <span class="s">&quot;set FAST output:&quot;</span><span class="p">,</span> <span class="n">output_params</span><span class="p">[</span><span class="s">&#39;output_keys&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="runTurbSimext"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FusedFAST.runTurbSimext">[docs]</a><span class="k">class</span> <span class="nc">runTurbSimext</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; a component to run TurbSim.</span>
+<span class="sd">        will try to make it aware of whether the wind file already exists&quot;&quot;&quot;</span>
+    
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">Instance</span><span class="p">(</span><span class="n">IECRunCaseBaseVT</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+    <span class="n">tswind_file</span> <span class="o">=</span> <span class="n">Str</span><span class="p">(</span><span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filedict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">runTurbSimext</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span> <span class="o">=</span> <span class="n">runTurbSim</span><span class="p">()</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">ts_exe</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;ts_exe&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">ts_dir</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;ts_dir&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">ts_file</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;ts_file&#39;</span><span class="p">]</span>
+<span class="c">#        self.rawts.run_name = self.run_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="s">&quot;allts_runs&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;run_dir&#39;</span> <span class="ow">in</span> <span class="n">filedict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="n">filedict</span><span class="p">[</span><span class="s">&#39;run_dir&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span>
+        <span class="n">ws</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span>
+        <span class="n">tmax</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c">## should not be hard default ##</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s">&#39;TMax&#39;</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">):</span>  <span class="c">## Note, this gets set via &quot;AnalTime&quot; in input files--FAST peculiarity ? ##</span>
+            <span class="n">tmax</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">[</span><span class="s">&#39;TMax&#39;</span><span class="p">]</span>
+
+        <span class="c"># run TurbSim to generate the wind:        </span>
+        <span class="c"># for now, turbsim params we mess with are possibly: TMax, RandomSeed, Tmax.  These should generate</span>
+        <span class="c"># new runs, otherwise we should just use wind file we already have</span>
+            <span class="c"># for now, just differentiate by wind speed</span>
+        <span class="n">ts_case_name</span> <span class="o">=</span> <span class="s">&quot;TurbSim-Vhub</span><span class="si">%.4f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ws</span>
+
+        <span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">,</span> <span class="n">ts_case_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;running TurbSim in </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">run_dir</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;running TurbSim in &quot;</span> <span class="p">,</span> <span class="n">run_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="n">run_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">set_dict</span><span class="p">({</span><span class="s">&quot;URef&quot;</span><span class="p">:</span> <span class="n">ws</span><span class="p">,</span> <span class="s">&quot;AnalysisTime&quot;</span><span class="p">:</span><span class="n">tmax</span><span class="p">,</span> <span class="s">&quot;UsableTime&quot;</span><span class="p">:</span><span class="n">tmax</span><span class="p">})</span>
+        <span class="n">tsoutname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">ts_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;inp&quot;</span><span class="p">,</span> <span class="s">&quot;wnd&quot;</span><span class="p">)</span>
+        <span class="n">tsoutname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">tsoutname</span><span class="p">)</span>
+        <span class="n">tssumname</span> <span class="o">=</span> <span class="n">tsoutname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;wnd&quot;</span><span class="p">,</span> <span class="s">&quot;sum&quot;</span><span class="p">)</span>
+        <span class="n">reuse_run</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">tsoutname</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">tssumname</span><span class="p">)):</span>
+            <span class="c"># maybe there&#39;s an old results we can use:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="ow">not</span> <span class="n">reuse_run</span><span class="p">):</span>
+                <span class="n">ln</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">tssumname</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ln</span> <span class="o">!=</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">ln1</span> <span class="o">=</span> <span class="n">ln</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c"># check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)</span>
+                    <span class="n">ln1</span> <span class="o">=</span> <span class="n">ln1</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span>
+                    <span class="n">ln2</span> <span class="o">=</span> <span class="n">ln</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="c"># check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)</span>
+                    <span class="n">ln2</span> <span class="o">=</span> <span class="n">ln2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ln1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">ln1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Processing complete&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ln2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">ln2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Processing complete&quot;</span><span class="p">)):</span>
+                        <span class="k">print</span> <span class="s">&quot;re-using previous TurbSim output </span><span class="si">%s</span><span class="s"> for ws = </span><span class="si">%f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tsoutname</span><span class="p">,</span> <span class="n">ws</span><span class="p">)</span>
+                        <span class="n">reuse_run</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">reuse_run</span><span class="p">):</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">print</span> <span class="s">&quot;waiting for &quot;</span><span class="p">,</span> <span class="n">tsoutname</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;waiting for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tsoutname</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;DONE waiting for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tsoutname</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">reuse_run</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span> 
+
+        <span class="c"># here we link turbsim -&gt; fast</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tswind_file</span> <span class="o">=</span> <span class="n">tsoutname</span>
+
+</div>
+<div class="viewcode-block" id="runFASText"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FusedFAST.runFASText">[docs]</a><span class="k">class</span> <span class="nc">runFASText</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        this used to be an ExternalCode class to take advantage of file copying stuff.</span>
+<span class="sd">        But now it relies on the global file system instead.</span>
+<span class="sd">        it finally calls the real (openMDAO-free) FAST wrapper </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">Instance</span><span class="p">(</span><span class="n">IECRunCaseBaseVT</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+<span class="c">#    input = Instance(GenericRunCase, iotype=&#39;in&#39;)</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">Instance</span><span class="p">(</span><span class="n">RunResult</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">)</span>  <span class="c">## never used, never even set</span>
+    <span class="n">tswind_file</span> <span class="o">=</span> <span class="n">Str</span><span class="p">(</span><span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+
+    <span class="c">## just a template, meant to be reset by caller</span>
+    <span class="n">fast_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;WindVxi&#39;</span><span class="p">,</span><span class="s">&#39;RotSpeed&#39;</span><span class="p">,</span> <span class="s">&#39;RotPwr&#39;</span><span class="p">,</span> <span class="s">&#39;GenPwr&#39;</span><span class="p">,</span> <span class="s">&#39;RootMxc1&#39;</span><span class="p">,</span> <span class="s">&#39;RootMyc1&#39;</span><span class="p">,</span> <span class="s">&#39;LSSGagMya&#39;</span><span class="p">,</span> <span class="s">&#39;LSSGagMza&#39;</span><span class="p">,</span> <span class="s">&#39;YawBrMxp&#39;</span><span class="p">,</span> <span class="s">&#39;YawBrMyp&#39;</span><span class="p">,</span><span class="s">&#39;TwrBsMxt&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;TwrBsMyt&#39;</span><span class="p">,</span> <span class="s">&#39;Fair1Ten&#39;</span><span class="p">,</span> <span class="s">&#39;Fair2Ten&#39;</span><span class="p">,</span> <span class="s">&#39;Fair3Ten&#39;</span><span class="p">,</span> <span class="s">&#39;Anch1Ten&#39;</span><span class="p">,</span> <span class="s">&#39;Anch2Ten&#39;</span><span class="p">,</span> <span class="s">&#39;Anch3Ten&#39;</span><span class="p">]</span> 
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filedict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">runFASText</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span> <span class="o">=</span> <span class="n">runFAST</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;runFASText init(), filedict = &quot;</span><span class="p">,</span> <span class="n">filedict</span>
+
+        <span class="c"># probably overridden by caller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">setOutputs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fast_outputs</span><span class="p">)</span>
+
+        <span class="c"># if True, results will be copied back to basedir+casename.</span>
+        <span class="c"># In context of global file system, this is not necessary.  Instead, leave False and postprocess directly from run_dirs.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyback_files</span> <span class="o">=</span> <span class="bp">False</span>
+ 
+        <span class="n">have_tags</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">filedict</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;fst_exe&quot;</span><span class="p">,</span> <span class="s">&quot;fst_dir&quot;</span><span class="p">,</span> <span class="s">&quot;fst_file&quot;</span><span class="p">,</span> <span class="s">&quot;ts_exe&quot;</span><span class="p">,</span> <span class="s">&quot;ts_dir&quot;</span><span class="p">,</span> <span class="s">&quot;ts_file&quot;</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">have_tags</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">fst_exe</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;fst_exe&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;fst_dir&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="n">filedict</span><span class="p">[</span><span class="s">&#39;fst_file&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">fst_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">run_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="s">&quot;all_runs&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;run_dir&#39;</span> <span class="ow">in</span> <span class="n">filedict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">basedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="n">filedict</span><span class="p">[</span><span class="s">&#39;run_dir&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_fast_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fst_out</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fast_outputs</span> <span class="o">=</span> <span class="n">fst_out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">setOutputs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fast_outputs</span><span class="p">)</span>
+                
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span>
+
+        <span class="n">ws</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span>
+        <span class="n">tmax</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c">## should not be hard default ##</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s">&#39;TMax&#39;</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">):</span>  <span class="c">## Note, this gets set via &quot;AnalTime&quot; in input files--FAST peculiarity ? ##</span>
+            <span class="n">tmax</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">[</span><span class="s">&#39;TMax&#39;</span><span class="p">]</span>
+
+        <span class="c"># TurbSim has already been run to generate the wind, it&#39;s output is</span>
+        <span class="c"># connected as tswind_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">set_wind_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tswind_file</span><span class="p">)</span>
+
+        <span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">case_name</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;running FASTFASTFAST in &quot;</span> <span class="p">,</span> <span class="n">run_dir</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">case_name</span>
+
+        <span class="c">### actually execute FAST (!!) </span>
+        <span class="k">print</span> <span class="s">&quot;RUNNING FAST WITH RUN_DIR&quot;</span><span class="p">,</span> <span class="n">run_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="n">run_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">set_dict</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">fst_params</span><span class="p">)</span>
+        <span class="c"># FAST object write its inputs in execute()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="c">###</span>
+
+        <span class="c"># gather output directly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">FASTRunResult</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="c"># also, copy all the output and input back &quot;home&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copyback_files</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basedir</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">case_name</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_dir</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="c"># print &#39;error creating directory&#39;, results_dir</span>
+                <span class="c"># print &#39;it probably already exists, so no problem&#39;</span>
+                <span class="k">pass</span>
+
+            <span class="c"># Is this supposed to do what we&#39;re doing by hand here?</span>
+            <span class="c"># self.copy_results_dirs(results_dir, &#39;&#39;, overwrite=True)</span>
+
+            <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.*&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawfast</span><span class="o">.</span><span class="n">run_name</span><span class="p">))</span>
+            <span class="n">files</span> <span class="o">+=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.*&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">run_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawts</span><span class="o">.</span><span class="n">run_name</span><span class="p">))</span>
+            
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+<span class="c">#                print &quot;wanting to copy %s to %s&quot; % (filename, results_dir) ## for debugging, don&#39;t clobber stuff you care about!</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_dir</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="designFAST"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FusedFAST.designFAST">[docs]</a><span class="k">class</span> <span class="nc">designFAST</span><span class="p">(</span><span class="n">openFAST</span><span class="p">):</span>        
+    <span class="sd">&quot;&quot;&quot; base class for cases where we have parametric design (e.g. dakota),</span>
+<span class="sd">    corresponding to a driver that are for use within a Driver that &quot;has_parameters&quot; &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>   <span class="c">## exact size of this gets filled in study.setup_cases(), which call create_x, below</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">)</span>
+    <span class="c"># need some mapping back and forth</span>
+    <span class="n">param_names</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">geom</span><span class="p">,</span><span class="n">atm</span><span class="p">,</span><span class="n">filedict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">designFAST</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span><span class="n">atm</span><span class="p">,</span><span class="n">filedict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="designFAST.create_x"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.FusedFAST.designFAST.create_x">[docs]</a>    <span class="k">def</span> <span class="nf">create_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; just needs to exist and be right size to use has_parameters stuff &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+</div>
+    <span class="k">def</span> <span class="nf">dlc_from_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dlc</span><span class="o">.</span><span class="n">case_name</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="n">FASTRunCaseBuilder</span><span class="o">.</span><span class="n">buildRunCase_x</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dlc</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">case</span><span class="o">.</span><span class="n">fst_params</span>
+        <span class="k">return</span> <span class="n">case</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># build DLC from x, if we&#39;re using it</span>
+        <span class="k">print</span> <span class="s">&quot;in design code. execute()&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dlc_from_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">designFAST</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="n">myfast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runfast</span><span class="o">.</span><span class="n">rawfast</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">myfast</span><span class="o">.</span><span class="n">getMaxOutputValue</span><span class="p">(</span><span class="s">&#39;TwrBsMxt&#39;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+
+
+</div>
+<span class="k">def</span> <span class="nf">designFAST_test</span><span class="p">():</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">designFAST</span><span class="p">()</span>
+
+    <span class="c">## sort of hacks to save this info</span>
+    <span class="n">w</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">]</span>
+    <span class="n">w</span><span class="o">.</span><span class="n">dlc</span> <span class="o">=</span> <span class="n">FASTRunCase</span><span class="p">(</span><span class="s">&quot;runAero-testcase&quot;</span><span class="p">,</span> <span class="p">{},</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;set aerocode dlc&quot;</span>
+    <span class="c">##</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">([</span> <span class="n">w</span><span class="o">.</span><span class="n">dlc</span><span class="o">.</span><span class="n">case_name</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">f</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">r</span>
+
+
+<span class="k">def</span> <span class="nf">openFAST_test</span><span class="p">():</span>
+    <span class="c"># in real life these come from an input file:</span>
+    <span class="n">filedict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;ts_exe&#39;</span> <span class="p">:</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;</span><span class="p">,</span>
+                <span class="s">&#39;ts_dir&#39;</span> <span class="p">:</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;</span><span class="p">,</span>
+                <span class="s">&#39;ts_file&#39;</span> <span class="p">:</span> <span class="s">&quot;TurbSim.inp&quot;</span><span class="p">,</span>
+                <span class="s">&#39;fst_exe&#39;</span> <span class="p">:</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;</span><span class="p">,</span>
+                <span class="s">&#39;fst_dir&#39;</span> <span class="p">:</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;</span><span class="p">,</span>
+                <span class="s">&#39;fst_file&#39;</span> <span class="p">:</span> <span class="s">&quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;</span><span class="p">,</span>
+                <span class="s">&#39;run_dir&#39;</span> <span class="p">:</span> <span class="s">&quot;run_dir&quot;</span><span class="p">}</span>
+
+    <span class="n">w</span> <span class="o">=</span> <span class="n">openFAST</span><span class="p">(</span><span class="n">filedict</span><span class="p">)</span>
+    <span class="n">tmax</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">case</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">20</span><span class="p">]:</span>
+            <span class="n">dlc</span> <span class="o">=</span> <span class="n">GenericRunCase</span><span class="p">(</span><span class="s">&quot;runAero-testcase</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">,</span><span class="s">&#39;AnalTime&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">tmax</span><span class="p">])</span>
+        <span class="c">#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">dlc</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">vhub</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="c">#        xs=[.10,.4,1.0]   # radians!, wave angle</span>
+<span class="c">#        xs=[10,20,30]   # m/s!, vhub</span>
+        <span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span> <span class="mi">90</span><span class="p">]</span>  <span class="c"># degrees, platform angle</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+            <span class="c">#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;WaveDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])</span>
+            <span class="n">dlc</span> <span class="o">=</span> <span class="n">GenericRunCase</span><span class="p">(</span><span class="s">&quot;runAero-testcase</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;PlatformDir&#39;</span><span class="p">,</span><span class="s">&#39;AnalTime&#39;</span><span class="p">,</span> <span class="s">&#39;Vhub&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">tmax</span><span class="p">,</span><span class="n">vhub</span><span class="p">])</span>
+<span class="c">#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])</span>
+<span class="c">#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">dlc</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+            <span class="n">results_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filedict</span><span class="p">[</span><span class="s">&#39;run_dir&#39;</span><span class="p">],</span><span class="n">dlc</span><span class="o">.</span><span class="n">case_name</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;name&quot;</span><span class="p">,</span> <span class="n">results_dir</span>
+            <span class="n">rr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">getResults</span><span class="p">([</span><span class="s">&quot;RotPwr&quot;</span><span class="p">,</span> <span class="s">&quot;TwrBsMxt&quot;</span><span class="p">],</span> <span class="n">results_dir</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xs</span><span class="p">)):</span>
+            <span class="k">print</span> <span class="n">xs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">openFAST_test</span><span class="p">()</span>
+<span class="c">#    designFAST_test()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Sep 23, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
