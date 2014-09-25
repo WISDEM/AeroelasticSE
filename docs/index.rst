@@ -5,7 +5,7 @@ AeroelasticSE
 
 This python code forms a wrapper for the NWTC codes `FAST <https://wind.nrel.gov/designcodes/simulators/fast/>`_ and TurbSim.
 
-Author: `Peter Graf <mailto:peter.graf@nrel.gov>`_ and many others.
+Authors: `Peter Graf <mailto:peter.graf@nrel.gov>`_,  `Katherine Dykes <mailto:katherine.dykes@nrel.gov>`_  and many others.
 
 ..
   High-level overview of code.  Probably just a few paragraphs.  Math can be added using :math:`\exp^x`, you can refer to other sections like :ref:`theory`, and link to the web like `f2py <http://www.scipy.org/F2py/>`_.

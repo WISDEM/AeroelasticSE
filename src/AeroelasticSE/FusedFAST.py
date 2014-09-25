@@ -311,7 +311,6 @@ def openFAST_test():
     if (case == 1):
         for x in [10,16,20]:
             dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
-        #        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
             w.inputs = dlc
             w.execute()
     elif case == 2:
@@ -321,10 +320,7 @@ def openFAST_test():
 #        xs=[10,20,30]   # m/s!, vhub
         xs = [0,30,60, 90]  # degrees, platform angle
         for x in xs:
-            #            dlc = GenericRunCase("runAero-testcase%d" % x, ['WaveDir','AnalTime', 'Vhub'], [x,tmax,vhub])
             dlc = GenericRunCase("runAero-testcase%d" % x, ['PlatformDir','AnalTime', 'Vhub'], [x,tmax,vhub])
-#            dlc = GenericRunCase("runAero-testcase%d" % x, ['Vhub','AnalTime'], [x,tmax])
-#        dlc = FASTRunCase("runAero-testcase%d" % x, {'Vhub':x, 'AnalTime':tmax}, {})
             w.inputs = dlc
             w.execute()
             results_dir = os.path.join(filedict['run_dir'],dlc.case_name)
