@@ -358,7 +358,6 @@
     <span class="k">if</span> <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">20</span><span class="p">]:</span>
             <span class="n">dlc</span> <span class="o">=</span> <span class="n">GenericRunCase</span><span class="p">(</span><span class="s">&quot;runAero-testcase</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;Vhub&#39;</span><span class="p">,</span><span class="s">&#39;AnalTime&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">tmax</span><span class="p">])</span>
-        <span class="c">#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})</span>
             <span class="n">w</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">dlc</span>
             <span class="n">w</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
     <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -368,10 +367,7 @@
 <span class="c">#        xs=[10,20,30]   # m/s!, vhub</span>
         <span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span> <span class="mi">90</span><span class="p">]</span>  <span class="c"># degrees, platform angle</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
-            <span class="c">#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;WaveDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])</span>
             <span class="n">dlc</span> <span class="o">=</span> <span class="n">GenericRunCase</span><span class="p">(</span><span class="s">&quot;runAero-testcase</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;PlatformDir&#39;</span><span class="p">,</span><span class="s">&#39;AnalTime&#39;</span><span class="p">,</span> <span class="s">&#39;Vhub&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">tmax</span><span class="p">,</span><span class="n">vhub</span><span class="p">])</span>
-<span class="c">#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])</span>
-<span class="c">#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})</span>
             <span class="n">w</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">dlc</span>
             <span class="n">w</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
             <span class="n">results_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filedict</span><span class="p">[</span><span class="s">&#39;run_dir&#39;</span><span class="p">],</span><span class="n">dlc</span><span class="o">.</span><span class="n">case_name</span><span class="p">)</span>
@@ -423,7 +419,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, NREL.
-      Last updated on Sep 23, 2014.
+      Last updated on Sep 25, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

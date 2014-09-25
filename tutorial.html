@@ -52,9 +52,21 @@
             
   <div class="section" id="tutorial">
 <span id="tutorial-label"></span><h1>2. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<p>The following examples are called as test cases in the modules  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runFAST" title="AeroelasticSE.runFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runFAST</span></tt></a>),   (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runTurbSim" title="AeroelasticSE.runTurbSim"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runTurbSim</span></tt></a>),  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.FusedFAST" title="AeroelasticSE.FusedFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FusedFAST</span></tt></a>),  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.iecApp" title="AeroelasticSE.iecApp"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.iecApp</span></tt></a>),</p>
+<p>The following examples are called as test cases in the modules  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runFAST" title="AeroelasticSE.runFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runFAST</span></tt></a>,  <a class="reference internal" href="documentation.html#module-AeroelasticSE.runTurbSim" title="AeroelasticSE.runTurbSim"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runTurbSim</span></tt></a>,  <a class="reference internal" href="documentation.html#module-AeroelasticSE.FusedFAST" title="AeroelasticSE.FusedFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FusedFAST</span></tt></a>, <a class="reference internal" href="documentation.html#module-AeroelasticSE.FAST_component" title="AeroelasticSE.FAST_component"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FAST_component</span></tt></a>, <a class="reference internal" href="documentation.html#module-AeroelasticSE.iecApp" title="AeroelasticSE.iecApp"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.iecApp</span></tt></a>).</p>
 <div class="section" id="running-fast-one-time">
 <h2>2.1. running FAST one time<a class="headerlink" href="#running-fast-one-time" title="Permalink to this headline">¶</a></h2>
+<p>The FAST wrapper implemented in <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt> adopts a &#8220;template-based&#8221; approach to running FAST.  That is,
+the user is expected to have access to a previously prepared directory containing working FAST input files (e.g., such that
+FAST could be run from the command line in that directory).  Then, to use the WISDEM FAST wrapper, the user
+just needs to point WISDEM to that directory, and to the FAST executable, and to the particular &#8220;main&#8221; FAST
+input file (e.g., the &#8221;.fst&#8221; file).  The code then parses the input files into python dictionaries.  The python user
+drives FAST by modifying the contents of these input files, then allowing the wrapper to rewrite these input files
+and run FAST.  Everything except the modification of the dictionary is hidden from the user, resulting in a
+<cite>pythonic</cite> interface.</p>
+<p>(Note: a &#8220;Variable-tree&#8221; based approach, in which the entire turbine
+is represented as an openMDAO <tt class="docutils literal"><span class="pre">VariableTree</span></tt> object, is described in <a class="reference internal" href="documentation.html#module-AeroelasticSE.FSTTemplate_runner" title="AeroelasticSE.FSTTemplate_runner"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FSTTemplate_runner</span></tt></a>.)</p>
+<p>The following code, found at the bottom of <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt>, illustrates to basic process of running FAST via
+the template based approach of <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt>.</p>
 <div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time &quot;&quot;&quot;
     fast = runFAST()
     fast.fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
@@ -91,19 +103,28 @@
     print max(out)
 </pre></div>
 </div>
+<p>To run it successfully, you should edit the file (or copy the example to a new file)
+and change the <tt class="docutils literal"><span class="pre">.fst_exe</span></tt>, <tt class="docutils literal"><span class="pre">.fst_dir</span></tt>, <tt class="docutils literal"><span class="pre">.fst_file</span></tt>, and <tt class="docutils literal"><span class="pre">.run_dir</span></tt> fields of
+the <tt class="docutils literal"><span class="pre">runFast</span></tt> object
+to reflect the location of your FAST executable and template input files.</p>
+<p>Then run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python runFAST.py
+</pre></div>
+</div>
 <p>This will print something like:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">max</span> <span class="n">power</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="mf">11840.0</span>
 </pre></div>
 </div>
 <p>Run:</p>
-<div class="highlight-python"><div class="highlight"><pre>python runFAST.py --help
+<div class="highlight-python"><div class="highlight"><pre>python runFAST.py -t
 </pre></div>
 </div>
-<p>to see options for this example.</p>
+<p>to run TurbSim first, then FAST.</p>
 </div>
 <div class="section" id="running-turbsim-one-time">
 <h2>2.2. running TurbSim one time<a class="headerlink" href="#running-turbsim-one-time" title="Permalink to this headline">¶</a></h2>
+<p>There is a similar example for TurbSim in <tt class="xref py py-mod docutils literal"><span class="pre">TurbSim.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; simple example usage &quot;&quot;&quot;
     from AeroelasticSE.runTurbSim import runTurbSim
 
@@ -126,9 +147,16 @@
     ts.execute()
 </pre></div>
 </div>
+<p>Again note, the user is required to specify
+<tt class="docutils literal"><span class="pre">.ts_exe</span></tt>, <tt class="docutils literal"><span class="pre">.ts_dir</span></tt>, <tt class="docutils literal"><span class="pre">.ts_file</span></tt>, and <tt class="docutils literal"><span class="pre">.run_dir</span></tt>
+fields for the <tt class="docutils literal"><span class="pre">TurbSim</span></tt> object.</p>
 </div>
 <div class="section" id="running-fusedfast">
 <h2>2.3. running FusedFAST<a class="headerlink" href="#running-fusedfast" title="Permalink to this headline">¶</a></h2>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">FusedFAST</span></tt> uses the <tt class="xref py py-mod docutils literal"><span class="pre">fusedwind</span></tt> framework.  The input to the code is in the form of
+<tt class="docutils literal"><span class="pre">GenericRunCase</span></tt> objects.  These represent inputs in a simple, generic way that is independent of any particular
+turbine code.  The <tt class="docutils literal"><span class="pre">FusedFAST</span></tt> object translates these to a form required by <tt class="docutils literal"><span class="pre">FAST</span></tt> and then runs
+<tt class="docutils literal"><span class="pre">FAST</span></tt>.</p>
 <div class="highlight-python"><div class="highlight"><pre>    # in real life these come from an input file:
     filedict = {&#39;ts_exe&#39; : &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;,
                 &#39;ts_dir&#39; : &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;,
@@ -146,7 +174,6 @@
     if (case == 1):
         for x in [10,16,20]:
             dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])
-        #        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})
             w.inputs = dlc
             w.execute()
     elif case == 2:
@@ -156,10 +183,7 @@
 #        xs=[10,20,30]   # m/s!, vhub
         xs = [0,30,60, 90]  # degrees, platform angle
         for x in xs:
-            #            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;WaveDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])
             dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;PlatformDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])
-#            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])
-#        dlc = FASTRunCase(&quot;runAero-testcase%d&quot; % x, {&#39;Vhub&#39;:x, &#39;AnalTime&#39;:tmax}, {})
             w.inputs = dlc
             w.execute()
             results_dir = os.path.join(filedict[&#39;run_dir&#39;],dlc.case_name)
@@ -180,6 +204,9 @@ if __name__==&quot;__main__&quot;:
 </div>
 <div class="section" id="running-fast-component">
 <h2>2.4. running FAST_component<a class="headerlink" href="#running-fast-component" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">FAST_component</span></tt> presents <tt class="docutils literal"><span class="pre">runFAST</span></tt> as an openMDAO <tt class="docutils literal"><span class="pre">Component</span></tt>.
+It forms a base class for FAST wrappers that utilize the openMDAO input and output
+conventions, while still utilizing a template input file-based approach to FAST.</p>
 <div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time
     This component could now be used in an openMDAO Assembly that took 
     wind and rotor speed as input, delivered power production at that wind/rotor speed as output.&quot;&quot;&quot;
@@ -205,6 +232,8 @@ if __name__==&quot;__main__&quot;:
 </div>
 <div class="section" id="running-fast-iter-component">
 <h2>2.5. running FAST_iter_component<a class="headerlink" href="#running-fast-iter-component" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">FAST_iter_component</span></tt> allows FAST to be run multiple times  (e.g. for making a power curve)
+in a very simple manner.</p>
 <div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; This example uses the MyFAST_iter_component to create a simple power curve.
     This component could now be used in an openMDAO Assembly that dealt with
     wind/rotor-speed curves as input, and power-curves as output.&quot;&quot;&quot;
@@ -231,6 +260,65 @@ if __name__==&quot;__main__&quot;:
 </pre></div>
 </div>
 </div>
+<div class="section" id="running-iecapp">
+<h2>2.6. running iecApp<a class="headerlink" href="#running-iecapp" title="Permalink to this headline">¶</a></h2>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">iecApp</span></tt> uses the <tt class="xref py py-mod docutils literal"><span class="pre">fusedwind</span></tt> framework to run large numbers of FAST cases for, e.g., IEC standards
+analysis. The input to the code is a text file containing a table of
+run cases.</p>
+<p>To run this code, first prepare a file of cases, e.g. <tt class="docutils literal"><span class="pre">some_cases.txt</span></tt> and a file of control input, e.g.  <tt class="docutils literal"><span class="pre">runbatch-control</span></tt>.
+Examples of these:</p>
+<div class="highlight-python"><div class="highlight"><pre>(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more some_cases.txt
+AnalTime Vhub Hs Tp WaveDir Prob
+3.00e+00 1.00e+01 1.59e+00 1.14e+01 -1.01e+00  1.70e-02
+3.00e+00 1.02e+01 9.49e-01 8.37e+00 -9.48e-01  4.88e-03
+3.00e+00 9.95e+00 1.81e+00 1.14e+01 -4.38e-01  1.78e-02
+3.00e+00 8.87e+00 1.49e+00 1.37e+01 2.29e-03  7.63e-03
+3.00e+00 9.05e+00 1.25e+00 1.09e+01 -1.71e+00  5.62e-03
+# in reality this file might have thousands of cases...
+
+(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more runbatch-control.txt
+# key = value file of locations of various files to read and
+# to write
+# and for output keys.
+# and misc. control functionality
+main_output_file = &quot;runbatch.out&quot;
+output_keys =  RootMxc1  RootMyc1
+output_operations = rf np.std max
+ts_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;
+ts_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;
+ts_file = &quot;TurbSim.inp&quot;
+fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+fst_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.almostorig&quot;
+fst_file = &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;
+run_dir = &quot;all_runs&quot;
+</pre></div>
+</div>
+<p>The cases file is a simple table of FAST input variable to change.  These are translated to FAST &#8220;language&#8221; (e.g.
+<tt class="docutils literal"><span class="pre">AnalTime</span></tt> becomes <tt class="docutils literal"><span class="pre">Tmax</span></tt>) by the software.  The keys in the control file are all self-explanatory except for
+<tt class="docutils literal"><span class="pre">output_operations</span></tt>.  These are the names of python functions that will be applied to the output array to reduce the
+time sequence for each sensor to a single scalar.  These can be arbitrary python <tt class="docutils literal"><span class="pre">&lt;module&gt;.&lt;function_name&gt;</span></tt> directives.  So,
+for example if you had a custom postprocessor function <tt class="docutils literal"><span class="pre">reduce_data</span></tt> in module <tt class="docutils literal"><span class="pre">mystudy</span></tt> you would use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">output_operations</span> <span class="o">=</span> <span class="n">mystudy</span><span class="o">.</span><span class="n">reduce_data</span>
+</pre></div>
+</div>
+<p>Here the function <tt class="docutils literal"><span class="pre">reduce_data</span></tt> accepts a numpy array and returns a scalar.
+Run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python iecApp.py -i some_cases.txt -f runbatch-control.txt
+</pre></div>
+</div>
+<p>Hopefully you will see FAST running many times, resulting in stdout like:</p>
+<div class="highlight-python"><div class="highlight"><pre>RUNS ARE DONE:
+collecting output from copied-back files (not from case recorder), see runbatch.out
+processing case &lt;fusedwind.runSuite.runCase.GenericRunCase object at 0x103e1af50&gt;
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.0Hs.1.6Vhu.10.0Tp.11.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.9Hs.0.9Vhu.10.2Tp.8.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.4Hs.1.8Vhu.10.0Tp.11.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.0.0Hs.1.5Vhu.8.9Tp.13.7Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.7Hs.1.3Vhu.9.1Tp.10.9Pro.0.0
+</pre></div>
+</div>
+<p>and a file <tt class="docutils literal"><span class="pre">runbatch.out</span></tt> with the output in the form of a space separated text file table.</p>
+</div>
 </div>
 
 
@@ -247,6 +335,7 @@ if __name__==&quot;__main__&quot;:
 <li><a class="reference internal" href="#running-fusedfast">2.3. running FusedFAST</a></li>
 <li><a class="reference internal" href="#running-fast-component">2.4. running FAST_component</a></li>
 <li><a class="reference internal" href="#running-fast-iter-component">2.5. running FAST_iter_component</a></li>
+<li><a class="reference internal" href="#running-iecapp">2.6. running iecApp</a></li>
 </ul>
 </li>
 </ul>
@@ -296,7 +385,7 @@ if __name__==&quot;__main__&quot;:
     </div>
     <div class="footer">
         &copy; Copyright 2014, NREL.
-      Last updated on Sep 23, 2014.
+      Last updated on Sep 25, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

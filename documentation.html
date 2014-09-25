@@ -577,50 +577,6 @@ the turbine comes from this more structured representation (compared to the temp
 <h2>3.6. Run IEC<a class="headerlink" href="#run-iec" title="Permalink to this headline">¶</a></h2>
 <p>This code can run and process a whole study of many run cases, including in parallel on a
 compute cluster.</p>
-<p>First prepare a file of cases, e.g. <tt class="docutils literal"><span class="pre">some_cases.txt</span></tt> and a file of control input, e.g.  <tt class="docutils literal"><span class="pre">runbatch-control</span></tt>.
-Examples of these:</p>
-<div class="highlight-python"><div class="highlight"><pre>(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more some_cases.txt
-AnalTime Vhub Hs Tp WaveDir Prob
-3.00e+00 1.00e+01 1.59e+00 1.14e+01 -1.01e+00  1.70e-02
-3.00e+00 1.02e+01 9.49e-01 8.37e+00 -9.48e-01  4.88e-03
-3.00e+00 9.95e+00 1.81e+00 1.14e+01 -4.38e-01  1.78e-02
-3.00e+00 8.87e+00 1.49e+00 1.37e+01 2.29e-03  7.63e-03
-3.00e+00 9.05e+00 1.25e+00 1.09e+01 -1.71e+00  5.62e-03
-# in reality this file might have thousands of cases...
-
-(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more runbatch-control.txt
-# key = value file of locations of various files to read and
-# to write
-# and for output keys.
-# and misc. control functionality
-main_output_file = &quot;runbatch.out&quot;
-output_keys =  RootMxc1  RootMyc1
-output_operations = rf np.std max
-ts_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;
-ts_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;
-ts_file = &quot;TurbSim.inp&quot;
-fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
-fst_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.almostorig&quot;
-fst_file = &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;
-run_dir = &quot;all_runs&quot;
-</pre></div>
-</div>
-<p>Run:</p>
-<div class="highlight-python"><div class="highlight"><pre>python iecApp.py -i some_cases.txt -f runbatch-control.txt
-</pre></div>
-</div>
-<p>Hopefully you will see FAST running many times, resulting in stdout like:</p>
-<div class="highlight-python"><div class="highlight"><pre>RUNS ARE DONE:
-collecting output from copied-back files (not from case recorder), see runbatch.out
-processing case &lt;fusedwind.runSuite.runCase.GenericRunCase object at 0x103e1af50&gt;
-collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.0Hs.1.6Vhu.10.0Tp.11.4Pro.0.0
-collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.9Hs.0.9Vhu.10.2Tp.8.4Pro.0.0
-collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.4Hs.1.8Vhu.10.0Tp.11.4Pro.0.0
-collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.0.0Hs.1.5Vhu.8.9Tp.13.7Pro.0.0
-collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.7Hs.1.3Vhu.9.1Tp.10.9Pro.0.0
-</pre></div>
-</div>
-<p>and a file <tt class="docutils literal"><span class="pre">runbatch.out</span></tt> with the output in the form of a space separated text file table.</p>
 <span class="target" id="module-AeroelasticSE.iecApp"></span><dl class="function">
 <dt id="AeroelasticSE.iecApp.rundlcs">
 <tt class="descclassname">AeroelasticSE.iecApp.</tt><tt class="descname">rundlcs</tt><big>(</big><em>envcmd=None</em><big>)</big><a class="reference internal" href="_modules/AeroelasticSE/iecApp.html#rundlcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.iecApp.rundlcs" title="Permalink to this definition">¶</a></dt>
@@ -697,7 +653,7 @@ collect and save output</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, NREL.
-      Last updated on Sep 23, 2014.
+      Last updated on Sep 25, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
