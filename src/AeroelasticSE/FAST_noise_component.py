@@ -8,9 +8,9 @@ import os
 import numpy as np
 from openmdao.main.datatypes.api import Array
 
-from FAST_component import FAST_iter_component
+from FAST_component import MyFAST_iter_component, MyFAST_component
 
-class FAST_noise_component(FAST_iter_component):
+class FAST_noise_component(MyFAST_iter_component):
     """ Just do the noise run
 
     Returns
@@ -29,76 +29,57 @@ class FAST_noise_component(FAST_iter_component):
     soundPressureLevels = Array(np.array([[4.0,50.0],[13.0,50.0]]), iotype='out', desc='Maximum sound pressure level by wind speed') # units = 'dB',
 
 
-    def __init__(self, geometryaero=None, atmosphere=None, adpath=None, debug=False):
+    def __init__(self,fst_exe, fst_dir, fst_file, run_dir):
 
-        super(FAST_noise_component,self).__init__( geometryaero, atmosphere, adpath, debug)
+        super(FAST_noise_component,self).__init__(fst_exe, fst_dir, fst_file, run_dir)
 
 #   - - - - -
 
     def execute(self):
         """ execute the `runFAST` model and look up the SPL """
-
-        print "In {0}.execute() ...".format(self.__class__)
-
-        #self.soundPressureLevels = np.copy(self.rotorSpeedCurve)
         # run the model, copy its output to self
-        self.soundPressureLevels = np.zeros((2, len(self.rotorSpeedCurve[0])))
-        ws = np.round(self.rotorSpeedCurve[0,0])
-        if ws < self.rotorSpeedCurve[0,0]:
-        	  ws += 1.0
-        counter = 0
-        for i in xrange(0,self.rotorSpeedCurve.shape[1]):
-            if (self.rotorSpeedCurve[0,i] >= ws):
-               self.myModel.set_ws(self.rotorSpeedCurve[0,i])
-               self.myModel.set_rpm(self.rotorSpeedCurve[1,i])
-               self.myModel.execute()
-               self.soundPressureLevels[0,counter]=self.rotorSpeedCurve[0,i]
-               self.soundPressureLevels[1,counter]=self.myModel.getSPL()
-               ws += 1.0
-               counter += 1
+        # run the model
+        nspeeds = len(self.rotorSpeedCurve[0])
+        self.soundPressureLevels = np.zeros(nspeeds)
+        for i in range(nspeeds):
+            self.Vhub = self.rotorSpeedCurve[0,i]
+            self.RotSpeed = self.rotorSpeedCurve[1,i]
 
+            fstDict = {}
+            fstDict['Vhub'] = self.Vhub
+            fstDict['RotSpeed'] = self.RotSpeed
+            fstDict['TMax'] = self.TMax
+            fstDict['TStart'] = self.TStart
+            self.myfast.fstDict = fstDict
+            self.myfast.execute()
+#            MyFAST_component.execute(self)
+            self.soundPressureLevels[i] = self.myfast.getSPL()
 
 if __name__=="__main__":
+    fst_exe = "/Users/pgraf/opt/windcode-7.31.13/build/FAST_regular_glin64"
+    #    fast.fst_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/"  ## either abs or rel path ok.
+    fst_dir = "ModelFiles/Noise_Files/"
+    fst_file = "NREL5MW_Monopile_Rigid.v7.02.fst"  ## should _not_ be full path
 
-    from rotor_cst_component import GeometryAero, Atmosphere
+    run_dir = "new_run_dir"  ## either abs or rel path ok
+#   run_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir"
 
-    #compdir = os.path.dirname(os.path.realpath(__file__))
-    #afpath = os.path.join(compdir,"../inputFiles/airfoils/5MWRef/" )
-    #kld - hack of airfoil location
-    afpath = 'C:/Models/FAST/airfoils/5MWRef/'
+    fast = FAST_noise_component(fst_exe, fst_dir, fst_file, run_dir)
+    fast.TMax = 4
+    fast.TStart = 0
 
-    geometryVT = GeometryAero(afpath=afpath)
+    # test code
+    fast.rotorSpeedCurve = [[4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0],\
+                            [7.2, 7.5, 7.9, 8.4, 9.1, 10.1, 11.3, 11.9]]
 
-    ## now do interpolation, because Andrew's default 5MW is just at 5 widely spaced points on blade.
-    geometryVT.chord, geometryVT.theta = geometryVT.interpToAFStations()
-    tip = geometryVT.r[-1]
-    geometryVT.r = tip * geometryVT.r_af
-    ## now done interpolation
-    
-    atmVT = Atmosphere()
-    fast = FAST_noise_component(geometryaero=geometryVT, atmosphere=atmVT, debug=True)
-
-    #drivetrain = csmDriveEfficiency(1)
-    #fast.drivetrain = drivetrain
-
-    # Override the default values in runFAST.py here
-
-    # fast.myModel.noise_file = '*.ipt'
-    # fast.myModel.blade_file = '*.dat'
-    # fast.myModel.ad_file    = '*.ad'
-    # fast.myModel.fast_file  = '*.fst'
-    # fast.myModel.fastpath = ''
-    # fast.myModel.fastexe = '*.exe'
-    # fast.myModel.template_path = ' '
-    # fast.myModel.model_path = ' '
 
     # baseline
-    fast.rotorSpeedCurve = [[4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, \
+    '''fast.rotorSpeedCurve = [[4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, \
                              11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, \
                              18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0], \
                             [7.2, 7.5, 7.9, 8.4, 9.1, 10.1, 11.3, \
                              11.9, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2, \
-                             12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2]]
+                             12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2, 12.2]]'''
 
     # 80 opt
     #fast.rotorSpeedCurve = [[25.0], [12.2]]
@@ -129,13 +110,8 @@ if __name__=="__main__":
 
     fast.execute()
 
-    print "Sound Pressure Levels: "
-    print fast.soundPressureLevels
-    spd = fast.soundPressureLevels[0]
-    db = fast.soundPressureLevels[1]
-    fout = file("soundLevels.dat", "w")
-    fout.write("# rotorSpeed   Decibals\n")
-    for i in range(0,len(spd)):
-        fout.write("%f %f\n" % (spd[i], db[i]))
-    fout.close()
-    #print "Rated wind speed: {0}".format(fast.ratedWindSpeed)
+    print "Sound Pressure Levels:"
+    print "Vhub   RotSpeed    Decibals"
+    for i in range(len(fast.soundPressureLevels)):
+        print fast.rotorSpeedCurve[0][i],  fast.rotorSpeedCurve[1][i],  fast.soundPressureLevels[i]
+

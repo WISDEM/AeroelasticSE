@@ -836,10 +836,17 @@ def example():
     if (case==1):
     #    fast.fst_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/"  ## either abs or rel path ok.
         fast.fst_dir = "ModelFiles/OC3_Files/"
-        fast.fst_file = "NRELOffshrBsline5MW_Monopile_RF.fst"  ## should _not_ be full path
-    else:
+        fast.fst_file = "NRELOffshrBsline5MW_Monopile_RF.fst"  ## should _not_ be full path, is in relation to fst_dir
+    elif case == 2:
         fast.fst_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig"
         fast.fst_file = "NRELOffshrBsline5MW_Floating_OC3Hywind.fst"
+    elif case == 3:
+        fast.fst_exe = "/Users/pgraf/opt/windcode-7.31.13/build/FAST_regular_glin64"
+        fast.fst_dir = "ModelFiles/Noise_Files/"
+        fast.fst_file = "NREL5MW_Monopile_Rigid.v7.02.fst"  
+    else:
+        print "unknown test case for runFAST.py"
+        sys.exit()
 
     fast.run_dir = "new_run_dir"  ## either abs or rel path ok
 #    fast.run_dir = "/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir"

@@ -7,6 +7,17 @@ Tutorial
 
 The following examples are called as test cases in the modules  (:mod:`AeroelasticSE.runFAST`,  :mod:`AeroelasticSE.runTurbSim`,  :mod:`AeroelasticSE.FusedFAST`, :mod:`AeroelasticSE.FAST_component`, :mod:`AeroelasticSE.iecApp`).
 
+For all but the VariableTree based approach, FAST is run via "template" input files, whereby the user sets up a working FAST
+input deck, and the python wrapper parses and manipulates the data in these files.  
+
+For the most part, this is all accomplished by python dictionaries, easily modified to set parameters in a custom fashion.  The exceptions
+to this rule regard file names.  The need to accomodate cross-platform file names necessitates a slightly more careful treatment.  For example,
+files written as `AFDIR\afname.dat` need to be correctly parsed such that on linux and mac they end up as `AFDIR/afname.dat`.
+
+But for the most part the interface is by setting up a working FAST input set, then addressing the variables of the input
+programmically in python via dictionaries.  Some of the several scenarios are described below.
+
+
 running FAST one time
 ---------------------
 

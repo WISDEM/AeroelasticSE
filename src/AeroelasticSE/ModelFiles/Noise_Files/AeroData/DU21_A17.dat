@@ -1,16 +1,17 @@
-AeroDyn airfoil file.  Compatible with AeroDyn v13.0.
 DU21 airfoil with an aspect ratio of 17.  Original -180 to 180deg Cl, Cd, and Cm versus AOA data taken from Appendix A of DOWEC document 10046_009.pdf (numerical values obtained from Koert Lindenburg of ECN).
 Cl and Cd values corrected for rotational stall delay and Cd values corrected using the Viterna method for 0 to 90deg AOA by Jason Jonkman using AirfoilPrep_v2p0.xls.
-1        Number of airfoil tables in this file
-9.99e9   Reynolds number in millions.  For efficiency, make very large if only one table.
-0.0      Control Setting
-8.00     Stall angle (deg)
--5.0609  Zero Cn angle of attack (deg)
-6.2047   Cn slope for zero lift (dimensionless)
-1.4144   Cn extrapolated to value at positive stall angle of attack
--0.5324  Cn at stall value for negative angle of attack
--1.50    Angle of attack for minimum CD (deg)
-0.0057   Minimum CD value
+   1        Number of airfoil tables in this file
+   0.0      Table ID parameter
+   8.00     Stall angle (deg)
+   0.0      No longer used, enter zero
+   0.0      No longer used, enter zero
+   0.0      No longer used, enter zero
+  -5.0609   Zero Cn angle of attack (deg)
+   6.2047   Cn slope for zero lift (dimensionless)
+   1.4144   Cn extrapolated to value at positive stall angle of attack
+  -0.5324   Cn at stall value for negative angle of attack
+  -1.50     Angle of attack for minimum CD (deg)
+   0.0057   Minimum CD value
 -180.00    0.000   0.0185   0.0000
 -175.00    0.394   0.0332   0.1978
 -170.00    0.788   0.0945   0.3963
@@ -153,4 +154,5 @@ Cl and Cd values corrected for rotational stall delay and Cd values corrected us
  170.00   -0.788   0.0969  -0.3966
  175.00   -0.394   0.0334  -0.1978
  180.00    0.000   0.0185   0.0000
- EOT
+
+
