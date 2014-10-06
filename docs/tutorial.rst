@@ -169,3 +169,26 @@ Hopefully you will see FAST running many times, resulting in stdout like::
 
 and a file ``runbatch.out`` with the output in the form of a space separated text file table.
 
+
+running FSTVT_runner
+----------------------
+
+An example use of the variable tree version of the FAST aeroelastic code wrapper is provided in FSTVT_runner.py.  The code sets up a FAST variable tree from a set of template files for the NREL 5 MW fast turbine; it then updates the environmental variables for wind conditions and runs through cases for those conditions.  First we import the necessary files and set up our case FAST case iterator class.
+
+
+.. literalinclude:: ..src/AeroelasticSE/FAST_VT/FSTVT_runner.py
+    :start-after: # 1 ---
+    :end-before: # 1 ---
+
+Then we create the cases from FUSED-Wind for the environmental conditions of interest.
+
+.. literalinclude:: examples/example.py
+    :start-after: # 2 ---
+    :end-before: # 2 ---
+
+We then run those cases.
+
+
+.. literalinclude:: examples/example.py
+    :start-after: # 3 ---
+    :end-before: # 3 ---

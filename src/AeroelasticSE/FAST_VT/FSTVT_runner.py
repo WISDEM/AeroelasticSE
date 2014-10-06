@@ -3,6 +3,7 @@ The variable tree is a generic (wind-code agnostic) and hierarchical structural 
 of a modern wind turbine. 
 This module is a very simple tutorial example of reading in a FAST file into a set of variable trees, manipulating environmental conditions and updating the variable trees, then writing a new set of FAST files and running FAST for multiple environmental cases.
 """
+# 1 ---------
 
 import os
 
@@ -14,6 +15,9 @@ from FSTVT_runIEC import FUSEDFSTCaseRunner
 
 
 iec = FUSEDIECCaseIterator()
+
+# 1 ---------
+# 2 ---------
 
 for w in [10, 12]:
     c = IECRunCaseBaseVT()
@@ -31,4 +35,9 @@ iec.sequential = True
 print [c.name for c in iec.driver.workflow]
 print [c.name for c in iec.runner.driver.workflow]
 
+# 2 ---------
+# 3 ---------
+
 iec.run()
+
+# 3 ---------
