@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>AeroelasticSE.iecApp &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for AeroelasticSE.iecApp</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runCase</span> <span class="kn">import</span> <span class="n">GenericRunCaseTable</span>
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runBatch</span> <span class="kn">import</span> <span class="n">get_options</span><span class="p">,</span> <span class="n">parse_input</span><span class="p">,</span> <span class="n">CaseAnalyzer</span>
+
+<span class="c">#from peregrineallocators import ClusterAllocator</span>
+<span class="kn">from</span> <span class="nn">openmdao.main.resource</span> <span class="kn">import</span> <span class="n">ResourceAllocationManager</span> <span class="k">as</span> <span class="n">RAM</span>
+
+<span class="kn">from</span> <span class="nn">FusedFAST</span> <span class="kn">import</span> <span class="n">openFAST</span> 
+
+<span class="c"># this is a callback function used in processing output.</span>
+<span class="c"># see fusedwind.runSuite.runBatch.py, &quot;output_operations&quot;</span>
+<span class="k">def</span> <span class="nf">rf</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+    <span class="c"># import python version of rainflow algorithm</span>
+    <span class="kn">from</span> <span class="nn">rainflow</span> <span class="kn">import</span> <span class="n">rain_one</span>
+    <span class="c"># wrapper for rainflow algorithm</span>
+    <span class="c"># rain_one(column of data, exponent in final load calculation)</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">rain_one</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span>
+
+<span class="c">## main function that opens input, runs cases, writes output, ie. whole thing.</span>
+<span class="k">def</span> <span class="nf">rundlcs</span><span class="p">(</span><span class="n">envcmd</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="rundlcs"><a class="viewcode-back" href="../../documentation.html#AeroelasticSE.iecApp.rundlcs">[docs]</a>    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    run the whole process, including startup and shutdown</span>
+<span class="sd">    to do:</span>
+<span class="sd">    parse input</span>
+<span class="sd">    create load cases</span>
+<span class="sd">    create app assembly</span>
+<span class="sd">    create dispatcher</span>
+<span class="sd">    send cases and app to dispatcher</span>
+<span class="sd">    run cases</span>
+<span class="sd">    collect and save output</span>
+
+<span class="sd">    envcmd: a text string cmd (e.g. &#39;source env.sh&#39;) to set up the environment for the cluster allocator</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+
+    <span class="n">options</span><span class="p">,</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">get_options</span><span class="p">()</span>
+    <span class="n">ctrl</span> <span class="o">=</span> <span class="n">parse_input</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="c"># ctrl will be just the input, but broken up into separate categories, e.g.</span>
+    <span class="c"># ctrl.cases, ctrl.app, ctrl.dispatch, ...</span>
+
+    <span class="c"># work in progress; running efficiently at NREL.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">cluster_allocator</span><span class="p">):</span>
+<span class="c">#        cluster=ClusterAllocator()</span>
+<span class="c">### never had the guts to try this yet!</span>
+<span class="c">#        env = os.environ</span>
+<span class="c">#        fname = &quot;%s/.env.sh&quot; % (env[&#39;HOME&#39;])</span>
+<span class="c">#        fout = file(fname, &quot;w&quot;)</span>
+<span class="c">#        for key in env:</span>
+<span class="c">#            fout.write(&quot;export %s=%s\n&quot; % (key,env[key]))</span>
+<span class="c">#        fout.close()</span>
+<span class="c">###</span>
+        <span class="k">if</span> <span class="n">envcmd</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cluster</span><span class="o">=</span><span class="n">ClusterAllocator</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cluster</span><span class="o">=</span><span class="n">ClusterAllocator</span><span class="p">(</span><span class="n">use_modules</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">beforestart</span><span class="o">=</span><span class="n">envcmd</span><span class="p">)</span>        
+<span class="c">#        cluster=ClusterAllocator(use_modules=False, beforestart=&quot;. %s;&quot; % fname)        </span>
+        <span class="n">RAM</span><span class="o">.</span><span class="n">remove_allocator</span><span class="p">(</span><span class="s">&#39;LocalHost&#39;</span><span class="p">)</span>
+        <span class="n">RAM</span><span class="o">.</span><span class="n">add_allocator</span><span class="p">(</span><span class="n">cluster</span><span class="p">)</span>
+<span class="c">#        RAM.insert_allocator(0,cluster)</span>
+            
+    <span class="c">###  using &quot;factory&quot; functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)</span>
+    <span class="c"># Then we use these to create the cases...</span>
+    <span class="n">case_params</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">cases</span>
+    <span class="n">casetab</span> <span class="o">=</span> <span class="n">GenericRunCaseTable</span><span class="p">()</span>
+    <span class="n">casetab</span><span class="o">.</span><span class="n">initFromFile</span><span class="p">(</span><span class="n">case_params</span><span class="p">[</span><span class="s">&#39;source_file&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">start_at</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">start_at</span><span class="p">)</span>
+
+    <span class="c"># solver...</span>
+    <span class="n">solver</span> <span class="o">=</span> <span class="s">&#39;FAST&#39;</span>
+<span class="c">#    solver = &#39;HAWC2&#39;</span>
+    <span class="k">if</span> <span class="n">solver</span><span class="o">==</span><span class="s">&#39;FAST&#39;</span><span class="p">:</span>
+        <span class="c">## TODO, changed when we have a real turbine</span>
+        <span class="c"># aero code stuff: for constructors</span>
+        <span class="n">aerocode</span> <span class="o">=</span> <span class="n">openFAST</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>  <span class="c">## need better name than output_params</span>
+        <span class="n">aerocode</span><span class="o">.</span><span class="n">setOutput</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s">&#39;HAWC2&#39;</span><span class="p">:</span>
+        <span class="n">aerocoe</span> <span class="o">=</span> <span class="n">openHAWC2</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">,</span> <span class="s">&quot;HAWC2 aeroecode wrapper not implemented in runBatch.py yet&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;unknown aerocode: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">solver</span>
+    
+    <span class="c"># case iterator</span>
+    <span class="n">dispatcher</span> <span class="o">=</span> <span class="n">CaseAnalyzer</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">dispatcher</span><span class="p">)</span>
+
+    <span class="c">### After this point everything should be generic, all appropriate subclass object created</span>
+    <span class="c"># # # # # # # # # # #</span>
+
+    <span class="n">dispatcher</span><span class="o">.</span><span class="n">presetup_workflow</span><span class="p">(</span><span class="n">aerocode</span><span class="p">,</span> <span class="n">casetab</span><span class="o">.</span><span class="n">cases</span><span class="p">)</span>  <span class="c"># just makes sure parts are there when configure() is called</span>
+    <span class="n">dispatcher</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+    <span class="c"># Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.</span>
+    <span class="c"># calling configure() is done inside run(). but now it is done already (above), too.</span>
+    
+    <span class="c"># norun does not write directories, but it does set us up to process them if they already exist</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">options</span><span class="o">.</span><span class="n">norun</span><span class="p">):</span>
+        <span class="n">dispatcher</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="c"># TODO:  more complexity will be needed for difference between &quot;run now&quot; and &quot;run later&quot; cases.</span>
+    <span class="n">dispatcher</span><span class="o">.</span><span class="n">collect_output</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span></div>
+    <span class="n">rundlcs</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Oct 05, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

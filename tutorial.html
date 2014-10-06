@@ -1,0 +1,445 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Tutorial &mdash; AeroelasticSE 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="AeroelasticSE 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="3. Documentation" href="documentation.html" />
+    <link rel="prev" title="1. Installation" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="3. Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="1. Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<span id="tutorial-label"></span><h1>2. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>The following examples are called as test cases in the modules  (<a class="reference internal" href="documentation.html#module-AeroelasticSE.runFAST" title="AeroelasticSE.runFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runFAST</span></tt></a>,  <a class="reference internal" href="documentation.html#module-AeroelasticSE.runTurbSim" title="AeroelasticSE.runTurbSim"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.runTurbSim</span></tt></a>,  <a class="reference internal" href="documentation.html#module-AeroelasticSE.FusedFAST" title="AeroelasticSE.FusedFAST"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FusedFAST</span></tt></a>, <a class="reference internal" href="documentation.html#module-AeroelasticSE.FAST_component" title="AeroelasticSE.FAST_component"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FAST_component</span></tt></a>, <a class="reference internal" href="documentation.html#module-AeroelasticSE.iecApp" title="AeroelasticSE.iecApp"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.iecApp</span></tt></a>).</p>
+<p>For all but the VariableTree based approach, FAST is run via &#8220;template&#8221; input files, whereby the user sets up a working FAST
+input deck, and the python wrapper parses and manipulates the data in these files.</p>
+<p>For the most part, this is all accomplished by python dictionaries, easily modified to set parameters in a custom fashion.  The exceptions
+to this rule regard file names.  The need to accomodate cross-platform file names necessitates a slightly more careful treatment.  For example,
+files written as <cite>AFDIRafname.dat</cite> need to be correctly parsed such that on linux and mac they end up as <cite>AFDIR/afname.dat</cite>.</p>
+<p>But for the most part the interface is by setting up a working FAST input set, then addressing the variables of the input
+programmically in python via dictionaries.  Some of the several scenarios are described below.</p>
+<div class="section" id="running-fast-one-time">
+<h2>2.1. running FAST one time<a class="headerlink" href="#running-fast-one-time" title="Permalink to this headline">¶</a></h2>
+<p>The FAST wrapper implemented in <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt> adopts a &#8220;template-based&#8221; approach to running FAST.  That is,
+the user is expected to have access to a previously prepared directory containing working FAST input files (e.g., such that
+FAST could be run from the command line in that directory).  Then, to use the WISDEM FAST wrapper, the user
+just needs to point WISDEM to that directory, and to the FAST executable, and to the particular &#8220;main&#8221; FAST
+input file (e.g., the &#8221;.fst&#8221; file).  The code then parses the input files into python dictionaries.  The python user
+drives FAST by modifying the contents of these input files, then allowing the wrapper to rewrite these input files
+and run FAST.  Everything except the modification of the dictionary is hidden from the user, resulting in a
+<cite>pythonic</cite> interface.</p>
+<p>(Note: a &#8220;Variable-tree&#8221; based approach, in which the entire turbine
+is represented as an openMDAO <tt class="docutils literal"><span class="pre">VariableTree</span></tt> object, is described in <a class="reference internal" href="documentation.html#module-AeroelasticSE.FSTTemplate_runner" title="AeroelasticSE.FSTTemplate_runner"><tt class="xref py py-mod docutils literal"><span class="pre">AeroelasticSE.FSTTemplate_runner</span></tt></a>.)</p>
+<p>The following code, found at the bottom of <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt>, illustrates to basic process of running FAST via
+the template based approach of <tt class="xref py py-mod docutils literal"><span class="pre">runFAST.py</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time &quot;&quot;&quot;
+    fast = runFAST()
+    fast.fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+
+    case = 1
+    if (case==1):
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+        fast.fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+        fast.fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path, is in relation to fst_dir
+    elif case == 2:
+        fast.fst_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;
+        fast.fst_file = &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;
+    elif case == 3:
+        fast.fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_regular_glin64&quot;
+        fast.fst_dir = &quot;ModelFiles/Noise_Files/&quot;
+        fast.fst_file = &quot;NREL5MW_Monopile_Rigid.v7.02.fst&quot;  
+    else:
+        print &quot;unknown test case for runFAST.py&quot;
+        sys.exit()
+
+    fast.run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#    fast.run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+
+    ## all changes to FAST input params go through dict
+    ## unless you want to change the name of the template for the sub-files (e.g. subst a different aerodyn file).  Those go through actual fields (&quot;fast.ad_file&quot;)
+    fast.fstDict[&#39;Vhub&#39;]=8.0
+    fast.fstDict[&#39;RotSpeed&#39;] = 12.03
+    fast.fstDict[&#39;TMax&#39;] = 2.0
+    fast.fstDict[&#39;TStart&#39;] = 0.0
+
+    fast.fstDict[&#39;PlatformDir&#39;] = 30.0
+
+    fast.setOutputs([&#39;RotPwr&#39;])
+
+    fast.execute()
+    out = fast.getOutputValue(&quot;RotPwr&quot;)
+
+    print fast
+    print &quot;max power&quot;
+    print max(out)
+</pre></div>
+</div>
+<p>To run it successfully, you should edit the file (or copy the example to a new file)
+and change the <tt class="docutils literal"><span class="pre">.fst_exe</span></tt>, <tt class="docutils literal"><span class="pre">.fst_dir</span></tt>, <tt class="docutils literal"><span class="pre">.fst_file</span></tt>, and <tt class="docutils literal"><span class="pre">.run_dir</span></tt> fields of
+the <tt class="docutils literal"><span class="pre">runFast</span></tt> object
+to reflect the location of your FAST executable and template input files.</p>
+<p>Then run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python runFAST.py
+</pre></div>
+</div>
+<p>This will print something like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">max</span> <span class="n">power</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mf">11840.0</span>
+</pre></div>
+</div>
+<p>Run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python runFAST.py -t
+</pre></div>
+</div>
+<p>to run TurbSim first, then FAST.</p>
+</div>
+<div class="section" id="running-turbsim-one-time">
+<h2>2.2. running TurbSim one time<a class="headerlink" href="#running-turbsim-one-time" title="Permalink to this headline">¶</a></h2>
+<p>There is a similar example for TurbSim in <tt class="xref py py-mod docutils literal"><span class="pre">TurbSim.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; simple example usage &quot;&quot;&quot;
+    from AeroelasticSE.runTurbSim import runTurbSim
+
+    ts = runTurbSim()
+    ts.ts_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;
+
+    #abs path
+    ts.ts_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;
+    ts.ts_file = &quot;TurbSim.inp&quot;
+
+    #relative path
+#    ts.ts_dir = &quot;TurbSimTest&quot;
+#    ts.ts_file = &quot;turbsim_template.inp&quot;
+
+    ts.run_dir = &quot;turbsim_test_run&quot;
+
+    ws = 12.34
+    tmax = 2
+    ts.set_dict({&quot;URef&quot;: ws, &quot;AnalysisTime&quot;:tmax, &quot;UsableTime&quot;:tmax})
+    ts.execute()
+</pre></div>
+</div>
+<p>Again note, the user is required to specify
+<tt class="docutils literal"><span class="pre">.ts_exe</span></tt>, <tt class="docutils literal"><span class="pre">.ts_dir</span></tt>, <tt class="docutils literal"><span class="pre">.ts_file</span></tt>, and <tt class="docutils literal"><span class="pre">.run_dir</span></tt>
+fields for the <tt class="docutils literal"><span class="pre">TurbSim</span></tt> object.</p>
+</div>
+<div class="section" id="running-fusedfast">
+<h2>2.3. running FusedFAST<a class="headerlink" href="#running-fusedfast" title="Permalink to this headline">¶</a></h2>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">FusedFAST</span></tt> uses the <tt class="xref py py-mod docutils literal"><span class="pre">fusedwind</span></tt> framework.  The input to the code is in the form of
+<tt class="docutils literal"><span class="pre">GenericRunCase</span></tt> objects.  These represent inputs in a simple, generic way that is independent of any particular
+turbine code.  The <tt class="docutils literal"><span class="pre">FusedFAST</span></tt> object translates these to a form required by <tt class="docutils literal"><span class="pre">FAST</span></tt> and then runs
+<tt class="docutils literal"><span class="pre">FAST</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre>    # in real life these come from an input file:
+    filedict = {&#39;ts_exe&#39; : &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;,
+                &#39;ts_dir&#39; : &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;,
+                &#39;ts_file&#39; : &quot;TurbSim.inp&quot;,
+                &#39;fst_exe&#39; : &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;,
+                &#39;fst_dir&#39; : &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;,
+                &#39;fst_file&#39; : &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;,
+                &#39;run_dir&#39; : &quot;run_dir&quot;}
+
+    w = openFAST(filedict)
+    tmax = 5
+    res = []
+
+    case = 2
+    if (case == 1):
+        for x in [10,16,20]:
+            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;Vhub&#39;,&#39;AnalTime&#39;], [x,tmax])
+            w.inputs = dlc
+            w.execute()
+    elif case == 2:
+        res = []
+        vhub = 20
+#        xs=[.10,.4,1.0]   # radians!, wave angle
+#        xs=[10,20,30]   # m/s!, vhub
+        xs = [0,30,60, 90]  # degrees, platform angle
+        for x in xs:
+            dlc = GenericRunCase(&quot;runAero-testcase%d&quot; % x, [&#39;PlatformDir&#39;,&#39;AnalTime&#39;, &#39;Vhub&#39;], [x,tmax,vhub])
+            w.inputs = dlc
+            w.execute()
+            results_dir = os.path.join(filedict[&#39;run_dir&#39;],dlc.case_name)
+            print &quot;name&quot;, results_dir
+            rr = w.getResults([&quot;RotPwr&quot;, &quot;TwrBsMxt&quot;], results_dir, operation=np.std)
+            res.append(rr)
+        for i in range(len(xs)):
+            print xs[i], res[i]
+    elif case == 3:
+        pass
+
+
+if __name__==&quot;__main__&quot;:
+    openFAST_test()
+#    designFAST_test()
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-fast-component">
+<h2>2.4. running FAST_component<a class="headerlink" href="#running-fast-component" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">FAST_component</span></tt> presents <tt class="docutils literal"><span class="pre">runFAST</span></tt> as an openMDAO <tt class="docutils literal"><span class="pre">Component</span></tt>.
+It forms a base class for FAST wrappers that utilize the openMDAO input and output
+conventions, while still utilizing a template input file-based approach to FAST.</p>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; A simple example of running FAST one time
+    This component could now be used in an openMDAO Assembly that took 
+    wind and rotor speed as input, delivered power production at that wind/rotor speed as output.&quot;&quot;&quot;
+    fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+    fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+    fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path
+
+    run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+    myfast = MyFAST_component(fst_exe, fst_dir, fst_file, run_dir)
+    myfast.Vhub = 8
+    myfast.RotSpeed = 12.03
+    myfast.TMax = 2
+    myfast.TStart = 0
+    myfast.execute()
+
+    print &quot;Vhub   RotPwr&quot;
+    print myfast.Vhub, myfast.RotPwr
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-fast-iter-component">
+<h2>2.5. running FAST_iter_component<a class="headerlink" href="#running-fast-iter-component" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">FAST_iter_component</span></tt> allows FAST to be run multiple times  (e.g. for making a power curve)
+in a very simple manner.</p>
+<div class="highlight-python"><div class="highlight"><pre>    &quot;&quot;&quot; This example uses the MyFAST_iter_component to create a simple power curve.
+    This component could now be used in an openMDAO Assembly that dealt with
+    wind/rotor-speed curves as input, and power-curves as output.&quot;&quot;&quot;
+
+    fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+    #    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.
+    fst_dir = &quot;ModelFiles/OC3_Files/&quot;
+    fst_file = &quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;  ## should _not_ be full path
+
+    run_dir = &quot;new_run_dir&quot;  ## either abs or rel path ok
+#   run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;
+
+    myfast = MyFAST_iter_component(fst_exe, fst_dir, fst_file, run_dir)
+    myfast.TMax = 2
+    myfast.TStart = 0
+    myfast.rotorSpeedCurve = [[4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0],
+                              [7.0, 8.0,  9.0, 10.0, 11.0, 12.0, 12.5, 12.5]]
+
+    myfast.execute()
+
+    print &quot;Vhub   RotSpeed    RotPwr&quot;
+    for i in range(len(myfast.rotorPowerCurve)):
+        print myfast.rotorSpeedCurve[0][i],  myfast.rotorSpeedCurve[1][i],  myfast.rotorPowerCurve[i]
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-iecapp">
+<h2>2.6. running iecApp<a class="headerlink" href="#running-iecapp" title="Permalink to this headline">¶</a></h2>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">iecApp</span></tt> uses the <tt class="xref py py-mod docutils literal"><span class="pre">fusedwind</span></tt> framework to run large numbers of FAST cases for, e.g., IEC standards
+analysis. The input to the code is a text file containing a table of
+run cases.</p>
+<p>To run this code, first prepare a file of cases, e.g. <tt class="docutils literal"><span class="pre">some_cases.txt</span></tt> and a file of control input, e.g.  <tt class="docutils literal"><span class="pre">runbatch-control</span></tt>.
+Examples of these:</p>
+<div class="highlight-python"><div class="highlight"><pre>(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more some_cases.txt
+AnalTime Vhub Hs Tp WaveDir Prob
+3.00e+00 1.00e+01 1.59e+00 1.14e+01 -1.01e+00  1.70e-02
+3.00e+00 1.02e+01 9.49e-01 8.37e+00 -9.48e-01  4.88e-03
+3.00e+00 9.95e+00 1.81e+00 1.14e+01 -4.38e-01  1.78e-02
+3.00e+00 8.87e+00 1.49e+00 1.37e+01 2.29e-03  7.63e-03
+3.00e+00 9.05e+00 1.25e+00 1.09e+01 -1.71e+00  5.62e-03
+# in reality this file might have thousands of cases...
+
+(openmdao-0.9.5)stc-24038s:AeroelasticSE pgraf$ more runbatch-control.txt
+# key = value file of locations of various files to read and
+# to write
+# and for output keys.
+# and misc. control functionality
+main_output_file = &quot;runbatch.out&quot;
+output_keys =  RootMxc1  RootMyc1
+output_operations = rf np.std max
+ts_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64&quot;
+ts_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim&quot;
+ts_file = &quot;TurbSim.inp&quot;
+fst_exe = &quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64&quot;
+fst_dir = &quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.almostorig&quot;
+fst_file = &quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;
+run_dir = &quot;all_runs&quot;
+</pre></div>
+</div>
+<p>The cases file is a simple table of FAST input variable to change.  These are translated to FAST &#8220;language&#8221; (e.g.
+<tt class="docutils literal"><span class="pre">AnalTime</span></tt> becomes <tt class="docutils literal"><span class="pre">Tmax</span></tt>) by the software.  The keys in the control file are all self-explanatory except for
+<tt class="docutils literal"><span class="pre">output_operations</span></tt>.  These are the names of python functions that will be applied to the output array to reduce the
+time sequence for each sensor to a single scalar.  These can be arbitrary python <tt class="docutils literal"><span class="pre">&lt;module&gt;.&lt;function_name&gt;</span></tt> directives.  So,
+for example if you had a custom postprocessor function <tt class="docutils literal"><span class="pre">reduce_data</span></tt> in module <tt class="docutils literal"><span class="pre">mystudy</span></tt> you would use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">output_operations</span> <span class="o">=</span> <span class="n">mystudy</span><span class="o">.</span><span class="n">reduce_data</span>
+</pre></div>
+</div>
+<p>Here the function <tt class="docutils literal"><span class="pre">reduce_data</span></tt> accepts a numpy array and returns a scalar.
+Run:</p>
+<div class="highlight-python"><div class="highlight"><pre>python iecApp.py -i some_cases.txt -f runbatch-control.txt
+</pre></div>
+</div>
+<p>Hopefully you will see FAST running many times, resulting in stdout like:</p>
+<div class="highlight-python"><div class="highlight"><pre>RUNS ARE DONE:
+collecting output from copied-back files (not from case recorder), see runbatch.out
+processing case &lt;fusedwind.runSuite.runCase.GenericRunCase object at 0x103e1af50&gt;
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.0Hs.1.6Vhu.10.0Tp.11.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.9Hs.0.9Vhu.10.2Tp.8.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.4Hs.1.8Vhu.10.0Tp.11.4Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.0.0Hs.1.5Vhu.8.9Tp.13.7Pro.0.0
+collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.7Hs.1.3Vhu.9.1Tp.10.9Pro.0.0
+</pre></div>
+</div>
+<p>and a file <tt class="docutils literal"><span class="pre">runbatch.out</span></tt> with the output in the form of a space separated text file table.</p>
+</div>
+<div class="section" id="running-fstvt-runner">
+<h2>2.7. running FSTVT_runner<a class="headerlink" href="#running-fstvt-runner" title="Permalink to this headline">¶</a></h2>
+<p>An example use of the variable tree version of the FAST aeroelastic code wrapper is provided in FSTVT_runner.py.  The code sets up a FAST variable tree from a set of template files for the NREL 5 MW fast turbine; it then updates the environmental variables for wind conditions and runs through cases for those conditions.  First we import the necessary files and set up our case FAST case iterator class.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">openmdao.lib.casehandlers.api</span> <span class="kn">import</span> <span class="n">ListCaseRecorder</span>
+<span class="c"># from fusedwind.lib.caseiter import FUSEDCaseIterator</span>
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runCase</span> <span class="kn">import</span> <span class="n">IECRunCaseBaseVT</span>
+<span class="kn">from</span> <span class="nn">fusedwind.runSuite.runBatch</span> <span class="kn">import</span> <span class="n">FUSEDIECCaseIterator</span>
+<span class="kn">from</span> <span class="nn">FSTVT_runIEC</span> <span class="kn">import</span> <span class="n">FUSEDFSTCaseRunner</span>
+
+
+<span class="n">iec</span> <span class="o">=</span> <span class="n">FUSEDIECCaseIterator</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Then we create the cases from FUSED-Wind for the environmental conditions of interest.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">]:</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">IECRunCaseBaseVT</span><span class="p">()</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">vhub</span> <span class="o">=</span> <span class="n">w</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">ti</span> <span class="o">=</span> <span class="mf">10.</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">simulation</span><span class="o">.</span><span class="n">time_stop</span> <span class="o">=</span> <span class="mf">30.</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">simulation</span><span class="o">.</span><span class="n">time_step</span> <span class="o">=</span> <span class="mf">0.02</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">case_name</span> <span class="o">=</span> <span class="s">&#39;wsp</span><span class="si">%2.1f</span><span class="s">_TI</span><span class="si">%2.1f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> 
+    <span class="n">iec</span><span class="o">.</span><span class="n">cases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">iec</span><span class="o">.</span><span class="n">setup_cases</span><span class="p">()</span>
+<span class="n">iec</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;runner&#39;</span><span class="p">,</span> <span class="n">FUSEDFSTCaseRunner</span><span class="p">())</span>
+
+<span class="n">iec</span><span class="o">.</span><span class="n">sequential</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">print</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">iec</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">workflow</span><span class="p">]</span>
+<span class="k">print</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">iec</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">workflow</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We then run those cases.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">iec</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. Tutorial</a><ul>
+<li><a class="reference internal" href="#running-fast-one-time">2.1. running FAST one time</a></li>
+<li><a class="reference internal" href="#running-turbsim-one-time">2.2. running TurbSim one time</a></li>
+<li><a class="reference internal" href="#running-fusedfast">2.3. running FusedFAST</a></li>
+<li><a class="reference internal" href="#running-fast-component">2.4. running FAST_component</a></li>
+<li><a class="reference internal" href="#running-fast-iter-component">2.5. running FAST_iter_component</a></li>
+<li><a class="reference internal" href="#running-iecapp">2.6. running iecApp</a></li>
+<li><a class="reference internal" href="#running-fstvt-runner">2.7. running FSTVT_runner</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">1. Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="documentation.html"
+                        title="next chapter">3. Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="3. Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="1. Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">AeroelasticSE 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Oct 05, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
