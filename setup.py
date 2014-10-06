@@ -6,24 +6,16 @@
 
 from setuptools import setup, find_packages
 
-kwargs = {'author': '',
- 'author_email': '',
- 'classifiers': ['Intended Audience :: Science/Research',
-                 'Topic :: Scientific/Engineering'],
- 'description': '',
- 'download_url': '',
+kwargs = {'author': 'Peter Graf',
+ 'author_email': 'peter.graf@nrel.gov',
  'include_package_data': True,
  'install_requires': ['openmdao.main'],
  'keywords': ['openmdao'],
- 'license': '',
- 'maintainer': '',
- 'maintainer_email': '',
+ 'license' : 'Apache License, Version 2.0',
  'name': 'AeroelasticSE',
  'package_data': {'AeroelasticSE': []},
  'package_dir': {'': 'src'},
- 'packages': ['AeroelasticSE'],
- 'url': '',
- 'version': '0.1',
+ 'packages': ['AeroelasticSE','AeroelasticSE.FAST_VT','AeroelasticSE.rainflow'],
  'zip_safe': False}
 
 
