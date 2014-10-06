@@ -7,9 +7,6 @@ This python code forms a wrapper for the NWTC codes `FAST <https://wind.nrel.gov
 
 Authors: `Peter Graf <mailto:peter.graf@nrel.gov>`_,  `Katherine Dykes <mailto:katherine.dykes@nrel.gov>`_  and many others.
 
-..
-  High-level overview of code.  Probably just a few paragraphs.  Math can be added using :math:`\exp^x`, you can refer to other sections like :ref:`theory`, and link to the web like `f2py <http://www.scipy.org/F2py/>`_.
-
 The core code involved is the NWTC code `FAST <https://wind.nrel.gov/designcodes/simulators/fast/>`_.
 The AeroelasticSE modules provide access to it in various ways, as detailed below:
 

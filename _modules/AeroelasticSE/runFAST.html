@@ -883,10 +883,17 @@
     <span class="k">if</span> <span class="p">(</span><span class="n">case</span><span class="o">==</span><span class="mi">1</span><span class="p">):</span>
     <span class="c">#    fast.fst_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/FAST_VT/OC3_Files/&quot;  ## either abs or rel path ok.</span>
         <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;ModelFiles/OC3_Files/&quot;</span>
-        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span>  <span class="c">## should _not_ be full path</span>
-    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Monopile_RF.fst&quot;</span>  <span class="c">## should _not_ be full path, is in relation to fst_dir</span>
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig&quot;</span>
         <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NRELOffshrBsline5MW_Floating_OC3Hywind.fst&quot;</span>
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_exe</span> <span class="o">=</span> <span class="s">&quot;/Users/pgraf/opt/windcode-7.31.13/build/FAST_regular_glin64&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_dir</span> <span class="o">=</span> <span class="s">&quot;ModelFiles/Noise_Files/&quot;</span>
+        <span class="n">fast</span><span class="o">.</span><span class="n">fst_file</span> <span class="o">=</span> <span class="s">&quot;NREL5MW_Monopile_Rigid.v7.02.fst&quot;</span>  
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;unknown test case for runFAST.py&quot;</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
 
     <span class="n">fast</span><span class="o">.</span><span class="n">run_dir</span> <span class="o">=</span> <span class="s">&quot;new_run_dir&quot;</span>  <span class="c">## either abs or rel path ok</span>
 <span class="c">#    fast.run_dir = &quot;/Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/another_run_dir&quot;</span>
@@ -1021,7 +1028,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, NREL.
-      Last updated on Sep 25, 2014.
+      Last updated on Oct 05, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

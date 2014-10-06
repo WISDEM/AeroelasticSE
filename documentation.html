@@ -566,7 +566,7 @@ will try to make it aware of whether the wind file already exists</p>
 
 </div>
 <div class="section" id="module-AeroelasticSE.FSTTemplate_runner">
-<span id="fast-variabletree-runner"></span><h2>3.5. FAST VariableTree Runner<a class="headerlink" href="#module-AeroelasticSE.FSTTemplate_runner" title="Permalink to this headline">¶</a></h2>
+<span id="fast-template-runner"></span><h2>3.5. FAST Template Runner<a class="headerlink" href="#module-AeroelasticSE.FSTTemplate_runner" title="Permalink to this headline">¶</a></h2>
 <p>This module implements FAST wrapper in terms of fusedwind&#8217;s VariableTree based representation of a wind turbine.
 The variable tree is a generic (wind-code agnostic) and hierarchical structural representation
 of a modern wind turbine. 
@@ -593,6 +593,147 @@ collect and save output</p>
 </dd></dl>
 
 </div>
+<div class="section" id="fast-variabletree-runner-fstvt-runner">
+<h2>3.7. FAST VariableTree Runner (FSTVT_runner)<a class="headerlink" href="#fast-variabletree-runner-fstvt-runner" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-AeroelasticSE.FAST_VT.FST_reader">
+<span id="supporting-modules-for-fastvt-runner"></span><h3>3.7.1. Supporting Modules for FASTVT_runner<a class="headerlink" href="#module-AeroelasticSE.FAST_VT.FST_reader" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_reader.FstInputBase">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_reader.</tt><tt class="descname">FstInputBase</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_reader.html#FstInputBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_reader.FstInputBase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_reader.FstInputReader">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_reader.</tt><tt class="descname">FstInputReader</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_reader.html#FstInputReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_reader.FstInputReader" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-AeroelasticSE.FAST_VT.FST_vartrees"></span><dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.SimpleWind">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">SimpleWind</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#SimpleWind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.SimpleWind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.ADAirfoilPolar">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">ADAirfoilPolar</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#ADAirfoilPolar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.ADAirfoilPolar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.ADAirfoil">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">ADAirfoil</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#ADAirfoil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.ADAirfoil" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.ADBladeAeroGeometry">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">ADBladeAeroGeometry</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#ADBladeAeroGeometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.ADBladeAeroGeometry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.ADAero">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">ADAero</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#ADAero"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.ADAero" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.FstBladeStrucGeometry">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">FstBladeStrucGeometry</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#FstBladeStrucGeometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.FstBladeStrucGeometry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.FstTowerStrucGeometry">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">FstTowerStrucGeometry</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#FstTowerStrucGeometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.FstTowerStrucGeometry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.FstPlatformModule">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">FstPlatformModule</tt><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.FstPlatformModule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees.FstModel">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees.</tt><tt class="descname">FstModel</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees.html#FstModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees.FstModel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-AeroelasticSE.FAST_VT.FST_writer"></span><dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_writer.FstInputBuilder">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_writer.</tt><tt class="descname">FstInputBuilder</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_writer.html#FstInputBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_writer.FstInputBuilder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_writer.FUSEDWindInputBuilder">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_writer.</tt><tt class="descname">FUSEDWindInputBuilder</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_writer.html#FUSEDWindInputBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_writer.FUSEDWindInputBuilder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_writer.FstInputWRiter">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_writer.</tt><tt class="descname">FstInputWRiter</tt><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_writer.FstInputWRiter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-AeroelasticSE.FAST_VT.FST_vartrees_out"></span><dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.WindMotionsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">WindMotionsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#WindMotionsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.WindMotionsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.BladeMotionsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">BladeMotionsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#BladeMotionsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.BladeMotionsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.HubNacelleMotionsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">HubNacelleMotionsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#HubNacelleMotionsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.HubNacelleMotionsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.TowerSupportMotionsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">TowerSupportMotionsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#TowerSupportMotionsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.TowerSupportMotionsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.BladeLoadsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">BladeLoadsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#BladeLoadsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.BladeLoadsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.HubNacelleLoadsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">HubNacelleLoadsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#HubNacelleLoadsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.HubNacelleLoadsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.TowerSupportLoadsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">TowerSupportLoadsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#TowerSupportLoadsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.TowerSupportLoadsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.WaveMotionsOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">WaveMotionsOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#WaveMotionsOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.WaveMotionsOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.DOFOut">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">DOFOut</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#DOFOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.DOFOut" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_vartrees_out.FstOutput">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_vartrees_out.</tt><tt class="descname">FstOutput</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_vartrees_out.html#FstOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_vartrees_out.FstOutput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-AeroelasticSE.FAST_VT.FST_wrapper"></span><dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_wrapper.FstExternalCode">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_wrapper.</tt><tt class="descname">FstExternalCode</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_wrapper.html#FstExternalCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_wrapper.FstExternalCode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FST_wrapper.FstWrapper">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FST_wrapper.</tt><tt class="descname">FstWrapper</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FST_wrapper.html#FstWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FST_wrapper.FstWrapper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-AeroelasticSE.FAST_VT.FSTVT_runIEC"></span><dl class="class">
+<dt id="AeroelasticSE.FAST_VT.FSTVT_runIEC.FUSEDFSTCaseRunner">
+<em class="property">class </em><tt class="descclassname">AeroelasticSE.FAST_VT.FSTVT_runIEC.</tt><tt class="descname">FUSEDFSTCaseRunner</tt><a class="reference internal" href="_modules/AeroelasticSE/FAST_VT/FSTVT_runIEC.html#FUSEDFSTCaseRunner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#AeroelasticSE.FAST_VT.FSTVT_runIEC.FUSEDFSTCaseRunner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
 </div>
 
 
@@ -608,8 +749,12 @@ collect and save output</p>
 <li><a class="reference internal" href="#module-AeroelasticSE.runTurbSim">3.2. Run TurbSim</a></li>
 <li><a class="reference internal" href="#module-AeroelasticSE.FAST_component">3.3. FAST openMDAO Components</a></li>
 <li><a class="reference internal" href="#module-AeroelasticSE.FusedFAST">3.4. Fused FAST</a></li>
-<li><a class="reference internal" href="#module-AeroelasticSE.FSTTemplate_runner">3.5. FAST VariableTree Runner</a></li>
+<li><a class="reference internal" href="#module-AeroelasticSE.FSTTemplate_runner">3.5. FAST Template Runner</a></li>
 <li><a class="reference internal" href="#run-iec">3.6. Run IEC</a></li>
+<li><a class="reference internal" href="#fast-variabletree-runner-fstvt-runner">3.7. FAST VariableTree Runner (FSTVT_runner)</a><ul>
+<li><a class="reference internal" href="#module-AeroelasticSE.FAST_VT.FST_reader">3.7.1. Supporting Modules for FASTVT_runner</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -653,7 +798,7 @@ collect and save output</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, NREL.
-      Last updated on Sep 25, 2014.
+      Last updated on Oct 05, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
