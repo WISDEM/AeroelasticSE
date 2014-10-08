@@ -1,6 +1,6 @@
 AeroelasticSE is a wrapper for the FAST aeroelastic code that allows it to be used in OpenMDAO.
 
-Author: [P. Graf](mailto:peter.graf@nrel.gov) and [K. Dykes](mailto:katherine.dykes@nrel.gov) 
+Author: [P. Graf and K. Dykes](mailto:nrel.wisdem+aeroelasticse@gmail.com) 
 
 ## Version
 
@@ -12,11 +12,22 @@ For detailed documentation see <http://wisdem.github.io/AeroelasticSE/>
 
 ## Prerequisites
 
-NumPy, SciPy, FUSED-Wind, OpenMDAO
+General: NumPy, SciPy, Swig, pyWin32, MatlPlotLib, Lxml, OpenMDAO
+
+## Dependencies
+
+Wind Plant Framework: [FUSED-Wind](http://fusedwind.org) (Framework for Unified Systems Engineering and Design of Wind Plants)
+
+Sub-Models: CommonSE
+
+Supporting python packages: Pandas, Algopy, Zope.interface, Sphinx, Xlrd, PyOpt, py2exe, Pyzmq, Sphinxcontrib-bibtex, Sphinxcontrib-zopeext, Numpydoc, Ipython
 
 ## Installation
 
-Install PLant_EnergySE within an activated OpenMDAO environment
+First, clone the [repository](https://github.com/WISDEM/AeroelasticSE)
+or download the releases and uncompress/unpack (AeroelasticSE.py-|release|.tar.gz or AeroelasticSE.py-|release|.zip) from the website link at the bottom the [AeroelasticSE site](http://nwtc.nrel.gov/AeroelasticSE).
+
+Install AeroelasticSE within an activated OpenMDAO environment
 
 	$ plugin install
 

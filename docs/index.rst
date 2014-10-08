@@ -5,7 +5,7 @@ AeroelasticSE
 
 This python code forms a wrapper for the NWTC codes `FAST <https://wind.nrel.gov/designcodes/simulators/fast/>`_ and TurbSim.
 
-Authors: `Peter Graf <mailto:peter.graf@nrel.gov>`_,  `Katherine Dykes <mailto:katherine.dykes@nrel.gov>`_  and many others.
+Authors: `P. Graf, K. Dykes and many others <mailto:nrel.wisdem+aeroelasticse@gmail.com>`_ 
 
 The core code involved is the NWTC code `FAST <https://wind.nrel.gov/designcodes/simulators/fast/>`_.
 The AeroelasticSE modules provide access to it in various ways, as detailed below:
