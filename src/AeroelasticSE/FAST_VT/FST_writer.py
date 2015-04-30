@@ -1,6 +1,6 @@
 
 from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict, Slot
+from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict, Slot, Instance
 import os
 
 from FST_reader import FstInputReader, FstInputBase
@@ -41,7 +41,7 @@ class FUSEDWindInputBuilder(FstInputBuilder):
     Component for translating FUSED-Wind input vartrees to HAWC2 inputs
     """
 
-    inputs = Slot(iotype='in')
+    inputs = Instance(iotype='in')
     
     def __init__(self):
         
