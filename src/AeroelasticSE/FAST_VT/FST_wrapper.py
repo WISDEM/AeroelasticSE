@@ -23,6 +23,7 @@ class FstWrapper(FstExternalCode):
 
     def execute(self):
 
+        print "Executing FAST"
         self.input_file = os.path.join(self.fst_directory, self.FSTInputFile)
 
         if (not os.path.exists(self.FSTexe)):
