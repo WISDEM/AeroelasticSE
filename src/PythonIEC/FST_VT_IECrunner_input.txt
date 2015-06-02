@@ -1,0 +1,11 @@
+####### DLC 1.6 Input File #######
+DLC =  1.6 
+V_range = 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24
+Shear Exp =  0.14 
+Yaw Angle =  0 
+Shear Exp =  0.14 
+Hs_range =  9.5 
+Tp_range =  36.3 
+Wave Dir =  0 
+Simulation length =  3600 
+Seed Number =  6 
