@@ -38,7 +38,8 @@ for w in [10, 12]:
    # c.simulation.time_step = 0.02
     c.case_name = 'wsp%2.1f_TI%2.1f' % (w, 10) 
     iec.cases.append(c)
-iec.replace('runner', FUSEDFSTCaseRunner(options.file_locs))
+#iec.replace('runner', FUSEDFSTCaseRunner(options.file_locs))
+iec.replace('runner', FUSEDFSTCaseRunner()) #kld hard-coding
 #iec.replace('runner', PGrafSubComponent())
 
 iec.setup_cases()

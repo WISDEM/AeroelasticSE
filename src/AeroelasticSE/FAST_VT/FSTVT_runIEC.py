@@ -21,9 +21,9 @@ class FUSEDFSTCaseRunner(FUSEDIECBase):
 
     FSTexe = Str(iotype='in', desc='Path to executable')
 
-    def __init__(self, file_locs):
+    def __init__(self): #, file_locs):
         super(FUSEDFSTCaseRunner, self).__init__()
-        self.filedict = parse_key_val_file_all(file_locs)
+        #self.filedict = parse_key_val_file_all(file_locs)
 
     def configure(self):
 
@@ -34,15 +34,15 @@ class FUSEDFSTCaseRunner(FUSEDIECBase):
         #self.connect('fst_infile_vt', 'reader.fst_infile_vt')
         #OC3 Example
         #FAST_DIR = os.path.dirname(os.path.realpath(__file__))
-        #FAST_DIR = "C:/Python27/NREL-Models/WISDEM/AeroelasticSE/src/AeroelasticSE/ModelFiles"
-        print self.filedict
-        FAST_DIR = self.filedict['fst_dir']
+        FAST_DIR = "C:/Python27/NREL-Models/WISDEM/AeroelasticSE/src/AeroelasticSE/ModelFiles"
+        #print self.filedict
+        #FAST_DIR = self.filedict['fst_dir']
 
-    
-#        self.reader.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst' #replace with master fast file
-        self.reader.fst_infile =  os.path.join(FAST_DIR,self.filedict['fst_file']) #replace with master fast file
-#        self.reader.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
-        self.reader.fst_directory = FAST_DIR
+
+        #self.reader.fst_infile =  os.path.join(FAST_DIR,self.filedict['fst_file']) #replace with master fast file
+        self.reader.fst_infile = 'NRELOffshrBsline5MW_Monopile_RF.fst' #replace with master fast file
+        self.reader.fst_directory = os.path.join(FAST_DIR,"OC3_Files")
+        #self.reader.fst_directory = FAST_DIR
         self.reader.ad_file_type = 1  ### TODO: peter graf, automate which type
         self.reader.fst_file_type = 1
 
@@ -73,8 +73,8 @@ class FUSEDFSTCaseRunner(FUSEDIECBase):
         self.driver.workflow.add('wrapper')
         #self.connect('FSTexe', 'wrapper.FSTexe') #TODO: why isn't connect working?
         # Set up input files
-#        self.wrapper.FSTexe = 'C:/Models/FAST/FAST.exe'
-        self.wrapper.FSTexe = self.filedict['fst_exe']
+        self.wrapper.FSTexe = 'C:/Models/FAST/FAST.exe'
+        #self.wrapper.FSTexe = self.filedict['fst_exe']
         self.connect('writer.fst_directory', 'wrapper.fst_directory')
         self.connect('writer.fst_file', 'wrapper.FSTInputFile')
 

@@ -182,7 +182,7 @@ True
   3
  5 , 9  , 13 
 Outlist
-"WindVzi, WindVyi, WindVxi, "
+"WindVzi, WindVxi, WindVyi, "
 "IPDefl1, OoPDefl1, TwstDefl1, "
 "BldPitch1, TeetDefl, GenSpeed, RotSpeed, Azimuth, "
 "PtfmRDyi, TTDspTwst, PtfmTDxi, PtfmRDxi, TTDspSS, TTDspFA, PtfmTDyi, "
