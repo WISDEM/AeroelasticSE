@@ -20,7 +20,7 @@ def rf(col):
     return val
 
 ## main function that opens input, runs cases, writes output, ie. whole thing.
-def rundlcs(envcmd = None):
+def rundlcs(envcmd = None, options=None, args=None):
     """ 
     run the whole process, including startup and shutdown
     to do:
@@ -35,7 +35,9 @@ def rundlcs(envcmd = None):
     envcmd: a text string cmd (e.g. 'source env.sh') to set up the environment for the cluster allocator
     """    
 
-    options, arg = get_options()
+    if options==None:
+        options, args = get_options()
+    print options
     ctrl = parse_input(options)
     # ctrl will be just the input, but broken up into separate categories, e.g.
     # ctrl.cases, ctrl.app, ctrl.dispatch, ...

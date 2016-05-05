@@ -103,6 +103,7 @@ class runTurbSimext(Component):
     def execute(self):
         case = self.inputs
         ws=case.fst_params['Vhub']
+        rs = case.fst_params['RandSeed1'] if 'RandSeed1' in case.fst_params else None
         tmax = 2  ## should not be hard default ##
         if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
             tmax = case.fst_params['TMax']
@@ -112,12 +113,15 @@ class runTurbSimext(Component):
         # new runs, otherwise we should just use wind file we already have
             # for now, just differentiate by wind speed
         ts_case_name = "TurbSim-Vhub%.4f" % ws
+        if rs != None:
+            ts_case_name = "%s-Rseed%d" % (ts_case_name, rs)
 
         run_dir = os.path.join(self.basedir, ts_case_name)
         self._logger.info("running TurbSim in %s " % run_dir)
         print "running TurbSim in " , run_dir
         self.rawts.run_dir = run_dir
-        self.rawts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
+        tsdict = dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax}.items() + case.fst_params.items())
+        self.rawts.set_dict(tsdict)
         tsoutname = self.rawts.ts_file.replace("inp", "wnd")
         tsoutname = os.path.join(run_dir, tsoutname)
         tssumname = tsoutname.replace("wnd", "sum")
