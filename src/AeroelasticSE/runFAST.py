@@ -133,6 +133,7 @@ class runFAST(object):
         #read everything from templates, modify them selectively, then write them back out in "run_dir"
         self.ptfm_file = None
         self.twr_file = None
+        self.adams_file = None
         self.blade1_file = None
         self.blade2_file = None
         self.blade3_file = None
@@ -240,6 +241,7 @@ class runFAST(object):
         self.writeNoise()
         self.writePtfm(self.fstDict)
         self.copyTwr()
+        self.copyAdams()
 
         os.chdir(curdir) ## restore dir
 
@@ -532,6 +534,8 @@ class runFAST(object):
                 self.ptfm_file = f[0][1:-1]
             if (f[1] == 'TwrFile' and self.twr_file == None):
                 self.twr_file = f[0][1:-1]
+            if (f[1] == 'ADAMSFile' and self.adams_file == None):
+                self.adams_file = f[0][1:-1]
             if (f[1] == 'BldFile(1)' and self.blade1_file == None):
                 self.blade1_file = f[0][1:-1]
             if (f[1] == 'BldFile(2)' and self.blade2_file == None):
@@ -565,6 +569,11 @@ class runFAST(object):
         if not os.path.isabs(src0):
             src = os.path.join(self.fst_dir, src0)
             src = fix_path(src)  # deal with slashes
+#            print "copying wind files, from->to", src, src0
+            (head,tail) = os.path.split(src0)
+            if not os.path.exists(head):
+#                print "creating ", head
+                os.mkdir(head)
             shutil.copyfile(src,src0)        
             
 
@@ -625,6 +634,8 @@ class runFAST(object):
         fstDict may contain location of WAMITFile, also may contain "PlatformDir" to change angle of platform
         """
 
+        if self.ptfm_file == None:
+            return
         ofname = self.ptfm_file
         ofh = open(ofname,'w')
 #        print "writing platform file  ", ofname
@@ -717,6 +728,12 @@ class runFAST(object):
         # this is executing during write_input, so curdir is run_dir
         shutil.copyfile(os.path.join(self.fst_dir,self.twr_file), self.twr_file)
 
+    def copyAdams(self):
+        """ just copy "ADAMSFile" file, so far not changing it """
+        # this is executing during write_input, so curdir is run_dir
+        if self.adams_file != None:
+            shutil.copyfile(os.path.join(self.fst_dir,self.adams_file), self.adams_file)
+
     #------------------------------------------------------------
 
     def writeAD(self):
@@ -778,6 +795,8 @@ class runFAST(object):
                     flds[0] = self.ptfm_file
                 if (flds[1] == 'TwrFile'):
                     flds[0] = self.twr_file
+                if (flds[1] == 'ADAMSFile'):
+                    flds[0] = self.adams_file
                 if (flds[1] == 'BldFile(1)'):
                     flds[0] = self.blade1_file
                 if (flds[1] == 'BldFile(2)'):
