@@ -259,11 +259,14 @@ class runFAST(object):
         if (not os.path.exists(self.fst_exe)):
             sys.stderr.write("Can't find FAST executable: {:}\n".format(self.fst_exe))
             return 0
-        print "calling ", self.fst_exe
+        print "calling FAST:", self.fst_exe
         print "input file=", self.fst_file
         curdir = os.getcwd()
         os.chdir (self.run_dir)  ###note, change to run_dir
-        ret = subprocess.call([self.fst_exe, self.fst_file] ) #### actual call to FAST !! 
+#        faststdout = file("FAST.stdout", "w")
+#        ret = subprocess.call([self.fst_exe, self.fst_file], stdout=faststdout ) #### actual call to FAST !! 
+        ret = subprocess.call([self.fst_exe, self.fst_file]) #### actual call to FAST !! 
+#        faststdout.close()
         os.chdir(curdir) ## restore dir
 
         return ret

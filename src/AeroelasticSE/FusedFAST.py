@@ -74,7 +74,10 @@ class openFAST(openAeroCode):
         return vals
 
     def setOutput(self, output_params):
-        self.runfast.set_fast_outputs(output_params['output_keys'])
+        channels = output_params['output_keys']
+        if (not isinstance(channels, (list, tuple))):
+            channels = [channels]                
+        self.runfast.set_fast_outputs(channels)
         print "set FAST output:", output_params['output_keys']
 
 

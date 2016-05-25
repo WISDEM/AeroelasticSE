@@ -19,8 +19,42 @@ def rf(col):
     val = rain_one(col, 5)
     return val
 
+def rundlcs_bybatch(envcmd, options, args, batch_size):
+## this is a workaround for the openmdao parallel running out of memory madness: memory leaks and/or buildups
+# in the case iterator driver mean we can only do a couple hundred FAST runs at a time.
+# strategy here will be to break the big batch up into many little batches, then do one final "no run" (but collect)
+# run for the whole batch at the end
+    all_cases = options.cases
+    lns = file(all_cases).readlines()
+    all_cnt = len(lns)-1  # -1 for header line
+    cnt = 0
+    batch = 0
+    while cnt < all_cnt:
+        this_case = "%s.%d" % (all_cases,batch)
+        fout = file(this_case, "w")
+        fout.write(lns[0])
+        end = min(cnt+batch_size, all_cnt)
+        for i in range(cnt+1,end+1):
+            fout.write(lns[i])
+        fout.close()
+        options.cases = this_case
+        rundlcs(envcmd, options, args)
+        cnt += batch_size
+        batch += 1
+    
+    saveit = options.norun
+    options.norun = True
+    options.cases = all_cases
+    rundlcs(envcmd, options, args, batch_size=None)
+    options.norun = saveit
+
+
+def line_count(fname):
+    num_lines = sum(1 for line in open(fname))
+    return num_lines
+
 ## main function that opens input, runs cases, writes output, ie. whole thing.
-def rundlcs(envcmd = None, options=None, args=None):
+def rundlcs(envcmd = None, options=None, args=None, batch_size=5):
     """ 
     run the whole process, including startup and shutdown
     to do:
@@ -34,6 +68,10 @@ def rundlcs(envcmd = None, options=None, args=None):
 
     envcmd: a text string cmd (e.g. 'source env.sh') to set up the environment for the cluster allocator
     """    
+
+    if (batch_size != None and line_count(options.cases)-1 > batch_size):
+        rundlcs_bybatch(envcmd, options, args, batch_size)
+        return
 
     if options==None:
         options, args = get_options()

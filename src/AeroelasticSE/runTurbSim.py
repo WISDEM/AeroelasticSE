@@ -108,9 +108,15 @@ class runTurbSim(object):
         if (not os.path.exists(exe_name)):
             sys.stderr.write("Can't find TurbSim executable: {:}\n".format(exe_name))
             return 0
-        print "calling ", exe_name
+        curdir = os.getcwd()
+        os.chdir (self.run_dir)  ###note, change to run_dir
+        print "calling TurbSim:", exe_name
         print "input file=", input_name
-        ret = subprocess.call([exe_name, input_name] )
+#        tsstdout = file("TurbSim.stdout", "w")
+#        ret = subprocess.call([exe_name, input_name], stdout=tsstdout )
+        ret = subprocess.call([exe_name, input_name])
+#        tsstdout.close()
+        os.chdir(curdir) ## restore dir
         return ret
 
     def set_dict(self, ts_dict):
