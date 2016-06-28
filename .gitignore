@@ -4,6 +4,9 @@
 # OpenMDAO
 openmdao_log.txt
 
+# Test files
+workspace.py
+
 # Sphinx
 _build
 generated

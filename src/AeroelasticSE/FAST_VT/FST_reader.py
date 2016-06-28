@@ -1,6 +1,6 @@
 
-from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
+# from openmdao.main.api import VariableTree, Container, Component
+# from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
 import os,re
 
 from FST_vartrees import FstModel, ADAirfoil, ADAirfoilPolar
@@ -13,18 +13,18 @@ def fix_path(name):
         new = os.path.join(new, name[i])
     return new
 
-class FstInputBase(Component):
+class FstInputBase(object):
 
-    model_name = Str('FAST Model')
+    model_name = 'FAST Model'
 
 class FstInputReader(FstInputBase):
 
-    fst_infile = Str(desc='Master FAST file')
-    fst_directory = Str(desc='Directory of master FAST file set')
-    fst_file_type = Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+    fst_infile = ''   #Master FAST file
+    fst_directory = ''   #Directory of master FAST file set
+    fst_file_type = 0   #Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
+    ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
 
-    fst_vt = VarTree(FstModel(), iotype='out')
+    fst_vt = FstModel()
 
     def __init__(self):
         super(FstInputReader, self).__init__()
@@ -354,12 +354,12 @@ class FstInputReader(FstInputBase):
         twrg = f.readline().split(',')
         for i in range(self.fst_vt.NTwGages):
             self.fst_vt.TwrGagNd.append(twrg[i])
-        self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]
+        # self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]   # [AH] Commented out (also line 5 down), was causing errors. What does this line do?
         self.fst_vt.NBlGages = int(f.readline().split()[0])
         blg = f.readline().split(',')
         for i in range(self.fst_vt.NBlGages):
             self.fst_vt.BldGagNd.append(blg[i])
-        self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
+        # self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
     
         # Outlist (TODO - detailed categorization)
         f.readline()
@@ -412,7 +412,8 @@ class FstInputReader(FstInputBase):
             print "TODO: not simple wind file"
         self.BladeReader()
         self.TowerReader()
-        self.PlatformReader()
+        if self.fst_vt.PtfmFile != 'unused':
+            self.PlatformReader()
     
     def PlatformReader(self):
 
@@ -836,8 +837,7 @@ class FstInputReader(FstInputBase):
                 alpha.append(data[0])
                 cl.append(data[1])
                 cd.append(data[2])
-                cm.append(data[3])
-
+                # cm.append(data[3]) [AH] does not appear to be used in current version...
             polar.alpha = alpha
             polar.cl = cl
             polar.cd = cd
