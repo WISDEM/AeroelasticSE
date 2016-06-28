@@ -1,7 +1,5 @@
 from numpy import zeros, array
-
-#ADD THIS BACK IN LATER--UNCOMMENT LINE 247ish
-#from FST_vartrees_out import FstOutput
+from FST_vartrees_out import FstOutput
 
 class SimpleWind(object):
 	def __init__(self):
@@ -231,20 +229,20 @@ class FstPlatformModel(object):
 class FstModel(object):
 	def __init__(self):
 	    # FAST Wind Information
-	    simple_wind_vt = SimpleWind()   #Simple wind input model
+	    self.simple_wind_vt = SimpleWind()   #Simple wind input model
 	    
 	    # FAST Hydro Information
-	    platform_vt = FstPlatformModel()   #Model of platform foundation
+	    self.platform_vt = FstPlatformModel()   #Model of platform foundation
 
 	    # FAST Aerodynamic Information
-	    aero_vt = ADAero()   #Aerodynamic settings, blade design and airfoils
+	    self.aero_vt = ADAero()   #Aerodynamic settings, blade design and airfoils
 
 	    # FAST Structural Information
-	    fst_blade_vt = FstBladeStrucGeometry()   #Structural information on the blade and properties
-	    fst_tower_vt = FstTowerStrucGeometry()   #Structural information on the tower and properties
+	    self.fst_blade_vt = FstBladeStrucGeometry()   #Structural information on the blade and properties
+	    self.fst_tower_vt = FstTowerStrucGeometry()   #Structural information on the tower and properties
 	    
 	    # FAST Outputs
-	    # fst_output_vt = FstOutput()   #List of output channels
+	    self.fst_output_vt = FstOutput()   #List of output channels
 
 	    # FAST Inputs
 	    self.description = ''   #description of platform
