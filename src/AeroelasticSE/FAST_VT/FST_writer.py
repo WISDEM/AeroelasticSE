@@ -1,6 +1,3 @@
-
-from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict, Slot, Instance
 import os
 
 from FST_reader import FstInputReader, FstInputBase
@@ -10,16 +7,16 @@ import copy
 
 # Builder
 
-class FstInputBuilder(Component):
+class FstInputBuilder(object):
     """
     base class for setting up HAWC2 input data
 
     add additional design variables and methods in derived classes
     """
 
-    fstIn = VarTree(FstModel(), iotype='in')
-    fstS = VarTree(FstModel(), iotype='in')
-    fstOut = VarTree(FstModel(), iotype='out')
+    fstIn = FstModel()
+    fstS = FstModel()
+    fstOut = FstModel()
     
     def __init__(self):
         
@@ -41,7 +38,7 @@ class FUSEDWindInputBuilder(FstInputBuilder):
     Component for translating FUSED-Wind input vartrees to HAWC2 inputs
     """
 
-    inputs = Instance(iotype='in')
+    # inputs = Instance(iotype='in')   #[AH] no Instance in omdao1
     
     def __init__(self):
         
@@ -116,16 +113,16 @@ class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
 class FstInputWriter(FstInputBase):
     """ Write the new AeroDyn file
     """
-    fst_vt = VarTree(FstModel(), iotype='in')
+    fst_vt = FstModel()
 
-    fst_infile = Str(iotype='in', desc='Master FAST file')
-    fst_directory = Str(iotype='in', desc='Directory of master FAST file set')
-    fst_file_type = Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+    fst_infile = ''   #Master FAST file')
+    fst_directory = ''   #Directory of master FAST file set')
+    fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
+    ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
     
-    case_id = Str('DEFAULT', iotype='in', desc='Case ID if writer is used as part of a case analyzer analysis')
+    case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis')
 
-    fst_file = Str(iotype='out', desc='Case FAST file')
+    fst_file = ''   #Case FAST file')
 
     def __init__(self):
 
