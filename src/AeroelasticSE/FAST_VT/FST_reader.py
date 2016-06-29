@@ -717,10 +717,6 @@ class FstInputReader(FstInputBase):
             self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[14])
             self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[15])
             self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[16])
-        
-            # BlFract  AeroCent  StrcTwst  BMassDen    FlpStff    EdgStff    GJStff    EAStff   
-            # Alpha   FlpIner   EdgIner   PrecrvRef   PreswpRef   FlpcgOf   EdgcgOf   FlpEAOf   
-            # EdgEAOf
 
         f.readline()
         self.fst_vt.fst_blade_vt.BldFl1Sh = [None] * 5

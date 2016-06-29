@@ -126,10 +126,6 @@ class FstBladeStrucGeometry(object):
 	    self.FlpEAOf = zeros([1])
 	    self.EdgEAOf = zeros([1])
 	    
-        # BlFract  AeroCent  StrcTwst  BMassDen    FlpStff    EdgStff    GJStff    EAStff   
-        # Alpha   FlpIner   EdgIner   PrecrvRef   PreswpRef   FlpcgOf   EdgcgOf   FlpEAOf   
-        # EdgEAOf
-
 	    # Blade Mode Shapes
 	    self.BldFl1Sh = zeros([1])
 	    self.BldFl2Sh = zeros([1])
