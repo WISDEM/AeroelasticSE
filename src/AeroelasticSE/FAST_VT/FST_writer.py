@@ -115,14 +115,14 @@ class FstInputWriter(FstInputBase):
     """
     fst_vt = FstModel()
 
-    fst_infile = ''   #Master FAST file')
-    fst_directory = ''   #Directory of master FAST file set')
-    fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+    fst_infile = ''   #Master FAST file
+    fst_directory = ''   #Directory of master FAST file set
+    fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
+    ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
     
-    case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis')
+    case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
 
-    fst_file = ''   #Case FAST file')
+    fst_file = ''   #Case FAST file
 
     def __init__(self):
 
@@ -683,7 +683,7 @@ class FstInputWriter(FstInputBase):
         prnelm = self.fst_vt.aero_vt.blade_vt.PrnElm
         ofh.write('Nodal properties\n')
         for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
-            ofh.write('{:.4f}\t{:.3f}\t{:.4f}\t{:.3f}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
+            ofh.write('{:.5f}\t{:.3f}\t{:.4f}\t{:.3f}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
 
         ofh.close()
 

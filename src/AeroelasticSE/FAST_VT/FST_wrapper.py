@@ -1,27 +1,27 @@
 import os
 import sys
-from openmdao.lib.components.external_code import ExternalCode
-from openmdao.lib.datatypes.api import Str
+import subprocess
 
 from FST_writer import FstInputWriter
 from FST_reader import FstInputReader
 from FST_vartrees import FstModel
 
-class FstExternalCode(ExternalCode):
+class FstExternalCode(object):
 
     pass
 
 
 class FstWrapper(FstExternalCode):
 
-    FSTexe = Str(io_type='in', desc='Path to executable')
-    FSTInputFile = Str(iotype='in', desc='FAST input file (ext=.fst)')
-    fst_directory = Str(iotype='in', desc='Path to fst directory files')
+    FSTexe = ''   #Path to executable
+    FSTInputFile = ''   #FAST input file (ext=.fst)
+    fst_directory = ''   #Path to fst directory files
 
     def __init__(self):
         super(FstWrapper, self).__init__()
 
     def execute(self):
+
 
         print "Executing FAST"
         self.input_file = os.path.join(self.fst_directory, self.FSTInputFile)
@@ -29,14 +29,16 @@ class FstWrapper(FstExternalCode):
         if (not os.path.exists(self.FSTexe)):
             sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
             return 0
-        print "calling ", self.FSTexe
-        print "input file=", self.input_file
-
-        self.command.append(self.FSTexe)
-        self.command.append(self.input_file)
         
-        super(FstWrapper,self).execute()
+        print "Calling ", self.FSTexe
+        print "Input file = ", self.input_file
 
+        exec_str = []
+        exec_str.append(self.FSTexe)
+        exec_str.append(self.input_file)
+
+        subprocess.call(exec_str)#, stdin=None, stdout=None, stderr=None, shell=False)
+        
 
 if __name__=="__main__":
 
