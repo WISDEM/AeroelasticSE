@@ -13,6 +13,18 @@ class SimpleWind(object):
 		self.LnVShr = zeros([1])   #vertical linear shear
 		self.GstSpd = zeros([1])   #gust speed not sheared by Aerodyn
 
+class WndWind(object):
+	def __init__(self):
+		self.TimeSteps = 0   #number of time steps
+		self.Time = zeros([1])   #time steps
+		self.HorSpd = zeros([1])   #horizontal wind speed
+		self.WindDir = zeros([1])   #wind direction
+		self.VerSpd = zeros([1])   #vertical wind speed
+		self.HorShr = zeros([1])   #horizontal shear
+		self.VerShr = zeros([1])   #vertical power-law shear
+		self.LnVShr = zeros([1])   #vertical linear shear
+		self.GstSpd = zeros([1])   #gust speed not sheared by Aerodyn
+
 class ADAirfoilPolar(object):
 	def __init__(self):
 	    self.IDParam = 0.0   #Table ID Parameter (Typically Reynolds number)
@@ -230,6 +242,7 @@ class FstModel(object):
 	def __init__(self):
 	    # FAST Wind Information
 	    self.simple_wind_vt = SimpleWind()   #Simple wind input model
+	    self.wnd_wind_vt = WndWind()   #Wnd wind input model
 	    
 	    # FAST Hydro Information
 	    self.platform_vt = FstPlatformModel()   #Model of platform foundation

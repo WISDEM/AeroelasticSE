@@ -416,8 +416,10 @@ class FstInputReader(FstInputBase):
         self.AeroReader()
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
             self.SimpleWindReader()
+        elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
+            self.WndWindReader()
         else:
-            print "TODO: not simple wind file"
+            print "TODO: Other wind file type (bts)"
         self.BladeReader()
         self.TowerReader()
         if self.fst_vt.PtfmFile != 'unused':
@@ -891,6 +893,43 @@ class FstInputReader(FstInputBase):
             self.fst_vt.simple_wind_vt.VerShr[i] = float(data[i][5])
             self.fst_vt.simple_wind_vt.LnVShr[i] = float(data[i][6])
             self.fst_vt.simple_wind_vt.GstSpd[i] = float(data[i][7])
+
+        f.close()
+
+
+    def WndWindReader(self):
+
+        wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
+        f = open(wind_file)
+
+        data = []
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+            line_split = line.split()
+            if line_split[0] != '!':
+                data.append(line.split())
+
+        self.fst_vt.wnd_wind_vt.TimeSteps = len(data)
+
+        self.fst_vt.wnd_wind_vt.Time = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.HorSpd = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.WindDir = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.VerSpd = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.HorShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.VerShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.LnVShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.GstSpd = [None] * len(data)        
+        for i in range(len(data)):
+            self.fst_vt.wnd_wind_vt.Time[i] = float(data[i][0])
+            self.fst_vt.wnd_wind_vt.HorSpd[i] = float(data[i][1])
+            self.fst_vt.wnd_wind_vt.WindDir[i] = float(data[i][2])
+            self.fst_vt.wnd_wind_vt.VerSpd[i] = float(data[i][3])
+            self.fst_vt.wnd_wind_vt.HorShr[i] = float(data[i][4])
+            self.fst_vt.wnd_wind_vt.VerShr[i] = float(data[i][5])
+            self.fst_vt.wnd_wind_vt.LnVShr[i] = float(data[i][6])
+            self.fst_vt.wnd_wind_vt.GstSpd[i] = float(data[i][7])
 
         f.close()
 

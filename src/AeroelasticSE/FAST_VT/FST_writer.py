@@ -782,8 +782,26 @@ class FstInputWriter(FstInputBase):
                           self.fst_vt.simple_wind_vt.VerShr[i], self.fst_vt.simple_wind_vt.LnVShr[i], self.fst_vt.simple_wind_vt.GstSpd[i]))
     
             ofh.close()
+
+        elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
+            
+            print "Wind file: ", self.fst_vt.aero_vt.WindFile
+            print "Wind file type: ", self.fst_vt.aero_vt.wind_file_type
+            print "Location: ", self.fst_directory
+
+            wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
+            ofh = open(wind_file,'w')
+        
+            for i in range(self.fst_vt.wnd_wind_vt.TimeSteps):
+                ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.format(\
+                          self.fst_vt.wnd_wind_vt.Time[i], self.fst_vt.wnd_wind_vt.HorSpd[i], self.fst_vt.wnd_wind_vt.WindDir[i],\
+                          self.fst_vt.wnd_wind_vt.VerSpd[i], self.fst_vt.wnd_wind_vt.HorShr[i],\
+                          self.fst_vt.wnd_wind_vt.VerShr[i], self.fst_vt.wnd_wind_vt.LnVShr[i], self.fst_vt.wnd_wind_vt.GstSpd[i]))
+    
+            ofh.close()
+        
         else:
-           print "TODO: Other wind file types bts and wnd"
+            print "TODO: Other wind file types bts and wnd"
 
 '''def noise_example():
 
