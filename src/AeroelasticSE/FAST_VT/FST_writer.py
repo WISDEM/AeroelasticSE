@@ -612,20 +612,25 @@ class FstInputWriter(FstInputBase):
         fs = self.fst_vt.fst_blade_vt.FlpStff
         es = self.fst_vt.fst_blade_vt.EdgStff
         gs = self.fst_vt.fst_blade_vt.GJStff
-        es = self.fst_vt.fst_blade_vt.EAStff
+        eas = self.fst_vt.fst_blade_vt.EAStff #[AH] was es (overwrote EdgStiff) -- changed to eas
         a = self.fst_vt.fst_blade_vt.Alpha
         fi = self.fst_vt.fst_blade_vt.FlpIner
         ei = self.fst_vt.fst_blade_vt.EdgIner 
         pr = self.fst_vt.fst_blade_vt.PrecrvRef
+        ps = self.fst_vt.fst_blade_vt.PreswpRef
         fo = self.fst_vt.fst_blade_vt.FlpcgOf       
         eo = self.fst_vt.fst_blade_vt.Edgcgof
         feo = self.fst_vt.fst_blade_vt.FlpEAOf
         eeo = self.fst_vt.fst_blade_vt.EdgEAOf      
         
-        for a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16  in \
-            zip(bf, ac, st, bm, fs, es, gs, es, a, fi, ei, pr, fo, eo, feo, eeo):
-            ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
-            format(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16))
+        # BlFract  AeroCent  StrcTwst  BMassDen    FlpStff    EdgStff    GJStff    EAStff   
+        # Alpha   FlpIner   EdgIner   PrecrvRef   PreswpRef   FlpcgOf   EdgcgOf   FlpEAOf   
+        # EdgEAOf
+
+        for a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17  in \
+            zip(bf, ac, st, bm, fs, es, gs, eas, a, fi, ei, pr, ps, fo, eo, feo, eeo):
+            ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
+            format(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17))
  
         ofh.write('Blade Mode Shapes\n')
         for i in range(5):

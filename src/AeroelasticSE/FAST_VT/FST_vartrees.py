@@ -120,11 +120,16 @@ class FstBladeStrucGeometry(object):
 	    self.FlpIner = zeros([1])
 	    self.EdgIner = zeros([1])
 	    self.PrecrvRef = zeros([1])
+	    self.PreswpRef = zeros([1]) #[AH] Added during openmdao1 update
 	    self.FlpcgOf = zeros([1])
 	    self.Edgcgof = zeros([1])
 	    self.FlpEAOf = zeros([1])
 	    self.EdgEAOf = zeros([1])
 	    
+        # BlFract  AeroCent  StrcTwst  BMassDen    FlpStff    EdgStff    GJStff    EAStff   
+        # Alpha   FlpIner   EdgIner   PrecrvRef   PreswpRef   FlpcgOf   EdgcgOf   FlpEAOf   
+        # EdgEAOf
+
 	    # Blade Mode Shapes
 	    self.BldFl1Sh = zeros([1])
 	    self.BldFl2Sh = zeros([1])

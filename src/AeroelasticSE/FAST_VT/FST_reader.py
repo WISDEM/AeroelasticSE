@@ -665,9 +665,9 @@ class FstInputReader(FstInputBase):
         self.fst_vt.fst_blade_vt.NBlInpSt = int(f.readline().split()[0])
         boolflag = f.readline().split()[0]
         if boolflag == 'False':
-            self.fst_vt.CalcBMode = False
+            self.fst_vt.fst_blade_vt.CalcBMode = False
         else:
-            self.fst_vt.CalcBMode = True
+            self.fst_vt.fst_blade_vt.CalcBMode = True
         self.fst_vt.fst_blade_vt.BldFlDmp1 = float(f.readline().split()[0])
         self.fst_vt.fst_blade_vt.BldFlDmp2 = float(f.readline().split()[0])
         self.fst_vt.fst_blade_vt.BldEdDmp1 = float(f.readline().split()[0])
@@ -693,6 +693,7 @@ class FstInputReader(FstInputBase):
         self.fst_vt.fst_blade_vt.FlpIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.EdgIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.PrecrvRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
+        self.fst_vt.fst_blade_vt.PreswpRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.FlpcgOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.Edgcgof = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.FlpEAOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
@@ -711,11 +712,16 @@ class FstInputReader(FstInputBase):
             self.fst_vt.fst_blade_vt.FlpIner[i] = float(data[9])
             self.fst_vt.fst_blade_vt.EdgIner[i] = float(data[10])
             self.fst_vt.fst_blade_vt.PrecrvRef[i] = float(data[11])
-            self.fst_vt.fst_blade_vt.FlpcgOf[i] = float(data[12])
-            self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[13])
-            self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[14])
-            self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[15])
+            self.fst_vt.fst_blade_vt.PreswpRef[i] = float(data[12])
+            self.fst_vt.fst_blade_vt.FlpcgOf[i] = float(data[13])
+            self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[14])
+            self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[15])
+            self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[16])
         
+            # BlFract  AeroCent  StrcTwst  BMassDen    FlpStff    EdgStff    GJStff    EAStff   
+            # Alpha   FlpIner   EdgIner   PrecrvRef   PreswpRef   FlpcgOf   EdgcgOf   FlpEAOf   
+            # EdgEAOf
+
         f.readline()
         self.fst_vt.fst_blade_vt.BldFl1Sh = [None] * 5
         self.fst_vt.fst_blade_vt.BldFl2Sh = [None] * 5        
