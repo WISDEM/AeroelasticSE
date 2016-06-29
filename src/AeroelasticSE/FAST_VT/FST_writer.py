@@ -644,8 +644,8 @@ class FstInputWriter(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             af_name = os.path.join(self.fst_directory, 'AeroData\\Airfoil' + str(i) + '.dat')
-             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = 'AeroData\\Airfoil' + str(i) + '.dat'
+             af_name = os.path.join(self.fst_directory, 'AeroData', 'Airfoil' + str(i) + '.dat')
+             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
              self.writeAirfoilFile(af_name, i, 2)
 
         ad_file = os.path.join(self.fst_directory,self.fst_vt.ADFile)

@@ -352,14 +352,22 @@ class FstInputReader(FstInputBase):
         self.fst_vt.ShftGagL = float(f.readline().split()[0])
         self.fst_vt.NTwGages = int(f.readline().split()[0])
         twrg = f.readline().split(',')
-        for i in range(self.fst_vt.NTwGages):
-            self.fst_vt.TwrGagNd.append(twrg[i])
-        # self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]   # [AH] Commented out (also line 5 down), was causing errors. What does this line do?
+        if self.fst_vt.NTwGages != 0: #loop over elements if there are gauges to be added, otherwise assign directly
+            for i in range(self.fst_vt.NTwGages):
+                self.fst_vt.TwrGagNd.append(twrg[i])
+            self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]
+        else:
+            self.fst_vt.TwrGagNd = twrg
+            self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:4]
         self.fst_vt.NBlGages = int(f.readline().split()[0])
         blg = f.readline().split(',')
-        for i in range(self.fst_vt.NBlGages):
-            self.fst_vt.BldGagNd.append(blg[i])
-        # self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
+        if self.fst_vt.NBlGages != 0:
+            for i in range(self.fst_vt.NBlGages):
+                self.fst_vt.BldGagNd.append(blg[i])
+            self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
+        else:
+            self.fst_vt.BldGagNd = blg
+            self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:4]
     
         # Outlist (TODO - detailed categorization)
         f.readline()
