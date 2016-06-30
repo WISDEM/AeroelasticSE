@@ -17,7 +17,7 @@ class FSTWorkflow (Component):
 		name as the input. Executes FAST workflow in the associated case running directory.
 		"""
 		super(FSTWorkflow, self).__init__()
-		
+
 		# Initialize objects
 		self.reader = FstInputReader()
 		self.writer = FstInputWriter()
@@ -48,12 +48,30 @@ class FSTWorkflow (Component):
 		self.wrapper.FSTInputFile = self.writer.fst_infile
 		self.wrapper.fst_directory = self.writer.fst_directory
 
+		# # Check for number of active outputs
+		# outcounter = 0   #initialize counter
+		# self.output_outer_dict = self.writer.fst_vt.fst_output_vt.__dict__   #get dictionary of output objects
+		# self.output_outer_keys = self.output_outer_dict.keys()   #get keys/names of output objects
+		# for key in self.output_outer_keys:   #loop over keyed output objects
+		# 	output_dict = self.output_outer_dict[key].__dict__   #get dictionary for this particular output object
+		# 	output_keys = output_dict.keys()   #get keys for this particular output object
+		# 	for key2 in output_keys:   #loop over keys of this particular output object
+		# 		#if value for this key is true, add 1 to outcounter
+		# 		if output_dict[key2]:
+		# 			outcounter = outcounter + 1
+		# print "Number of outputs assigned: ", outcounter
+
 		# OpenMDAO input parameters?
 
 		# OpenMDAO output parameters?
 
+
 	def solve_nonlinear(self, params, unknowns, resids):
-		
+
+		# Create running directory if it doesn't exist
+		if not os.path.isdir(self.writer.fst_directory):
+			os.makedirs(self.writer.fst_directory)
+
 		# Write new analysis files
 		self.writer.execute()
 
@@ -61,32 +79,29 @@ class FSTWorkflow (Component):
 		self.wrapper.execute()
 
 
-# Could write switchable (through config) function for deleting running directories
 class FSTAeroElasticSolver(Group):
 	"""
 	OpenMDAO group to execute FAST components in parallel.
 
-	Here, 'configs' is a dictionary of dictionaries, unlike in FASTv8_Workflow
+	Here, 'configs' is a dictionary of dictionaries, unlike in FSTWorkflow
 	where 'config' is merely a dictionary. 'caseids' is similarly an array of
 	caseid strings.
 	"""
 	def __init__(self, configs, caseids):
-		super(FASTv8_AeroElasticSolver, self).__init__()
+		super(FSTAeroElasticSolver, self).__init__()
 
-		#self._check_config(configs, caseids) ### could write function to check setup
+		#self._check_config(configs, caseids) #could write function to check setup
 
 		pg = self.add('pg', ParallelGroup()) # add parallel group
 		
 		#Loop over cases, add them to the parallel group
 		case_num = len(caseids)
 		for i in range(case_num):
-			pg.add(caseids[i], FASTv8_Workflow(configs[caseids[i]], caseids[i]))
+			pg.add(caseids[i], FSTWorkflow(configs[caseids[i]], caseids[i]))
 
 
 if __name__=="__main__":
-	
-	print "Pass. Check callv8Wrapper.py file to see examples of using FASTv8_aeroelasticsolver.py."
+	pass
 
 
 
-	

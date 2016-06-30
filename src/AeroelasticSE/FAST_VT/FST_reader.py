@@ -19,15 +19,15 @@ class FstInputBase(object):
 
 class FstInputReader(FstInputBase):
 
-    fst_infile = ''   #Master FAST file
-    fst_directory = ''   #Directory of master FAST file set
-    fst_file_type = 0   #Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
-
-    fst_vt = FstModel()
 
     def __init__(self):
-        super(FstInputReader, self).__init__()
+
+        self.fst_infile = ''   #Master FAST file
+        self.fst_directory = ''   #Directory of master FAST file set
+        self.fst_file_type = 0   #Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
+        self.ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+
+        self.fst_vt = FstModel()
     
     def execute(self):
     	  

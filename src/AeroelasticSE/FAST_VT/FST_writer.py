@@ -112,20 +112,18 @@ class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
 
 class FstInputWriter(FstInputBase):
 
-    fst_vt = FstModel()
-
-    fst_infile = ''   #Master FAST file
-    fst_directory = ''   #Directory of master FAST file set
-    fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
-    ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
-    
-    case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
-
-    fst_file = ''   #Case FAST file
-
     def __init__(self):
 
-        super(FstInputWriter, self).__init__()
+        self.fst_vt = FstModel()
+
+        self.fst_infile = ''   #Master FAST file
+        self.fst_directory = ''   #Directory of master FAST file set
+        self.fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
+        self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
+        
+        self.case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
+
+        self.fst_file = ''   #Case FAST file
 
     def InputConfig(self, **kwargs):
         for k, w in kwargs.iteritems():
