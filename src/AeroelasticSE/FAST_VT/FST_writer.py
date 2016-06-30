@@ -111,8 +111,7 @@ class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
 # Writer
 
 class FstInputWriter(FstInputBase):
-    """ Write the new AeroDyn file
-    """
+
     fst_vt = FstModel()
 
     fst_infile = ''   #Master FAST file
@@ -127,7 +126,45 @@ class FstInputWriter(FstInputBase):
     def __init__(self):
 
         super(FstInputWriter, self).__init__()
-    
+
+    def InputConfig(self, **kwargs):
+        for k, w in kwargs.iteritems():
+            try:
+                success = False
+                if hasattr(self, k):
+                    setattr(self,k,w)
+                    success = True
+                # [AH] Not sure if checking against all vartrees is a good idea
+                # (problems if variables in different trees have same name)
+                if hasattr(self.fst_vt, k):
+                    setattr(self.fst_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.simple_wind_vt, k):
+                    setattr(self.fst_vt.simple_wind_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.wnd_wind_vt, k):
+                    setattr(self.fst_vt.wnd_wind_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.platform_vt, k):
+                    setattr(self.fst_vt.platform_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.aero_vt, k):
+                    setattr(self.fst_vt.aero_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.fst_blade_vt, k):
+                    setattr(self.fst_vt.fst_blade_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.fst_tower_vt, k):
+                    setattr(self.fst_vt.fst_tower_vt,k,w)
+                    success = True
+                # elif hasattr(self.fst_output_vt, k):
+                #     setattr(self.fst_output_vt,k,w)
+                # [AH] Not including outputs for now (has multiple sub-vartrees)
+                if not success:
+                    print "No object definition or variable tree has the attribute '{0}'.".format(k)
+            except:
+                print "Error: Could assign attribute '{0}'".format(k)
+
     def execute(self):
 
         self.WindWriter()
@@ -788,10 +825,6 @@ class FstInputWriter(FstInputBase):
             ofh.close()
 
         elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
-
-            print "Wind file: ", self.fst_vt.aero_vt.WindFile
-            print "Wind file type: ", self.fst_vt.aero_vt.wind_file_type
-            print "Location: ", self.fst_directory
 
             wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
             ofh = open(wind_file,'w')
