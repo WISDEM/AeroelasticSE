@@ -161,9 +161,11 @@ class FstInputWriter(FstInputBase):
                 #     setattr(self.fst_output_vt,k,w)
                 # [AH] Not including outputs for now (has multiple sub-vartrees)
                 if not success:
-                    print "No object definition or variable tree has the attribute '{0}'.".format(k)
+                    pass
+                    # print "No object definition or variable tree has the attribute '{0}'.".format(k)
             except:
-                print "Error: Could assign attribute '{0}'".format(k)
+                pass
+                # print "Error: Could assign attribute '{0}'".format(k)
 
     def execute(self):
 
