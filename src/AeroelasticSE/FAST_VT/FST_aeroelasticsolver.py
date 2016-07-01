@@ -4,6 +4,55 @@ from FST_writer import FstInputWriter
 from FST_wrapper import FstWrapper
 import math
 import os
+import numpy as np
+
+# ===================== Miscellaneous Functions =====================
+
+def myloadtxt(fname, skiprows = 0):
+    """ like np.loadtxt, but handles stuff that can't be converted to a float """
+    fin = file(fname)
+    for i in range(skiprows):
+        fin.readline()
+    ln = fin.readline()
+    lns = []
+    while (ln != ""):
+        thisln = []
+        ln = ln.strip().split()
+        for s in ln:
+            try:
+                f = float(s)
+            except:
+                f = None
+            thisln.append(f)
+        lns.append(thisln)
+        ln = fin.readline()
+    return np.array(lns)
+
+
+def parseFASTout(fname, directory = None):
+	""" reads the FAST output file (.out) into a numpy array.  Returns
+
+	- hdr: list of fields in the output
+	- out: table of values over time """
+	fname = os.path.join(directory, fname)
+	if (not os.path.exists(fname)):
+		sys.stderr.write ('parseFASTout: {:} does not exist\n'.format(fname))
+		return None
+
+	fin = file(fname)
+	for i in range(6):
+		fin.readline() ## skip
+	hdr = fin.readline().strip().split()
+	fin.close
+
+	# let numpy do the rest
+	warmup = 0  ## also skip this many outputs, so np.loadtxt doesn't complain about "*****" entries in Fortran output 
+	              #(but why are they there?)  ### this should not happen, means your FAST input/FAST version are out of whack
+	out = myloadtxt(fname,skiprows=8+warmup)  # (8 is lines before data starts)
+	return hdr, out
+
+
+# ===================== OpenMDAO Components and Groups =====================
 
 class FSTWorkflow (Component):
 	""" An OpenMDAO Component for running the FST (FAST) workflow
@@ -48,22 +97,38 @@ class FSTWorkflow (Component):
 		self.wrapper.FSTInputFile = self.writer.fst_infile
 		self.wrapper.fst_directory = self.writer.fst_directory
 
-		# # Check for number of active outputs
-		# outcounter = 0   #initialize counter
-		# self.output_outer_dict = self.writer.fst_vt.fst_output_vt.__dict__   #get dictionary of output objects
-		# self.output_outer_keys = self.output_outer_dict.keys()   #get keys/names of output objects
-		# for key in self.output_outer_keys:   #loop over keyed output objects
-		# 	output_dict = self.output_outer_dict[key].__dict__   #get dictionary for this particular output object
-		# 	output_keys = output_dict.keys()   #get keys for this particular output object
-		# 	for key2 in output_keys:   #loop over keys of this particular output object
-		# 		#if value for this key is true, add 1 to outcounter
-		# 		if output_dict[key2]:
-		# 			outcounter = outcounter + 1
-		# print "Number of outputs assigned: ", outcounter
+		# Check for number of active outputs
+		self.outkeys = []
+		self.outcounter = 0   #initialize counter
+		self.output_outer_dict = self.writer.fst_vt.fst_output_vt.__dict__   #get dictionary of output subtrees
+		self.output_outer_keys = self.output_outer_dict.keys()   #get keys/names of output subtrees
+		for key in self.output_outer_keys:   #loop over keyed output subtrees
+			output_dict = self.output_outer_dict[key].__dict__   #get dictionary for this particular output subtree
+			output_keys = output_dict.keys()   #get keys for this particular output subtree
+			for key2 in output_keys:   #loop over keys of this particular output subtree
+				#if value for this key is true (active), add 1 to outcounter
+				if output_dict[key2]:
+					self.outkeys.append(key2)   #gather names of activated outputs
+					self.outcounter = self.outcounter + 1
 
-		# OpenMDAO input parameters?
+		# Calculate size of output channels
+		# outsize = (TMax - TStart)/(DT * DecFact) + 1
+		self.outsize = ((self.writer.fst_vt.TMax - self.writer.fst_vt.TStart) \
+			/(self.writer.fst_vt.DT*self.writer.fst_vt.DecFact)) + 1
+		print "Size of expected output fields: ", self.outsize
+		print "TMax: ", self.writer.fst_vt.TMax
+		print "TStart: ", self.writer.fst_vt.TStart
+		print "DT: ", self.writer.fst_vt.DT
+		print "DecFact: ", self.writer.fst_vt.DecFact
 
-		# OpenMDAO output parameters?
+		# Loop over number of activated outputs, add them all to the OpenMDAO component
+		ct = 0
+		for i in range(0, self.outcounter):
+			self.add_output(self.outkeys[i], shape=[self.outsize])
+			ct = ct + 1
+		self.add_output('Time', shape=[self.outsize])   #add Time variable (included by default)
+		ct = ct + 1
+		print "{0} output fields added".format(ct)
 
 
 	def solve_nonlinear(self, params, unknowns, resids):
@@ -77,6 +142,20 @@ class FSTWorkflow (Component):
 
 		# Execute analysis
 		self.wrapper.execute()
+
+
+		# ===== Assign Outputs =====
+		# Build output file name
+		casename = self.wrapper.FSTInputFile.rsplit('.', 1)[0]
+		fname = "{0}.out".format(casename)
+
+		# Parse output file
+		hdr, out = parseFASTout(fname, self.wrapper.fst_directory)
+
+		# Loop over output headers, assign values in 'out' to OpenMDAO outputs
+		# This assumes headers match previously assigned ouputs
+		for i in range(0, len(hdr)):
+			unknowns[hdr[i]] = out[:,i]   #assigns values to output channel matching header name
 
 
 class FSTAeroElasticSolver(Group):
