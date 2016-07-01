@@ -115,11 +115,11 @@ class FSTWorkflow (Component):
 		# outsize = (TMax - TStart)/(DT * DecFact) + 1
 		self.outsize = ((self.writer.fst_vt.TMax - self.writer.fst_vt.TStart) \
 			/(self.writer.fst_vt.DT*self.writer.fst_vt.DecFact)) + 1
-		print "Size of expected output fields: ", self.outsize
-		print "TMax: ", self.writer.fst_vt.TMax
-		print "TStart: ", self.writer.fst_vt.TStart
-		print "DT: ", self.writer.fst_vt.DT
-		print "DecFact: ", self.writer.fst_vt.DecFact
+		# print "Size of expected output fields: ", self.outsize
+		# print "TMax: ", self.writer.fst_vt.TMax
+		# print "TStart: ", self.writer.fst_vt.TStart
+		# print "DT: ", self.writer.fst_vt.DT
+		# print "DecFact: ", self.writer.fst_vt.DecFact
 
 		# Loop over number of activated outputs, add them all to the OpenMDAO component
 		ct = 0
@@ -128,7 +128,7 @@ class FSTWorkflow (Component):
 			ct = ct + 1
 		self.add_output('Time', shape=[self.outsize])   #add Time variable (included by default)
 		ct = ct + 1
-		print "{0} output fields added".format(ct)
+		# print "{0} output fields added".format(ct)
 
 
 	def solve_nonlinear(self, params, unknowns, resids):

@@ -767,7 +767,7 @@ class FstInputReader(FstInputBase):
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
             af_filename = f.readline().split()[0]
             af_filename = fix_path(af_filename)
-            print af_filename
+            # print af_filename
             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = af_filename[1:-1]
         
         self.fst_vt.aero_vt.blade_vt.BldNodes = int(f.readline().split()[0])

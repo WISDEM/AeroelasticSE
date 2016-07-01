@@ -6,6 +6,8 @@ openmdao_log.txt
 
 # Test files
 workspace.py
+process_results.py
+*.png
 
 # Sphinx
 _build
