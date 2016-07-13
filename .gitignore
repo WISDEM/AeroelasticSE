@@ -5,9 +5,12 @@
 openmdao_log.txt
 
 # Test files
+notes.txt
 workspace.py
+workspace2.py
 process_results.py
 *.png
+testclasses.py
 
 # Sphinx
 _build
@@ -82,6 +85,7 @@ nosetests.xml
 
 # OS generated files #
 ######################
+~$*
 .DS_Store
 .DS_Store?
 ._*
