@@ -1,5 +1,5 @@
 from numpy import zeros, array
-# from FST_vartrees_out import FstOutput ???
+from FST_vartrees_out import FstOutput
 
 # This variable tree contains all parameters required to create a FAST model
 # for FAST versions 7 and 8.
@@ -42,6 +42,18 @@ class InputFiles(object):
 		self.SubFile = ''
 		self.MooringFile = ''
 		self.IceFile = ''
+
+# FAST Output Parameters
+class FstOutputParams(object):
+	def __init__(self):
+		self.SumPrint   = False
+		self.SttsTime   = 0.0
+		self.ChkptTime  = 0.0
+		self.DT_Out     = 0.0
+		self.TStart     = 0.0
+		self.OutFileFmt = 0
+		self.TabDelim   = False
+		self.OutFmt     = ''
 
 # Visualization
 class Visualization(object):
@@ -264,6 +276,19 @@ class Tower(object):
 		self.TwFAM2Sh = zeros([1])   #Tower Fore-Aft Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
 		self.TwSSM1Sh = zeros([1])   #Tower Side-to-Side Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
 		self.TwSSM2Sh = zeros([1])   #Tower Side-to-Side Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6      
+
+class EdOutParams(object):
+	def __init__(self):
+		self.SumPrint = False
+		self.OutFile  = 0
+		self.TabDelim = False
+		self.OutFmt   = ''
+		self.TStart   = 0.0
+		self.DecFact  = 0.0
+		self.NTwGages = 0
+		self.TwrGagNd = []
+		self.NBlGages = 0
+		self.BldGagNd = []
 
 # Inflow Wind General Parameters
 class InflowWind(object):
@@ -501,12 +526,17 @@ class BladedInterface(object):
 
 class FstModel(object):
 	def __init__(self):
-		
+
+		# Description
+		self.description = ''
+
 		# Fst file vartrees
 		self.fst_sim_ctrl = FstSimCtrl()
 		self.ftr_swtchs_flgs = FtrSwtchsFlgs()
 		self.input_files = InputFiles()
+		self.fst_output_params = FstOutputParams()
 		self.visualization = Visualization()
+		self.fst_out_params = FstOutputParams()
 		
 		# Elastodyn vartrees
 		self.ed_sim_ctrl = EdSimCtrl()
@@ -517,9 +547,10 @@ class FstModel(object):
 		self.mass_inertia = MassInertia()
 		self.blade_struc = BladeStruc()
 		self.rotor_teeter = RotorTeeter()
-		self.drive_train = DriveTrain()
+		self.drivetrain = DriveTrain()
 		self.furling = Furling()
 		self.tower = Tower()
+		self.ed_out_params = EdOutParams()
 
 		# Wind vartrees
 		self.inflow_wind = InflowWind()
@@ -545,6 +576,10 @@ class FstModel(object):
 		self.nac_yaw_ctrl = NacYawCtrl()
 		self.tuned_mass_damp = TunedMassDamp()
 		self.bladed_interface = BladedInterface()
+		
+		# List of Outputs (all input files -- FST, ED, SD)
+		# TODO: Update FstOutput for a few new outputs in FAST8
+		self.outlist = FstOutput()   # 
 
 
 
