@@ -178,7 +178,7 @@ class BladeStruc(object):
 
 		# General Model Inputs
 		self.NBlInpSt = 0   #Number of blade input stations (-)
-		self.CalcBMode = True   #Calculate blade mode shapes internally {T: ignore mode shapes from below, F: use mode shapes from below} [CURRENTLY IGNORED] (flag)
+		self.CalcBMode = False   #Calculate blade mode shapes internally {T: ignore mode shapes from below, F: use mode shapes from below} [CURRENTLY IGNORED] (flag)
 		self.BldFlDmp1 = 0.0   #Blade flap mode #1 structural damping in percent of critical (%)
 		self.BldFlDmp2 = 0.0   #Blade flap mode #2 structural damping in percent of critical (%)
 		self.BldEdDmp1 = 0.0   #Blade edge mode #1 structural damping in percent of critical (%)
@@ -244,7 +244,7 @@ class Tower(object):
 
 		# General Tower Paramters
 		self.NTwInptSt = 0   #Number of input stations to specify tower geometry
-		self.CalcTMode = True   #calculate tower mode shapes internally {T: ignore mode shapes from below, F: use mode shapes from below} [CURRENTLY IGNORED] (flag)
+		self.CalcTMode = False   #calculate tower mode shapes internally {T: ignore mode shapes from below, F: use mode shapes from below} [CURRENTLY IGNORED] (flag)
 		self.TwrFADmp1 = 0.0   #Tower 1st fore-aft mode structural damping ratio (%)
 		self.TwrFADmp2 = 0.0   #Tower 2nd fore-aft mode structural damping ratio (%)
 		self.TwrSSDmp1 = 0.0   #Tower 1st side-to-side mode structural damping ratio (%)
@@ -351,6 +351,11 @@ class HAWCWindParams(object):
 		self.PLExp       = 0.0
 		self.Z0          = 0.0
 
+# Inflow Wind Output Parameters (actual OutList included in master OutList)
+class InflowOutParams(object):
+	def __init__(self):
+		self.SumPrint = False
+
 # Wnd Wind File Parameters
 class WndWind(object):
 	def __init__(self):
@@ -395,7 +400,7 @@ class AeroDynBlade(object):
 	def __init__(self):
 		self.NumFoil = 0   #Number of airfoil files (-)
 		self.FoilNm = zeros([1])   #Names of the airfoil files [NumFoil lines] (quoted strings)
-		#TODO: reading in actual airfoil data
+
 		self.af_data = []   #list of airfoild data sets
 
 		self.BldNodes = 0   #Number of blade nodes used for analysis
@@ -405,6 +410,30 @@ class AeroDynBlade(object):
 		self.Chord = zeros([1])   #units='m',desc='Chord length at node locations; planform area = chord*DRNodes
 		self.NFoil = zeros([1])   #Airfoil ID Number
 		self.PrnElm = zeros([1])   #Flag for printing element ouput for blade section
+
+# AeroDyn Airfoil Polar
+class ADAirfoilPolar(object):
+	def __init__(self):
+	    self.IDParam = 0.0   #Table ID Parameter (Typically Reynolds number)
+	    self.StallAngle = 0.0   #Stall angle (deg)
+	    self.ZeroCn = 0.0   #Zero lift angle of attack (deg)
+	    self.CnSlope = 0.0   #Cn slope for zero lift (dimensionless)
+	    self.CnPosStall = 0.0   #Cn at stall value for positive angle of attack
+	    self.CnNegStall = 0.0   #Cn at stall value for negative angle of attack
+	    self.alphaCdMin = 0.0   #Angle of attack for minimum CD (deg)
+	    self.CdMin = 0.0   #Minimum Cd Value
+
+	    self.alpha = zeros([1])   #angle of attack
+	    self.cl = zeros([1])   #coefficient of lift
+	    self.cd = zeros([1])   #coefficient of drag
+	    self.cm = zeros([1])   #coefficient of the pitching moment
+
+# AeroDyn airfoil
+class ADAirfoil(object):
+	def __init__(self):
+	    self.description = ''   #description of airfoil
+	    self.number_tables = 0   #number of airfoil polars
+	    self.af_tables = []   #list of airfoil polars
 
 # ServoDyn Simulation Control
 class SdSimCtrl(object):
@@ -521,6 +550,15 @@ class BladedInterface(object):
 		self.GenSpd_TLU = zeros([0])
 		self.GenTrq_TLU = zeros([0])
 
+# ServoDyn Output Params
+class SdOutParams(object):
+	def __init__(self):
+		self.SumPrint = False
+		self.OutFile  = 0
+		self.TabDelim = False
+		self.OutFmt   = ''
+		self.TStart   = 0.0
+
 
 # ====== INITIALIZE FAST MODEL BY INITIALIZING ALL VARIABLE TREES ======
 
@@ -559,6 +597,7 @@ class FstModel(object):
 		self.turbsim_wind_params = TurbSimWindParams()
 		self.bladed_wind_params = BladedWindParams()
 		self.hawc_wind_params = HAWCWindParams()
+		self.inflow_out_params = InflowOutParams()
 		self.wnd_wind = WndWind()
 
 		# AeroDyn vartrees
@@ -574,8 +613,9 @@ class FstModel(object):
 		self.theveq_induct_gen = ThevEqInductGen()
 		self.shaft_brake = ShaftBrake()
 		self.nac_yaw_ctrl = NacYawCtrl()
-		self.tuned_mass_damp = TunedMassDamp()
+		self.tuned_mass_damper = TunedMassDamp()
 		self.bladed_interface = BladedInterface()
+		self.sd_out_params = SdOutParams()
 		
 		# List of Outputs (all input files -- FST, ED, SD)
 		# TODO: Update FstOutput for a few new outputs in FAST8

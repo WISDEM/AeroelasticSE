@@ -1,7 +1,7 @@
-
 import os,re
+import sys
 
-from FST_vartrees_new import FstModel
+from FST_vartrees_new import FstModel, ADAirfoil, ADAirfoilPolar
 
 def fix_path(name):
     """ split a path, then reconstruct it using os.path.join """
@@ -21,10 +21,10 @@ class Fst8InputReader(Fst8InputBase):
 
         self.fst_infile = ''   #Master FAST file
         self.fst_directory = ''   #Directory of master FAST file set
+        self.ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
         
-        # These don't currently mean anything for FAST8
+        # This currently doesn't mean anything for FAST8
         # self.fst_file_type = 0   #Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
-        # self.ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
 
         self.fst_vt = FstModel()
     
@@ -111,12 +111,33 @@ class Fst8InputReader(Fst8InputBase):
             self.fst_vt.visualization.VTK_fields = True
         self.fst_vt.visualization.VTK_fps = float(f.readline().split()[0])
 
-        self.ElastoDynReader()  
-        # # ED blade file
-        # self.InflowWindReader() 
-        # self.AeroDynReader()
-        # # AD polars?
-        # self.ServoDynReader()
+        self.ElastoDynReader()
+        self.BladeStrucReader()
+        self.TowerReader()
+        self.InflowWindReader()
+        # Wnd wind file if necessary
+        if self.fst_vt.inflow_wind.WindType == 1:
+            #simple wind, no file necessary
+            pass
+        elif self.fst_vt.inflow_wind.WindType == 2:
+            exten = self.fst_vt.uniform_wind_params.Filename.split('.')[1]
+            if exten == "wnd":
+                self.WndWindReader(self.fst_vt.uniform_wind_params.Filename)
+            else:
+                sys.exit("Wind reader for file extension {} not yet implemented".format(exten))
+        elif self.fst_vt.inflow_wind.WindType == 3:
+            exten = self.fst_vt.turbsim_wind_params.Filename.split('.')[1]
+            if exten == "wnd":
+                self.WndWindReader(self.fst_vt.turbsim_wind_params.Filename)
+            else:
+                sys.exit("Wind reader for file extension {} not yet implemented".format(exten))
+        elif self.fst_vt.inflow_wind.WindType == 4:
+            print "Assuming binary bladed-style FilenameRoot is of type .wnd"
+            self.WndWindReader("{0}.wnd".format(self.fst_vt.bladed_wind_params.Filenameroot))
+        else:
+            sys.exit("Reader functionality for wind type {} not yet implemented".format(self.fst_vt.inflow_wind.WindType))
+        self.AeroDynReader()
+        self.ServoDynReader()
 
     def ElastoDynReader(self):
 
@@ -412,815 +433,601 @@ class Fst8InputReader(Fst8InputBase):
                     self.fst_vt.outlist.dof_vt.__dict__[channel_list[i]] = True
             data = f.readline()
 
-            
-###!!!!!def StrucBladeReader()!!!! (should be able to copy a lot of code) (initialize above!)
+        f.close()
 
 
+    def BladeStrucReader(self):
+        # All in blade_struc vartree
+
+        blade_file = os.path.join(self.fst_directory, self.fst_vt.blade_struc.BldFile1)
+        f = open(blade_file)
+        
+        f.readline()
+        f.readline()
+        f.readline()
+        
+        # Blade Parameters
+        self.fst_vt.blade_struc.NBlInpSt = int(f.readline().split()[0])
+        self.fst_vt.blade_struc.BldFlDmp1 = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.BldFlDmp2 = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.BldEdDmp1 = float(f.readline().split()[0])
+        
+        # Blade Adjustment Factors
+        f.readline()
+        self.fst_vt.blade_struc.FlStTunr1 = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.FlStTunr2 = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.AdjBlMs = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.AdjFlSt = float(f.readline().split()[0])
+        self.fst_vt.blade_struc.AdjEdSt = float(f.readline().split()[0])
+        
+        # Distrilbuted Blade Properties
+        f.readline()
+        f.readline()
+        f.readline()
+        self.fst_vt.blade_struc.BlFract = [None] * self.fst_vt.blade_struc.NBlInpSt
+        self.fst_vt.blade_struc.PitchAxis = [None] * self.fst_vt.blade_struc.NBlInpSt
+        self.fst_vt.blade_struc.StrcTwst = [None] * self.fst_vt.blade_struc.NBlInpSt
+        self.fst_vt.blade_struc.BMassDen = [None] * self.fst_vt.blade_struc.NBlInpSt
+        self.fst_vt.blade_struc.FlpStff = [None] * self.fst_vt.blade_struc.NBlInpSt
+        self.fst_vt.blade_struc.EdgStff = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.GJStff = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.EAStff = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.Alpha = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.FlpIner = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.EdgIner = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.PrecrvRef = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.PreswpRef = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.FlpcgOf = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.Edgcgof = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.FlpEAOf = [None] * self.fst_vt.blade_struc.NBlInpSt
+        # self.fst_vt.blade_struc.EdgEAOf = [None] * self.fst_vt.blade_struc.NBlInpSt
+        for i in range(self.fst_vt.blade_struc.NBlInpSt):
+            data = f.readline().split()          
+            self.fst_vt.blade_struc.BlFract[i] = float(data[0])
+            self.fst_vt.blade_struc.PitchAxis[i] = float(data[1])
+            self.fst_vt.blade_struc.StrcTwst[i] = float(data[2])
+            self.fst_vt.blade_struc.BMassDen[i] = float(data[3])
+            self.fst_vt.blade_struc.FlpStff[i] = float(data[4])
+            self.fst_vt.blade_struc.EdgStff[i] = float(data[5])
+            # self.fst_vt.blade_struc.GJStff[i] = float(data[6])
+            # self.fst_vt.blade_struc.EAStff[i] = float(data[7])
+            # self.fst_vt.blade_struc.Alpha[i] = float(data[8])
+            # self.fst_vt.blade_struc.FlpIner[i] = float(data[9])
+            # self.fst_vt.blade_struc.EdgIner[i] = float(data[10])
+            # self.fst_vt.blade_struc.PrecrvRef[i] = float(data[11])
+            # self.fst_vt.blade_struc.PreswpRef[i] = float(data[12])
+            # self.fst_vt.blade_struc.FlpcgOf[i] = float(data[13])
+            # self.fst_vt.blade_struc.Edgcgof[i] = float(data[14])
+            # self.fst_vt.blade_struc.FlpEAOf[i] = float(data[15])
+            # self.fst_vt.blade_struc.EdgEAOf[i] = float(data[16])
+
+        f.readline()
+        self.fst_vt.blade_struc.BldFl1Sh = [None] * 5
+        self.fst_vt.blade_struc.BldFl2Sh = [None] * 5        
+        self.fst_vt.blade_struc.BldEdgSh = [None] * 5
+        for i in range(5):
+            self.fst_vt.blade_struc.BldFl1Sh[i] = float(f.readline().split()[0])
+        for i in range(5):
+            self.fst_vt.blade_struc.BldFl2Sh[i] = float(f.readline().split()[0])            
+        for i in range(5):
+            self.fst_vt.blade_struc.BldEdgSh[i] = float(f.readline().split()[0])        
+
+        f.close()
 
 
+    def TowerReader(self):
 
-    #     ym = f.readline().split()[0]
-    #     if ym == '0':
-    #         self.fst_vt.YCMode = 0
-    #     elif ym == '1':
-    #         self.fst_vt.YCMode = 1
-    #     else:
-    #         self.fst_vt.YCMode = 2
-    #     self.fst_vt.TYCOn = float(f.readline().split()[0])
-    #     pm = f.readline().split()[0]
-    #     if pm == '0':
-    #         self.fst_vt.PCMode = 0
-    #     elif pm == '1':
-    #         self.fst_vt.PCMode = 1
-    #     else:
-    #         self.fst_vt.PCMode = 2
-    #     self.fst_vt.TPCOn = float(f.readline().split()[0])
-    #     vs = f.readline().split()[0]
-    #     if vs == '0':
-    #         self.fst_vt.VSContrl = 0
-    #     elif vs == '1':
-    #         self.fst_vt.VSContrl = 1
-    #     elif vs == '2':
-    #         self.fst_vt.VSContrl = 2
-    #     else:
-    #         self.fst_vt.VSContrl = 3
-    #     self.fst_vt.VS_RtGnSp  = float(f.readline().split()[0])
-    #     self.fst_vt.VS_RtTq  = float(f.readline().split()[0])
-    #     self.fst_vt.VS_Rgn2K  = float(f.readline().split()[0])
-    #     self.fst_vt.VS_SlPc  = float(f.readline().split()[0])
-    #     gm = f.readline().split()[0]
-    #     if gm == '1':
-    #         self.fst_vt.GenModel = 1
-    #     elif gm == '2':
-    #         self.fst_vt.GenModel = 2
-    #     else:
-    #         self.fst_vt.GenModel = 3
-    #     self.fst_vt.GenTiStr = bool(f.readline().split()[0])
-    #     self.fst_vt.GenTiStp = bool(f.readline().split()[0])
-    #     self.fst_vt.SpdGenOn = float(f.readline().split()[0])
-    #     self.fst_vt.TimGenOn = float(f.readline().split()[0])
-    #     self.fst_vt.TimGenOf = float(f.readline().split()[0])
-    #     hss = f.readline().split()[0]
-    #     if hss == '1':
-    #         self.fst_vt.HSSBrMode = 1
-    #     else:
-    #         self.fst_vt.HSSBrMode = 2
-    #     self.fst_vt.THSSBrDp = float(f.readline().split()[0])
-    #     self.fst_vt.TiDynBrk = float(f.readline().split()[0])
-    #     self.fst_vt.TTpBrDp1 = float(f.readline().split()[0])
-    #     self.fst_vt.TTpBrDp2 = float(f.readline().split()[0])
-    #     self.fst_vt.TTpBrDp3 = float(f.readline().split()[0])
-    #     self.fst_vt.TBDepISp1 = float(f.readline().split()[0])
-    #     self.fst_vt.TBDepISp2 = float(f.readline().split()[0])
-    #     self.fst_vt.TBDepISp3 = float(f.readline().split()[0])
-    #     self.fst_vt.TYawManS = float(f.readline().split()[0])
-    #     self.fst_vt.TYawManE = float(f.readline().split()[0])
-    #     self.fst_vt.NacYawF = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManS1 = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManS2 = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManS3 = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManE1 = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManE2 = float(f.readline().split()[0])
-    #     self.fst_vt.TPitManE3 = float(f.readline().split()[0])
-    #     self.fst_vt.BlPitch1  = float(f.readline().split()[0])
-    #     self.fst_vt.BlPitch2  = float(f.readline().split()[0])
-    #     self.fst_vt.BlPitch3  = float(f.readline().split()[0])
-    #     self.fst_vt.B1PitchF1 = float(f.readline().split()[0])
-    #     self.fst_vt.B1PitchF2 = float(f.readline().split()[0])
-    #     self.fst_vt.B1PitchF3 = float(f.readline().split()[0])
+        tower_file = os.path.join(self.fst_directory, self.fst_vt.tower.TwrFile)        
+        f = open(tower_file)
+
+        f.readline()
+        f.readline()
+
+        # General Tower Paramters
+        f.readline()
+        self.fst_vt.tower.NTwInptSt = int(f.readline().split()[0])
+        self.fst_vt.tower.TwrFADmp1 = float(f.readline().split()[0])
+        self.fst_vt.tower.TwrFADmp2 = float(f.readline().split()[0])
+        self.fst_vt.tower.TwrSSDmp1 = float(f.readline().split()[0])
+        self.fst_vt.tower.TwrSSDmp2 = float(f.readline().split()[0])
     
-    #     f.readline()
-    #     self.fst_vt.OoPDefl = float(f.readline().split()[0])
-    #     self.fst_vt.IPDefl = float(f.readline().split()[0])
-    #     self.fst_vt.TeetDefl = float(f.readline().split()[0])
-    #     self.fst_vt.Azimuth = float(f.readline().split()[0])
-    #     self.fst_vt.RotSpeed = float(f.readline().split()[0])
-    #     self.fst_vt.NacYaw = float(f.readline().split()[0])
-    #     self.fst_vt.TTDspFA = float(f.readline().split()[0])
-    #     self.fst_vt.TTDspSS = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.TipRad = float(f.readline().split()[0])
-    #     self.fst_vt.HubRad = float(f.readline().split()[0])
-    #     self.fst_vt.PSpnElN = int(f.readline().split()[0])
-    #     self.fst_vt.UndSling = float(f.readline().split()[0])
-    #     self.fst_vt.HubCM = float(f.readline().split()[0])
-    #     self.fst_vt.OverHang = float(f.readline().split()[0])
-    #     self.fst_vt.NacCMxn = float(f.readline().split()[0])
-    #     self.fst_vt.NacCMyn = float(f.readline().split()[0])
-    #     self.fst_vt.NacCMzn = float(f.readline().split()[0])
-    #     self.fst_vt.TowerHt = float(f.readline().split()[0])
-    #     self.fst_vt.Twr2Shft = float(f.readline().split()[0])
-    #     self.fst_vt.TwrRBHt = float(f.readline().split()[0])
-    #     self.fst_vt.ShftTilt = float(f.readline().split()[0])
-    #     self.fst_vt.Delta3 = float(f.readline().split()[0])
-    #     self.fst_vt.PreCone1 = float(f.readline().split()[0])
-    #     self.fst_vt.PreCone2 = float(f.readline().split()[0])
-    #     self.fst_vt.PreCone3 = float(f.readline().split()[0])
-    #     self.fst_vt.AzimB1Up = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.YawBrMass = float(f.readline().split()[0])
-    #     self.fst_vt.NacMass = float(f.readline().split()[0])
-    #     self.fst_vt.HubMass = float(f.readline().split()[0])
-    #     self.fst_vt.TipMass1 = float(f.readline().split()[0])
-    #     self.fst_vt.TipMass2 = float(f.readline().split()[0])
-    #     self.fst_vt.TipMass3 = float(f.readline().split()[0])
-    #     self.fst_vt.NacYIner = float(f.readline().split()[0])
-    #     self.fst_vt.GenIner = float(f.readline().split()[0])
-    #     self.fst_vt.HubIner = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.GBoxEff = float(f.readline().split()[0])
-    #     self.fst_vt.GenEff = float(f.readline().split()[0])
-    #     self.fst_vt.GBRatio = float(f.readline().split()[0])
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.GBRevers = False
-    #     else:
-    #         self.fst_vt.GBRevers = True
-    #     self.fst_vt.HSSBrTqF = float(f.readline().split()[0])
-    #     self.fst_vt.HSSBrDT = float(f.readline().split()[0])
-    #     self.fst_vt.DynBrkFi = f.readline().split()[0]
-    #     self.fst_vt.DTTorSpr = float(f.readline().split()[0])
-    #     self.fst_vt.DTTorDmp = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.SIG_SlPc = float(f.readline().split()[0])
-    #     self.fst_vt.SIG_SySp = float(f.readline().split()[0])
-    #     self.fst_vt.SIG_RtTq = float(f.readline().split()[0])
-    #     self.fst_vt.SIG_PORt = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.TEC_Freq = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_NPol = int(f.readline().split()[0])
-    #     self.fst_vt.TEC_SRes = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_RRes = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_VLL = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_SLR = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_RLR = float(f.readline().split()[0])
-    #     self.fst_vt.TEC_MR = float(f.readline().split()[0])
-    #     f.readline()
-    #     pm = f.readline().split()[0]
-    #     if pm == '0':
-    #         self.fst_vt.PtfmModel = 0
-    #     elif pm == '1':
-    #         self.fst_vt.PtfmModel = 1
-    #     elif pm == '2':
-    #         self.fst_vt.PtfmModel = 2
-    #     else:
-    #         self.fst_vt.PtfmModel = 3
-    #     self.fst_vt.PtfmFile = f.readline().split()[0][1:-1]
-    #     f.readline()
-    #     self.fst_vt.TwrNodes = int(f.readline().split()[0])
-    #     self.fst_vt.TwrFile = f.readline().split()[0][1:-1]
-    #     f.readline()
-    #     self.fst_vt.YawSpr = float(f.readline().split()[0])
-    #     self.fst_vt.YawDamp = float(f.readline().split()[0])
-    #     self.fst_vt.YawNeut = float(f.readline().split()[0])
-    #     f.readline()
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.Furling = False
-    #     else:
-    #         self.fst_vt.Furling = True
-    #     self.fst_vt.FurlFile = f.readline().split()[0]
-    #     f.readline() 
-    #     tm = f.readline().split()[0]
-    #     if tm == '0':
-    #         self.fst_vt.TeetMod = 0
-    #     elif tm == '1':
-    #         self.fst_vt.TeetMod = 1
-    #     else:
-    #         self.fst_vt.TeetMod = 2
-    #     self.fst_vt.TeetDmpP = float(f.readline().split()[0])
-    #     self.fst_vt.TeetDmp = float(f.readline().split()[0])
-    #     self.fst_vt.TeetCDmp = float(f.readline().split()[0])
-    #     self.fst_vt.TeetSStP = float(f.readline().split()[0])
-    #     self.fst_vt.TeetHStP = float(f.readline().split()[0])
-    #     self.fst_vt.TeetSSSp = float(f.readline().split()[0])
-    #     self.fst_vt.TeetHSSp = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.TBDrConN = float(f.readline().split()[0])
-    #     self.fst_vt.TBDrConD = float(f.readline().split()[0])
-    #     self.fst_vt.TpBrDT = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.BldFile1 = f.readline().split()[0][1:-1] # TODO - different blade files
-    #     self.fst_vt.BldFile2 = f.readline().split()[0][1:-1]
-    #     self.fst_vt.BldFile3 = f.readline().split()[0][1:-1]
-    #     f.readline() 
-    #     self.fst_vt.ADFile = f.readline().split()[0][1:-1]
-    #     f.readline()
-    #     self.fst_vt.NoiseFile = f.readline().split()[0]
-    #     f.readline()
-    #     self.fst_vt.ADAMSFile = f.readline().split()[0]
-    #     f.readline()
-    #     self.fst_vt.LinFile = f.readline().split()[0]
-    #     f.readline()
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.SumPrint = False
-    #     else:
-    #         self.fst_vt.SumPrint = True
-    #     if self.fst_file_type == 0:
-    #         ff = f.readline().split()[0]
-    #         if ff == '1':
-    #             self.fst_vt.OutFileFmt = 1
-    #         else:
-    #             self.fst_vt.OutFileFmt = 2
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.TabDelim = False
-    #     else:
-    #         self.fst_vt.TabDelim = True
-
-    #     self.fst_vt.OutFmt = f.readline().split()[0]
-    #     self.fst_vt.TStart = float(f.readline().split()[0])
-    #     self.fst_vt.DecFact = int(f.readline().split()[0])
-    #     self.fst_vt.SttsTime = float(f.readline().split()[0])
-    #     self.fst_vt.NcIMUxn = float(f.readline().split()[0])
-    #     self.fst_vt.NcIMUyn = float(f.readline().split()[0])
-    #     self.fst_vt.NcIMUzn = float(f.readline().split()[0])
-    #     self.fst_vt.ShftGagL = float(f.readline().split()[0])
-    #     self.fst_vt.NTwGages = int(f.readline().split()[0])
-    #     twrg = f.readline().split(',')
-    #     if self.fst_vt.NTwGages != 0: #loop over elements if there are gauges to be added, otherwise assign directly
-    #         for i in range(self.fst_vt.NTwGages):
-    #             self.fst_vt.TwrGagNd.append(twrg[i])
-    #         self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]
-    #     else:
-    #         self.fst_vt.TwrGagNd = twrg
-    #         self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:4]
-    #     self.fst_vt.NBlGages = int(f.readline().split()[0])
-    #     blg = f.readline().split(',')
-    #     if self.fst_vt.NBlGages != 0:
-    #         for i in range(self.fst_vt.NBlGages):
-    #             self.fst_vt.BldGagNd.append(blg[i])
-    #         self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
-    #     else:
-    #         self.fst_vt.BldGagNd = blg
-    #         self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:4]
-    
-    #     # Outlist (TODO - detailed categorization)
-    #     f.readline()
-    #     data = f.readline()
-    #     while data.split()[0] != 'END':
-    #         channels = data.split('"')
-    #         channel_list = channels[1].split(',')
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.wind_mot_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.wind_mot_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.blade_mot_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.blade_mot_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.hub_nacelle_mot_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.tower_support_mot_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.wave_mot_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.wave_mot_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.blade_loads_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.blade_loads_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.hub_nacelle_loads_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.tower_support_loads_vt.__dict__[channel_list[i]] = True
-    #         for i in range(len(channel_list)):
-    #             channel_list[i] = channel_list[i].replace(' ','')
-    #             if channel_list[i] in self.fst_vt.fst_output_vt.dof_vt.__dict__.keys():
-    #                 self.fst_vt.fst_output_vt.dof_vt.__dict__[channel_list[i]] = True
-    #         data = f.readline()
-
-    #     self.AeroReader()
-    #     if self.fst_vt.aero_vt.wind_file_type == 'hh':
-    #         self.SimpleWindReader()
-    #     elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
-    #         self.WndWindReader()
-    #     else:
-    #         print "TODO: Other wind file type (bts)"
-    #     self.BladeReader()
-    #     self.TowerReader()
-    #     if self.fst_vt.PtfmFile != 'unused':
-    #         self.PlatformReader()
-    
-    # def PlatformReader(self):
-
-    #     platform_file = os.path.join(self.fst_directory, self.fst_vt.PtfmFile)
-    #     f = open(platform_file)
-
-    #     f.readline()
-    #     f.readline()
-    #     self.fst_vt.platform_vt.description = f.readline().rstrip()
-
-    #     # FEATURE FLAGS (CONT)
-    #     f.readline()
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmSgDOF = False
-    #     else:
-    #         self.fst_vt.PtfmSgDOF = True
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmSwDOF = False
-    #     else:
-    #         self.fst_vt.PtfmSwDOF = True
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmHvDOF = False
-    #     else:
-    #         self.fst_vt.PtfmHvDOF = True
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmRDOF = False
-    #     else:
-    #         self.fst_vt.PtfmRDOF = True
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmPDOF = False
-    #     else:
-    #         self.fst_vt.PtfmPDOF = True
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.PtfmYDOF = False
-    #     else:
-    #         self.fst_vt.PtfmYDOF = True
-        
-    #     # INITIAL CONDITIONS (CONT)
-    #     f.readline()
-    #     self.fst_vt.platform_vt.PtfmSurge = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmSway  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmHeave = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmRoll  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmPitch = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmYaw   = float(f.readline().split()[0])
-        
-    #     # TURBINE CONFIGURATION (CONT)
-    #     f.readline()
-    #     self.fst_vt.platform_vt.TwrDraft  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmCM    = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmRef   = float(f.readline().split()[0])
-        
-    #     # MASS AND INERTIA (CONT) 
-    #     f.readline()
-    #     self.fst_vt.platform_vt.PtfmMass  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmRIner = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmPIner = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.PtfmYIner = float(f.readline().split()[0])
-        
-    #     # PLATFORM (CONT) 
-    #     f.readline()
-    #     pltmd = f.readline().split()[0]
-    #     if pltmd == '0':
-    #         self.fst_vt.platform_vt.PtfmLdMod  = 0
-    #     else:
-    #         self.fst_vt.platform_vt.PtfmLdMod  = 1
-        
-    #     # TOWER (CONT) 
-    #     f.readline()
-    #     twrmd = f.readline().split()[0]
-    #     if twrmd == '0':
-    #         self.fst_vt.platform_vt.TwrLdMod  = 0
-    #     elif twrmd == '1':
-    #         self.fst_vt.platform_vt.TwrLdMod  = 1
-    #     elif twrmd == '2':
-    #         self.fst_vt.platform_vt.TwrLdMod  = 3
-    #     self.fst_vt.platform_vt.TwrDiam   = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.TwrCA     = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.TwrCD     = float(f.readline().split()[0])
-        
-    #     # WAVES 
-    #     f.readline()
-    #     self.fst_vt.platform_vt.WtrDens   = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WtrDpth   = float(f.readline().split()[0])
-    #     wavemod = f.readline().split()[0]
-    #     if wavemod == '0':
-    #         self.fst_vt.platform_vt.WaveMod = 0
-    #     elif wavemod == '1':
-    #         self.fst_vt.platform_vt.WaveMod  = 1  
-    #     elif wavemod == '2':
-    #         self.fst_vt.platform_vt.WaveMod = 2
-    #     elif wavemod == '3':
-    #         self.fst_vt.platform_vt.WaveMod  = 3
-    #     else:
-    #         self.fst_vt.platform_vt.WaveMod  = 4
-    #     wavestmod = f.readline().split()[0]
-    #     if wavestmod == '0':
-    #         self.fst_vt.platform_vt.WaveStMod = 0
-    #     elif wavestmod == '1':
-    #         self.fst_vt.platform_vt.WaveStMod = 1
-    #     elif wavestmod == '2':
-    #         self.fst_vt.platform_vt.WaveStMod = 2
-    #     elif wavestmod == '3':
-    #         self.fst_vt.platform_vt.WaveStMod = 3
-    #     self.fst_vt.platform_vt.WaveTMax  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WaveDT    = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WaveHs    = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WaveTp    = float(f.readline().split()[0])
-    #     wvpk = f.readline().split()[0]
-    #     if wvpk == 'DEFAULT':
-    #         self.fst_vt.platform_vt.WavePkShp = 9999.9
-    #     else:
-    #         self.fst_vt.platform_vt.WavePkShp = float(wvpk)
-    #     self.fst_vt.platform_vt.WaveDir   = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WaveSeed1 = int(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.WaveSeed2 = int(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.GHWvFile  = f.readline().split()[0]
-    
-    #     # CURRENT
-    #     f.readline()
-    #     currmod = float(f.readline().split()[0])
-    #     if currmod == '0':
-    #         self.fst_vt.platform_vt.CurrMod   = 0
-    #     elif currmod == '1':
-    #         self.fst_vt.platform_vt.CurrMod   = 1
-    #     elif currmod == '2':
-    #         self.fst_vt.platform_vt.CurrMod   = 2
-    #     self.fst_vt.platform_vt.CurrSSV0  = float(f.readline().split()[0])
-    #     currs = f.readline().split()[0]
-    #     if currs == 'DEFAULT':
-    #         self.fst_vt.platform_vt.CurrSSDir = 9999.9
-    #     else:
-    #         self.fst_vt.platform_vt.CurrSSDir = float(currs)
-    #     self.fst_vt.platform_vt.CurrNSRef = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.CurrNSV0  = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.CurrNSDir = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.CurrDIV   = float(f.readline().split()[0])
-    #     self.fst_vt.platform_vt.CurrDIDir = float(f.readline().split()[0])
-    
-    #     # OUTPUT (CONT) 
-    #     f.readline()
-    #     self.fst_vt.platform_vt.NWaveKin = int(f.readline().split()[0])
-    #     if self.fst_vt.platform_vt.NWaveKin != 0:
-    #         self.fst_vt.platform_vt.WaveKinNd = str(f.readline().split()[0])
-
-
-    # def TowerReader(self):
-
-    #     tower_file = os.path.join(self.fst_directory, self.fst_vt.TwrFile)        
-    #     f = open(tower_file)
-        
-
-    #     f.readline()
-    #     f.readline()
-    #     self.fst_vt.fst_tower_vt.description = f.readline().rstrip()
-
-    #     # General Tower Paramters
-    #     f.readline()
-    #     self.fst_vt.fst_tower_vt.NTwInptSt = int(f.readline().split()[0])
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.CalcTMode = False
-    #     else:
-    #         self.fst_vt.CalcTMode = True
-    #     self.fst_vt.fst_tower_vt.TwrFADmp1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.TwrFADmp2 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.TwrSSDmp1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.TwrSSDmp2 = float(f.readline().split()[0])
-    
-    #     # Tower Adjustment Factors
-    #     f.readline()
-    #     self.fst_vt.fst_tower_vt.FAStTunr1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.FAStTunr2 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.SSStTunr1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.SSStTunr2 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.AdjTwMa = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.AdjFASt = float(f.readline().split()[0])
-    #     self.fst_vt.fst_tower_vt.AdjSSSt = float(f.readline().split()[0])
+        # Tower Adjustment Factors
+        f.readline()
+        self.fst_vt.tower.FAStTunr1 = float(f.readline().split()[0])
+        self.fst_vt.tower.FAStTunr2 = float(f.readline().split()[0])
+        self.fst_vt.tower.SSStTunr1 = float(f.readline().split()[0])
+        self.fst_vt.tower.SSStTunr2 = float(f.readline().split()[0])
+        self.fst_vt.tower.AdjTwMa = float(f.readline().split()[0])
+        self.fst_vt.tower.AdjFASt = float(f.readline().split()[0])
+        self.fst_vt.tower.AdjSSSt = float(f.readline().split()[0])
      
-    #     # Distributed Tower Properties   
-    #     x = f.readline()
-    #     y = f.readline()
-    #     z = f.readline()
-    #     self.fst_vt.fst_tower_vt.HtFract = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TMassDen = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwFAStif = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwSSStif = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwGJStif = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwEAStif = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt. TwFAIner = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwSSIner = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwFAcgOf = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     self.fst_vt.fst_tower_vt.TwSScgOf = [None] * self.fst_vt.fst_tower_vt.NTwInptSt
-    #     for i in range(self.fst_vt.fst_tower_vt.NTwInptSt):
-    #         data = f.readline().split()
-    #         self.fst_vt.fst_tower_vt.HtFract[i] = float(data[0])
-    #         self.fst_vt.fst_tower_vt.TMassDen[i] = float(data[1])
-    #         self.fst_vt.fst_tower_vt.TwFAStif[i] = float(data[2])
-    #         self.fst_vt.fst_tower_vt.TwSSStif[i] = float(data[3])
-    #         self.fst_vt.fst_tower_vt.TwGJStif[i] = float(data[4])
-    #         self.fst_vt.fst_tower_vt.TwEAStif[i] = float(data[5])
-    #         self.fst_vt.fst_tower_vt. TwFAIner[i] = float(data[6])
-    #         self.fst_vt.fst_tower_vt.TwSSIner[i] = float(data[7])
-    #         self.fst_vt.fst_tower_vt.TwFAcgOf[i] = float(data[8])
-    #         self.fst_vt.fst_tower_vt.TwSScgOf[i] = float(data[9])           
+        # Distributed Tower Properties   
+        f.readline()
+        f.readline()
+        f.readline()
+        self.fst_vt.tower.HtFract = [None] * self.fst_vt.tower.NTwInptSt
+        self.fst_vt.tower.TMassDen = [None] * self.fst_vt.tower.NTwInptSt
+        self.fst_vt.tower.TwFAStif = [None] * self.fst_vt.tower.NTwInptSt
+        self.fst_vt.tower.TwSSStif = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower.TwGJStif = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower.TwEAStif = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower. TwFAIner = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower.TwSSIner = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower.TwFAcgOf = [None] * self.fst_vt.tower.NTwInptSt
+        # self.fst_vt.tower.TwSScgOf = [None] * self.fst_vt.tower.NTwInptSt
+        for i in range(self.fst_vt.tower.NTwInptSt):
+            data = f.readline().split()
+            self.fst_vt.tower.HtFract[i] = float(data[0])
+            self.fst_vt.tower.TMassDen[i] = float(data[1])
+            self.fst_vt.tower.TwFAStif[i] = float(data[2])
+            self.fst_vt.tower.TwSSStif[i] = float(data[3])
+            # self.fst_vt.tower.TwGJStif[i] = float(data[4])
+            # self.fst_vt.tower.TwEAStif[i] = float(data[5])
+            # self.fst_vt.tower. TwFAIner[i] = float(data[6])
+            # self.fst_vt.tower.TwSSIner[i] = float(data[7])
+            # self.fst_vt.tower.TwFAcgOf[i] = float(data[8])
+            # self.fst_vt.tower.TwSScgOf[i] = float(data[9])           
         
-    #     # Tower Mode Shapes
-    #     f.readline()
-    #     self.fst_vt.fst_tower_vt.TwFAM1Sh = [None] * 5
-    #     self.fst_vt.fst_tower_vt.TwFAM2Sh = [None] * 5
-    #     for i in range(5):
-    #         self.fst_vt.fst_tower_vt.TwFAM1Sh[i] = float(f.readline().split()[0])
-    #     for i in range(5):
-    #         self.fst_vt.fst_tower_vt.TwFAM2Sh[i] = float(f.readline().split()[0])        
-    #     f.readline()
-    #     self.fst_vt.fst_tower_vt.TwSSM1Sh = [None] * 5
-    #     self.fst_vt.fst_tower_vt.TwSSM2Sh = [None] * 5          
-    #     for i in range(5):
-    #         self.fst_vt.fst_tower_vt.TwSSM1Sh[i] = float(f.readline().split()[0])
-    #     for i in range(5):
-    #         self.fst_vt.fst_tower_vt.TwSSM2Sh[i] = float(f.readline().split()[0]) 
-    
-    # def BladeReader(self):
+        # Tower Mode Shapes
+        f.readline()
+        self.fst_vt.tower.TwFAM1Sh = [None] * 5
+        self.fst_vt.tower.TwFAM2Sh = [None] * 5
+        for i in range(5):
+            self.fst_vt.tower.TwFAM1Sh[i] = float(f.readline().split()[0])
+        for i in range(5):
+            self.fst_vt.tower.TwFAM2Sh[i] = float(f.readline().split()[0])        
+        f.readline()
+        self.fst_vt.tower.TwSSM1Sh = [None] * 5
+        self.fst_vt.tower.TwSSM2Sh = [None] * 5          
+        for i in range(5):
+            self.fst_vt.tower.TwSSM1Sh[i] = float(f.readline().split()[0])
+        for i in range(5):
+            self.fst_vt.tower.TwSSM2Sh[i] = float(f.readline().split()[0]) 
 
-    #     blade_file = os.path.join(self.fst_directory, self.fst_vt.BldFile1)
-    #     f = open(blade_file)
+        f.close()
+
+
+    def InflowWindReader(self):
+
+        inflow_file = os.path.join(self.fst_directory, self.fst_vt.input_files.InflowFile)
+        f = open(inflow_file)
         
-    #     f.readline()
-    #     f.readline()
-    #     self.fst_vt.fst_blade_vt.description = f.readline().rstrip()
-    #     f.readline()
+        f.readline()
+        f.readline()
+        f.readline()
+
+        # Inflow wind header parameters (inflow_wind)
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.inflow_wind.Echo = False
+        else:
+            self.fst_vt.inflow_wind.Echo = True
+        self.fst_vt.inflow_wind.WindType       = int(f.readline().split()[0])
+        self.fst_vt.inflow_wind.PropogationDir = float(f.readline().split()[0])
+        self.fst_vt.inflow_wind.NWindVel       = int(f.readline().split()[0])
+        self.fst_vt.inflow_wind.WindVxiList    = float(f.readline().split()[0])
+        self.fst_vt.inflow_wind.WindVyiList    = float(f.readline().split()[0])
+        self.fst_vt.inflow_wind.WindVziList    = float(f.readline().split()[0])
+
+        # Parameters for Steady Wind Conditions [used only for WindType = 1] (steady_wind_params)
+        f.readline()
+        self.fst_vt.steady_wind_params.HWindSpeed = float(f.readline().split()[0])
+        self.fst_vt.steady_wind_params.RefHt = float(f.readline().split()[0])
+        self.fst_vt.steady_wind_params.PLexp = float(f.readline().split()[0])
+
+        # Parameters for Uniform wind file   [used only for WindType = 2] (uniform_wind_params)
+        f.readline()
+        self.fst_vt.uniform_wind_params.Filename = f.readline().split()[0][1:-1]
+        self.fst_vt.uniform_wind_params.RefHt = float(f.readline().split()[0])
+        self.fst_vt.uniform_wind_params.RefLength = float(f.readline().split()[0])
+
+        # Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] (turbsim_wind_params)
+        f.readline()
+        self.fst_vt.turbsim_wind_params.Filename = f.readline().split()[0][1:-1]
+
+        # Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] (bladed_wind_params)
+        f.readline()
+        self.fst_vt.bladed_wind_params.FilenameRoot = f.readline().split()[0][1:-1]       
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.bladed_wind_params.TowerFile = False
+        else:
+            self.fst_vt.bladed_wind_params.TowerFile = True
+
+        # Parameters for HAWC-format binary files  [Only used with WindType = 5] (hawc_wind_params)
+        f.readline()
+        self.fst_vt.hawc_wind_params.FileName_u = f.readline().split()[0][1:-1]
+        self.fst_vt.hawc_wind_params.FileName_v = f.readline().split()[0][1:-1]
+        self.fst_vt.hawc_wind_params.FileName_w = f.readline().split()[0][1:-1]
+        self.fst_vt.hawc_wind_params.nx    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.ny    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.nz    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.dx    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.dy    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.dz    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.RefHt = float(f.readline().split()[0])
+
+        # Scaling parameters for turbulence (still hawc_wind_params)
+        f.readline()
+        self.fst_vt.hawc_wind_params.ScaleMethod = int(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SFx         = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SFy         = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SFz         = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SigmaFx     = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SigmaFy     = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.SigmaFz     = float(f.readline().split()[0])
+
+        # Mean wind profile parameters (added to HAWC-format files) (still hawc_wind_params)
+        f.readline()
+        self.fst_vt.hawc_wind_params.URef        = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.WindProfile = int(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.PLExp       = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.Z0          = float(f.readline().split()[0])
+
+        # Inflow Wind Output Parameters (inflow_out_params)
+        f.readline()
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.inflow_out_params.SumPrint = False
+        else:
+            self.fst_vt.inflow_out_params.SumPrint = True
         
-    #     self.fst_vt.fst_blade_vt.NBlInpSt = int(f.readline().split()[0])
-    #     boolflag = f.readline().split()[0]
-    #     if boolflag == 'False':
-    #         self.fst_vt.fst_blade_vt.CalcBMode = False
-    #     else:
-    #         self.fst_vt.fst_blade_vt.CalcBMode = True
-    #     self.fst_vt.fst_blade_vt.BldFlDmp1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.BldFlDmp2 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.BldEdDmp1 = float(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.fst_blade_vt.FlStTunr1 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.FlStTunr2 = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.AdjBlMs = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.AdjFlSt = float(f.readline().split()[0])
-    #     self.fst_vt.fst_blade_vt.AdjEdSt = float(f.readline().split()[0])
+        # NO INFLOW WIND OUTPUT PARAMETERS YET DEFINED IN FAST
+        # f.readline()
+        # data = f.readline()
+        # while data.split()[0] != 'END':
+        #     channels = data.split('"')
+        #     channel_list = channels[1].split(',')
+        #     for i in range(len(channel_list)):
+        #         channel_list[i] = channel_list[i].replace(' ','')
+        #         if channel_list[i] in self.fst_vt.outlist.inflow_wind_vt.__dict__.keys():
+        #             self.fst_vt.outlist.inflow_wind_vt.__dict__[channel_list[i]] = True
+        #     data = f.readline()
+
+        f.close()
+
+
+    def WndWindReader(self, wndfile):
+
+        wind_file = os.path.join(self.fst_directory, wndfile)
+        f = open(wind_file)
+
+        data = []
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+            line_split = line.split()
+            if line_split[0] != '!':
+                data.append(line.split())
+
+        self.fst_vt.wnd_wind.TimeSteps = len(data)
+
+        self.fst_vt.wnd_wind.Time = [None] * len(data)
+        self.fst_vt.wnd_wind.HorSpd = [None] * len(data)
+        self.fst_vt.wnd_wind.WindDir = [None] * len(data)
+        self.fst_vt.wnd_wind.VerSpd = [None] * len(data)
+        self.fst_vt.wnd_wind.HorShr = [None] * len(data)
+        self.fst_vt.wnd_wind.VerShr = [None] * len(data)
+        self.fst_vt.wnd_wind.LnVShr = [None] * len(data)
+        self.fst_vt.wnd_wind.GstSpd = [None] * len(data)        
+        for i in range(len(data)):
+            self.fst_vt.wnd_wind.Time[i] = float(data[i][0])
+            self.fst_vt.wnd_wind.HorSpd[i] = float(data[i][1])
+            self.fst_vt.wnd_wind.WindDir[i] = float(data[i][2])
+            self.fst_vt.wnd_wind.VerSpd[i] = float(data[i][3])
+            self.fst_vt.wnd_wind.HorShr[i] = float(data[i][4])
+            self.fst_vt.wnd_wind.VerShr[i] = float(data[i][5])
+            self.fst_vt.wnd_wind.LnVShr[i] = float(data[i][6])
+            self.fst_vt.wnd_wind.GstSpd[i] = float(data[i][7])
+
+        f.close()
+
+
+    def AeroDynReader(self):
+
+        #from airfoil import PolarByRe # only if creating airfoil variable trees
+
+        ad_file = os.path.join(self.fst_directory, self.fst_vt.input_files.AeroFile)
+        f = open(ad_file)
+
+        # AeroDyn file header (aerodyn)
+        f.readline()
+        f.readline()
+        self.fst_vt.aerodyn.StallMod = f.readline().split()[0]
+        self.fst_vt.aerodyn.UseCm = f.readline().split()[0]
+        self.fst_vt.aerodyn.InfModel = f.readline().split()[0]
+        self.fst_vt.aerodyn.IndModel = f.readline().split()[0]
+        self.fst_vt.aerodyn.AToler = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.TLModel = f.readline().split()[0]
+        self.fst_vt.aerodyn.HLModel = f.readline().split()[0]
+        self.fst_vt.aerodyn.TwrShad = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.ShadHWid = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.T_Shad_Refpt = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.AirDens = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.KinVisc = float(f.readline().split()[0])
+        self.fst_vt.aerodyn.DTAero = float(f.readline().split()[0])
+
+        # AeroDyn Blade Properties (blade_aero)
+        self.fst_vt.blade_aero.NumFoil = int(f.readline().split()[0])
+        self.fst_vt.blade_aero.FoilNm = [None] * self.fst_vt.blade_aero.NumFoil
+        for i in range(self.fst_vt.blade_aero.NumFoil):
+            af_filename = f.readline().split()[0]
+            af_filename = fix_path(af_filename)
+            # print af_filename
+            self.fst_vt.blade_aero.FoilNm[i] = af_filename[1:-1]
         
-    #     f.readline()
-    #     f.readline()
-    #     f.readline()
-    #     self.fst_vt.fst_blade_vt.BlFract = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.AeroCent = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.StrcTwst = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.BMassDen = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.FlpStff = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.EdgStff = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.GJStff = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.EAStff = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.Alpha = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.FlpIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.EdgIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.PrecrvRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.PreswpRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.FlpcgOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.Edgcgof = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.FlpEAOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     self.fst_vt.fst_blade_vt.EdgEAOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
-    #     for i in range(self.fst_vt.fst_blade_vt.NBlInpSt):
-    #         data = f.readline().split()          
-    #         self.fst_vt.fst_blade_vt.BlFract[i] = float(data[0])
-    #         self.fst_vt.fst_blade_vt.AeroCent[i] = float(data[1])
-    #         self.fst_vt.fst_blade_vt.StrcTwst[i] = float(data[2])
-    #         self.fst_vt.fst_blade_vt.BMassDen[i] = float(data[3])
-    #         self.fst_vt.fst_blade_vt.FlpStff[i] = float(data[4])
-    #         self.fst_vt.fst_blade_vt.EdgStff[i] = float(data[5])
-    #         self.fst_vt.fst_blade_vt.GJStff[i] = float(data[6])
-    #         self.fst_vt.fst_blade_vt.EAStff[i] = float(data[7])
-    #         self.fst_vt.fst_blade_vt.Alpha[i] = float(data[8])
-    #         self.fst_vt.fst_blade_vt.FlpIner[i] = float(data[9])
-    #         self.fst_vt.fst_blade_vt.EdgIner[i] = float(data[10])
-    #         self.fst_vt.fst_blade_vt.PrecrvRef[i] = float(data[11])
-    #         self.fst_vt.fst_blade_vt.PreswpRef[i] = float(data[12])
-    #         self.fst_vt.fst_blade_vt.FlpcgOf[i] = float(data[13])
-    #         self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[14])
-    #         self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[15])
-    #         self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[16])
+        self.fst_vt.blade_aero.BldNodes = int(f.readline().split()[0])
+        f.readline()
+        self.fst_vt.blade_aero.RNodes = [None] * self.fst_vt.blade_aero.BldNodes
+        self.fst_vt.blade_aero.AeroTwst = [None] * self.fst_vt.blade_aero.BldNodes
+        self.fst_vt.blade_aero.DRNodes = [None] * self.fst_vt.blade_aero.BldNodes
+        self.fst_vt.blade_aero.Chord = [None] * self.fst_vt.blade_aero.BldNodes
+        self.fst_vt.blade_aero.NFoil = [None] * self.fst_vt.blade_aero.BldNodes
+        self.fst_vt.blade_aero.PrnElm = [None] * self.fst_vt.blade_aero.BldNodes       
+        for i in range(self.fst_vt.blade_aero.BldNodes):
+            data = f.readline().split()
+            self.fst_vt.blade_aero.RNodes[i] = float(data[0])
+            self.fst_vt.blade_aero.AeroTwst[i] = float(data[1])
+            self.fst_vt.blade_aero.DRNodes[i] = float(data[2])
+            self.fst_vt.blade_aero.Chord[i] = float(data[3])
+            self.fst_vt.blade_aero.NFoil[i] = int(data[4])
+            self.fst_vt.blade_aero.PrnElm[i] = data[5]
 
-    #     f.readline()
-    #     self.fst_vt.fst_blade_vt.BldFl1Sh = [None] * 5
-    #     self.fst_vt.fst_blade_vt.BldFl2Sh = [None] * 5        
-    #     self.fst_vt.fst_blade_vt.BldEdgSh = [None] * 5
-    #     for i in range(5):
-    #         self.fst_vt.fst_blade_vt.BldFl1Sh[i] = float(f.readline().split()[0])
-    #     for i in range(5):
-    #         self.fst_vt.fst_blade_vt.BldFl2Sh[i] = float(f.readline().split()[0])            
-    #     for i in range(5):
-    #         self.fst_vt.fst_blade_vt.BldEdgSh[i] = float(f.readline().split()[0])        
+        f.close()
+
+        # create airfoil objects
+        for i in range(self.fst_vt.blade_aero.NumFoil):
+             self.fst_vt.blade_aero.af_data.append(self.initFromAerodynFile(os.path.join(self.fst_directory,self.fst_vt.blade_aero.FoilNm[i]), self.ad_file_type))
+
+
+    def initFromAerodynFile(self, aerodynFile, mode): # kld - added for fast noise
+        """
+        Construct array of polars from old-style Aerodyn file
+        Use this method for FAST (which can't read the new format) 2012 11 12
+
+        Arguments:
+        aerodynFile - path/name of a properly formatted old-style Aerodyn file
+        """
+        # open aerodyn file
+        f = open(aerodynFile, 'r')
         
+        airfoil = ADAirfoil()
 
-    # def AeroReader(self):
+        # skip through header
+        airfoil.description = f.readline().rstrip()  # remove newline
+        f.readline()
+        if mode == 0: 
+            f.readline()        
+        airfoil.number_tables = int(f.readline().split()[0])
 
-    #     #from airfoil import PolarByRe # only if creating airfoil variable trees
-
-    #     ad_file = os.path.join(self.fst_directory, self.fst_vt.ADFile)
-    #     f = open(ad_file)
-
-    #     # skip lines and check if nondimensional
-    #     f.readline()
-    #     self.fst_vt.aero_vt.SysUnits = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.StallMod = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.UseCm = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.InfModel = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.IndModel = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.AToler = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.TLModel = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.HLModel = f.readline().split()[0]
-    #     self.fst_vt.aero_vt.WindFile = f.readline().split()[0][1:-1]
-    #     if self.fst_vt.aero_vt.WindFile[-1] == 'h':
-    #         self.fst_vt.aero_vt.wind_file_type = 'hh'
-    #     elif self.fst_vt.aero_vt.WindFile[-1] == 's':
-    #         self.fst_vt.aero_vt.wind_file_type = 'bts'
-    #     else:
-    #         self.fst_vt.aero_vt.wind_file_type = 'wnd'
-    #     self.fst_vt.aero_vt.HH = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.TwrShad = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.ShadHWid = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.T_Shad_Refpt = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.AirDens = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.KinVisc = float(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.DTAero = float(f.readline().split()[0])
-
-    #     self.fst_vt.aero_vt.blade_vt.NumFoil = int(f.readline().split()[0])
-    #     self.fst_vt.aero_vt.blade_vt.FoilNm = [None] * self.fst_vt.aero_vt.blade_vt.NumFoil
-    #     for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-    #         af_filename = f.readline().split()[0]
-    #         af_filename = fix_path(af_filename)
-    #         # print af_filename
-    #         self.fst_vt.aero_vt.blade_vt.FoilNm[i] = af_filename[1:-1]
-        
-    #     self.fst_vt.aero_vt.blade_vt.BldNodes = int(f.readline().split()[0])
-    #     f.readline()
-    #     self.fst_vt.aero_vt.blade_vt.RNodes = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes
-    #     self.fst_vt.aero_vt.blade_vt.AeroTwst = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes
-    #     self.fst_vt.aero_vt.blade_vt.DRNodes = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes
-    #     self.fst_vt.aero_vt.blade_vt.Chord = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes
-    #     self.fst_vt.aero_vt.blade_vt.NFoil = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes
-    #     self.fst_vt.aero_vt.blade_vt.PrnElm = [None] * self.fst_vt.aero_vt.blade_vt.BldNodes       
-    #     for i in range(self.fst_vt.aero_vt.blade_vt.BldNodes):
-    #         data = f.readline().split()
-    #         self.fst_vt.aero_vt.blade_vt.RNodes[i] = float(data[0])
-    #         self.fst_vt.aero_vt.blade_vt.AeroTwst[i] = float(data[1])
-    #         self.fst_vt.aero_vt.blade_vt.DRNodes[i] = float(data[2])
-    #         self.fst_vt.aero_vt.blade_vt.Chord[i] = float(data[3])
-    #         self.fst_vt.aero_vt.blade_vt.NFoil[i] = int(data[4])
-    #         self.fst_vt.aero_vt.blade_vt.PrnElm[i] = data[5]
-
-    #     f.close()
-
-    #     # create airfoil objects
-    #     for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-    #          self.fst_vt.aero_vt.blade_vt.af_data.append(self.initFromAerodynFile(os.path.join(self.fst_directory,self.fst_vt.aero_vt.blade_vt.FoilNm[i]), self.ad_file_type))
-
-
-    # def initFromAerodynFile(self, aerodynFile, mode): # kld - added for fast noise
-    #     """
-    #     Construct array of polars from old-style Aerodyn file
-    #     Use this method for FAST (which can't read the new format) 2012 11 12
-
-    #     Arguments:
-    #     aerodynFile - path/name of a properly formatted old-style Aerodyn file
-    #     """
-    #     # open aerodyn file
-    #     f = open(aerodynFile, 'r')
-        
-    #     airfoil = ADAirfoil()
-
-    #     # skip through header
-    #     airfoil.description = f.readline().rstrip()  # remove newline
-    #     f.readline()
-    #     if mode == 0: 
-    #         f.readline()        
-    #     airfoil.number_tables = int(f.readline().split()[0])
-
-    #     # loop through tables
-    #     for i in range(airfoil.number_tables):
+        # loop through tables
+        for i in range(airfoil.number_tables):
  
-    #         polar = ADAirfoilPolar()
+            polar = ADAirfoilPolar()
 
-    #         polar.IDParam = float(f.readline().split()[0])
-    #         if mode == 0:
-    #             f.readline()
-    #         polar.StallAngle = float(f.readline().split()[0])
-    #         if mode == 1:
-    #             f.readline()
-    #             f.readline()
-    #             f.readline()
-    #         polar.ZeroCn = float(f.readline().split()[0])
-    #         polar.CnSlope = float(f.readline().split()[0])
-    #         polar.CnPosStall = float(f.readline().split()[0])
-    #         polar.CnNegStall = float(f.readline().split()[0])
-    #         polar.alphaCdMin = float(f.readline().split()[0])
-    #         polar.CdMin = float(f.readline().split()[0])
+            polar.IDParam = float(f.readline().split()[0])
+            if mode == 0:
+                f.readline()
+            polar.StallAngle = float(f.readline().split()[0])
+            if mode == 1:
+                f.readline()
+                f.readline()
+                f.readline()
+            polar.ZeroCn = float(f.readline().split()[0])
+            polar.CnSlope = float(f.readline().split()[0])
+            polar.CnPosStall = float(f.readline().split()[0])
+            polar.CnNegStall = float(f.readline().split()[0])
+            polar.alphaCdMin = float(f.readline().split()[0])
+            polar.CdMin = float(f.readline().split()[0])
 
-    #         alpha = []
-    #         cl = []
-    #         cd = []
-    #         cm = []
-    #         # read polar information line by line
-    #         while True:
-    #             line = f.readline()
-    #             if 'EOT' in line:
-    #                 break
-    #             data = [float(s) for s in line.split()]
-    #             if len(data) < 1:
-    #                 break
-    #             alpha.append(data[0])
-    #             cl.append(data[1])
-    #             cd.append(data[2])
-    #             # cm.append(data[3]) [AH] does not appear to be used in current version...
-    #         polar.alpha = alpha
-    #         polar.cl = cl
-    #         polar.cd = cd
-    #         polar.cm = cm
-    #         airfoil.af_tables.append(polar)
+            alpha = []
+            cl = []
+            cd = []
+            cm = []
+            # read polar information line by line
+            while True:
+                line = f.readline()
+                if 'EOT' in line:
+                    break
+                data = [float(s) for s in line.split()]
+                if len(data) < 1:
+                    break
+                alpha.append(data[0])
+                cl.append(data[1])
+                cd.append(data[2])
+                # cm.append(data[3]) [AH] does not appear to be used in current version...
+            polar.alpha = alpha
+            polar.cl = cl
+            polar.cd = cd
+            polar.cm = cm
+            airfoil.af_tables.append(polar)
 
-    #     f.close()
+        f.close()
 
-    #     return airfoil
-    
-    # def SimpleWindReader(self):
-
-    #     #from airfoil import PolarByRe # only if creating airfoil variable trees
-
-    #     wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
-    #     f = open(wind_file)
-
-    #     data = []
-    #     while 1:
-    #         line = f.readline()
-    #         if not line:
-    #             break
-    #         line_split = line.split()
-    #         if line_split[0] != '!':
-    #             data.append(line.split())
-
-    #     self.fst_vt.simple_wind_vt.TimeSteps = len(data)
-
-    #     self.fst_vt.simple_wind_vt.Time = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.HorSpd = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.WindDir = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.VerSpd = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.HorShr = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.VerShr = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.LnVShr = [None] * len(data)
-    #     self.fst_vt.simple_wind_vt.GstSpd = [None] * len(data)        
-    #     for i in range(len(data)):
-    #         self.fst_vt.simple_wind_vt.Time[i] = float(data[i][0])
-    #         self.fst_vt.simple_wind_vt.HorSpd[i] = float(data[i][1])
-    #         self.fst_vt.simple_wind_vt.WindDir[i] = float(data[i][2])
-    #         self.fst_vt.simple_wind_vt.VerSpd[i] = float(data[i][3])
-    #         self.fst_vt.simple_wind_vt.HorShr[i] = float(data[i][4])
-    #         self.fst_vt.simple_wind_vt.VerShr[i] = float(data[i][5])
-    #         self.fst_vt.simple_wind_vt.LnVShr[i] = float(data[i][6])
-    #         self.fst_vt.simple_wind_vt.GstSpd[i] = float(data[i][7])
-
-    #     f.close()
+        return airfoil
 
 
-    # def WndWindReader(self):
+    def ServoDynReader(self):
 
-    #     wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
-    #     f = open(wind_file)
+        sd_file = os.path.join(self.fst_directory, self.fst_vt.input_files.ServoFile)
+        f = open(sd_file)
 
-    #     data = []
-    #     while 1:
-    #         line = f.readline()
-    #         if not line:
-    #             break
-    #         line_split = line.split()
-    #         if line_split[0] != '!':
-    #             data.append(line.split())
+        f.readline()
+        f.readline()
 
-    #     self.fst_vt.wnd_wind_vt.TimeSteps = len(data)
+        # Simulation Control (sd_sim_ctrl)
+        f.readline()
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.sd_sim_ctrl.Echo = False
+        else:
+            self.fst_vt.sd_sim_ctrl.Echo = True
+        self.fst_vt.sd_sim_ctrl.DT = float(f.readline().split()[0])
 
-    #     self.fst_vt.wnd_wind_vt.Time = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.HorSpd = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.WindDir = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.VerSpd = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.HorShr = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.VerShr = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.LnVShr = [None] * len(data)
-    #     self.fst_vt.wnd_wind_vt.GstSpd = [None] * len(data)        
-    #     for i in range(len(data)):
-    #         self.fst_vt.wnd_wind_vt.Time[i] = float(data[i][0])
-    #         self.fst_vt.wnd_wind_vt.HorSpd[i] = float(data[i][1])
-    #         self.fst_vt.wnd_wind_vt.WindDir[i] = float(data[i][2])
-    #         self.fst_vt.wnd_wind_vt.VerSpd[i] = float(data[i][3])
-    #         self.fst_vt.wnd_wind_vt.HorShr[i] = float(data[i][4])
-    #         self.fst_vt.wnd_wind_vt.VerShr[i] = float(data[i][5])
-    #         self.fst_vt.wnd_wind_vt.LnVShr[i] = float(data[i][6])
-    #         self.fst_vt.wnd_wind_vt.GstSpd[i] = float(data[i][7])
+        # Pitch Control (pitch_ctrl)
+        f.readline()
+        self.fst_vt.pitch_ctrl.PCMode       = int(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.TPCOn        = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.TPitManS1    = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.TPitManS2    = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.TPitManS3    = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.PitManRat1   = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.PitManRat2   = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.PitManRat3   = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.BlPitchF1    = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.BlPitchF2    = float(f.readline().split()[0])
+        self.fst_vt.pitch_ctrl.BlPitchF3    = float(f.readline().split()[0])
 
-    #     f.close()
+        # Geneartor and Torque Control (gen_torq_ctrl)
+        f.readline()
+        self.fst_vt.gen_torq_ctrl.VSContrl = int(f.readline().split()[0])
+        self.fst_vt.gen_torq_ctrl.GenModel = int(f.readline().split()[0])
+        self.fst_vt.gen_torq_ctrl.GenEff   = float(f.readline().split()[0])
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.gen_torq_ctrl.GenTiStr = False
+        else:
+            self.fst_vt.gen_torq_ctrl.GenTiStr = True
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.gen_torq_ctrl.GenTiStp = False
+        else:
+            self.fst_vt.gen_torq_ctrl.GenTiStp = True
+        self.fst_vt.gen_torq_ctrl.SpdGenOn = float(f.readline().split()[0])
+        self.fst_vt.gen_torq_ctrl.TimGenOn = float(f.readline().split()[0])
+        self.fst_vt.gen_torq_ctrl.TimGenOf = float(f.readline().split()[0])
+
+        # Simple Variable-Speed Torque Control (var_speed_torq_ctrl)
+        f.readline()
+        self.fst_vt.var_speed_torq_ctrl.VS_RtGnSp = float(f.readline().split()[0])
+        self.fst_vt.var_speed_torq_ctrl.VS_RtTq   = float(f.readline().split()[0])
+        self.fst_vt.var_speed_torq_ctrl.VS_Rgn2K  = float(f.readline().split()[0])
+        self.fst_vt.var_speed_torq_ctrl.VS_SlPc   = float(f.readline().split()[0])
+
+        # Simple Induction Generator (induct_gen)
+        f.readline()
+        self.fst_vt.induct_gen.SIG_SlPc = float(f.readline().split()[0])
+        self.fst_vt.induct_gen.SIG_SySp = float(f.readline().split()[0])
+        self.fst_vt.induct_gen.SIG_RtTq = float(f.readline().split()[0])
+        self.fst_vt.induct_gen.SIG_PORt = float(f.readline().split()[0])
+
+        # Thevenin-Equivalent Induction Generator (theveq_induct_gen)
+        f.readline()
+        self.fst_vt.theveq_induct_gen.TEC_Freq = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_NPol = int(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_SRes = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_RRes = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_VLL  = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_SLR  = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_RLR  = float(f.readline().split()[0])
+        self.fst_vt.theveq_induct_gen.TEC_MR   = float(f.readline().split()[0])
+
+        # High-Speed Shaft Brake (shaft_brake)
+        f.readline()
+        self.fst_vt.shaft_brake.HSSBrMode = float(f.readline().split()[0])
+        self.fst_vt.shaft_brake.THSSBrDp  = float(f.readline().split()[0])
+        self.fst_vt.shaft_brake.HSSBrDT   = float(f.readline().split()[0])
+        self.fst_vt.shaft_brake.HSSBrTqF  = float(f.readline().split()[0])
+
+        # Nacelle-Yaw Control (nac_yaw_ctrl)
+        f.readline()
+        self.fst_vt.nac_yaw_ctrl.YCMode    = int(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.TYCOn     = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.YawNeut   = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.YawSpr    = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.YawDamp   = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.TYawManS  = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.YawManRat = float(f.readline().split()[0])
+        self.fst_vt.nac_yaw_ctrl.NacYawF   = float(f.readline().split()[0])
+
+        # Tuned Mass Damper (tuned_mass_damper)
+        f.readline()
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.tuned_mass_damper.CompNTMD = False
+        else:
+            self.fst_vt.tuned_mass_damper.CompNTMD = True
+        self.fst_vt.tuned_mass_damper.NTMDfile = f.readline().split()[0][1:-1]
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.tuned_mass_damper.CompTTMD = False
+        else:
+            self.fst_vt.tuned_mass_damper.CompTTMD = True
+        self.fst_vt.tuned_mass_damper.TTMDfile = f.readline().split()[0][1:-1]
+
+        # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
+        f.readline()
+        self.fst_vt.bladed_interface.DLL_FileName = f.readline().split()[0][1:-1]
+        self.fst_vt.bladed_interface.DLL_InFile   = f.readline().split()[0][1:-1]
+        self.fst_vt.bladed_interface.DLL_ProcName = f.readline().split()[0][1:-1]
+        dll_dt_line = f.readline().split()[0]
+        try:
+            self.fst_vt.bladed_interface.DLL_DT = float(dll_dt_line)
+        except:
+            self.fst_vt.bladed_interface.DLL_DT = dll_dt_line[1:-1]
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.bladed_interface.DLL_Ramp = False
+        else:
+            self.fst_vt.bladed_interface.DLL_Ramp = True
+        self.fst_vt.bladed_interface.BPCutoff     = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.NacYaw_North = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.Ptch_Cntrl   = int(f.readline().split()[0])
+        self.fst_vt.bladed_interface.Ptch_SetPnt  = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.Ptch_Min     = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.Ptch_Max     = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.PtchRate_Min = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.PtchRate_Max = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.Gain_OM      = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.GenSpd_MinOM = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.GenSpd_MaxOM = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.GenSpd_Dem   = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.GenTrq_Dem   = float(f.readline().split()[0])
+        self.fst_vt.bladed_interface.GenPwr_Dem   = float(f.readline().split()[0])
+
+        f.readline()
+
+        self.fst_vt.bladed_interface.DLL_NumTrq = int(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        self.fst_vt.bladed_interface.GenSpd_TLU = [None] * self.fst_vt.bladed_interface.DLL_NumTrq
+        self.fst_vt.bladed_interface.GenTrq_TLU = [None] * self.fst_vt.bladed_interface.DLL_NumTrq
+        for i in range(self.fst_vt.bladed_interface.DLL_NumTrq):
+            data = f.readline().split()
+            self.fst_vt.bladed_interface.GenSpd_TLU[i] = float(data[0])
+            self.fst_vt.bladed_interface.GenTrq_TLU[i] = float(data[0])
+
+        # ServoDyn Output Params (sd_out_params)
+        f.readline()
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.sd_out_params.SumPrint = False
+        else:
+            self.fst_vt.sd_out_params.SumPrint = True
+        self.fst_vt.sd_out_params.OutFile  = int(f.readline().split()[0])
+        boolflag = f.readline().split()[0]
+        if boolflag == 'False':
+            self.fst_vt.sd_out_params.TabDelim = False
+        else:
+            self.fst_vt.sd_out_params.TabDelim = True
+        self.fst_vt.sd_out_params.OutFmt   = f.readline().split()[0][1:-1]
+        self.fst_vt.sd_out_params.TStart   = float(f.readline().split()[0])
+
+        # ServoDyn Outlist
+        f.readline()
+        data = f.readline()
+        while data.split()[0] != 'END':
+            channels = data.split('"')
+            channel_list = channels[1].split(',')
+            for i in range(len(channel_list)):
+                channel_list[i] = channel_list[i].replace(' ','')
+                if channel_list[i] in self.fst_vt.outlist.servodyn_vt.__dict__.keys():
+                    self.fst_vt.outlist.inflow_wind_vt.__dict__[channel_list[i]] = True
+            data = f.readline()
+
+        f.close()
+
 
 if __name__=="__main__":
     path = "this\\was\\a\\windows\\path"

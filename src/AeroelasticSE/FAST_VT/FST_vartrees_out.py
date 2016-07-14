@@ -1236,6 +1236,29 @@ class DOFOut(object):
         self.QD2_Y = False   #Acceleration of platform yaw rotation DOF () , () units= rad/s**2
 
 
+# class InflowWindOut(object):
+#     def __init__(self):
+# NO FAST OUTPUTS DEFINED FOR THIS YET
+
+class ServoDynOut(object):
+    def __init__(self):
+        self.BlPitchC1 = False   #Blade 1 pitch angle command
+        self.BlPitchC2 = False   #Blade 2 pitch angle command
+        self.BlPitchC3 = False   #Blade 3 pitch angle command
+        self.GenTq = False   #Electrical generator torque
+        self.GenPwr = False   #Electrical generator power
+        self.HSSBrTqC = False   #High-speed shaft brake torque command (i.e., the commanded moment applied to the high-speed shaft by the brake)
+        self.YawMomCom = False   #Nacelle yaw moment command
+        self.NTMD_XQ = False   #Nacelle X TMD position (displacement)
+        self.NTMD_XQD = False   #Nacelle X TMD velocity
+        self.NTMD_YQ = False   #Nacelle Y TMD position (displacement)
+        self.NTMD_YQD = False   #Nacelle Y TMD velocity
+        self.TTMD_XQ = False   #Tower X TMD position (displacement)
+        self.TTMD_XQD = False   #Tower X TMD velocity
+        self.TTMD_YQ = False   #Tower Y TMD position (displacement)
+        self.TTMD_YQD = False   #Tower Y TMD velocity
+
+
 # Output Variable Tree
 
 class FstOutput(object):
@@ -1252,6 +1275,9 @@ class FstOutput(object):
         self.blade_loads_vt = BladeLoadsOut()   #blade loads output channels 
         self.hub_nacelle_loads_vt = HubNacelleLoadsOut()   #hub and nacelle system loads output channels
         self.tower_support_loads_vt = TowerSupportLoadsOut()   #tower and support loads output channels
+
+        # ServoDyn output channels
+        self.servodyn_vt = ServoDynOut()
 
         # Other output channels
         self.dof_vt = DOFOut()   #degree of freedom output channels
