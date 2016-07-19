@@ -369,7 +369,7 @@ class Fst8InputReader(Fst8InputBase):
             self.fst_vt.ed_out_params.TabDelim = True
         self.fst_vt.ed_out_params.OutFmt   = f.readline().split()[0][1:-1]
         self.fst_vt.ed_out_params.TStart   = float(f.readline().split()[0])
-        self.fst_vt.ed_out_params.DecFact  = float(f.readline().split()[0])
+        self.fst_vt.ed_out_params.DecFact  = int(f.readline().split()[0])
         self.fst_vt.ed_out_params.NTwGages = int(f.readline().split()[0])
         twrg = f.readline().split(',')
         if self.fst_vt.ed_out_params.NTwGages != 0: #loop over elements if there are gauges to be added, otherwise assign directly
@@ -639,9 +639,9 @@ class Fst8InputReader(Fst8InputBase):
         self.fst_vt.hawc_wind_params.FileName_u = f.readline().split()[0][1:-1]
         self.fst_vt.hawc_wind_params.FileName_v = f.readline().split()[0][1:-1]
         self.fst_vt.hawc_wind_params.FileName_w = f.readline().split()[0][1:-1]
-        self.fst_vt.hawc_wind_params.nx    = float(f.readline().split()[0])
-        self.fst_vt.hawc_wind_params.ny    = float(f.readline().split()[0])
-        self.fst_vt.hawc_wind_params.nz    = float(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.nx    = int(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.ny    = int(f.readline().split()[0])
+        self.fst_vt.hawc_wind_params.nz    = int(f.readline().split()[0])
         self.fst_vt.hawc_wind_params.dx    = float(f.readline().split()[0])
         self.fst_vt.hawc_wind_params.dy    = float(f.readline().split()[0])
         self.fst_vt.hawc_wind_params.dz    = float(f.readline().split()[0])
@@ -925,7 +925,7 @@ class Fst8InputReader(Fst8InputBase):
 
         # High-Speed Shaft Brake (shaft_brake)
         f.readline()
-        self.fst_vt.shaft_brake.HSSBrMode = float(f.readline().split()[0])
+        self.fst_vt.shaft_brake.HSSBrMode = int(f.readline().split()[0])
         self.fst_vt.shaft_brake.THSSBrDp  = float(f.readline().split()[0])
         self.fst_vt.shaft_brake.HSSBrDT   = float(f.readline().split()[0])
         self.fst_vt.shaft_brake.HSSBrTqF  = float(f.readline().split()[0])

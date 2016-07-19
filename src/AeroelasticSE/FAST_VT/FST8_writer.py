@@ -185,7 +185,7 @@ class Fst8InputWriter(Fst8InputBase):
 		f.write('---\n')
 		f.write('---\n')
 		f.write('{:}\n'.format(self.fst_vt.fst_sim_ctrl.Echo       ))
-		f.write('"{:}"'.format(self.fst_vt.fst_sim_ctrl.AbortLevel ))
+		f.write('"{:}"\n'.format(self.fst_vt.fst_sim_ctrl.AbortLevel ))
 		f.write('{:.5f}\n'.format(self.fst_vt.fst_sim_ctrl.TMax       ))
 		f.write('{:.5f}\n'.format(self.fst_vt.fst_sim_ctrl.DT         ))
 		f.write('{:3}\n'.format(self.fst_vt.fst_sim_ctrl.InterpOrder))
@@ -328,7 +328,7 @@ class Fst8InputWriter(Fst8InputBase):
 
 		# Turbine Configuration (turb_config)
 		f.write('---\n')
-		f.write('{:3f}\n'.format(self.fst_vt.turb_config.NumBl     ))
+		f.write('{:3}\n'.format(self.fst_vt.turb_config.NumBl     ))
 		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.TipRad    ))
 		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.HubRad    ))
 		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PreCone1  ))
@@ -413,7 +413,7 @@ class Fst8InputWriter(Fst8InputBase):
 		f.write('{:}\n'.format(self.fst_vt.ed_out_params.TabDelim))
 		f.write('"{:}"\n'.format(self.fst_vt.ed_out_params.OutFmt  ))
 		f.write('{:.5f}\n'.format(self.fst_vt.ed_out_params.TStart  ))
-		f.write('{:.5f}\n'.format(self.fst_vt.ed_out_params.DecFact ))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.DecFact ))
 		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.NTwGages))
 		for i in range(self.fst_vt.ed_out_params.NTwGages-1):
 			f.write('{:3}, '.format(self.fst_vt.ed_out_params.TwrGagNd[i]))
@@ -677,9 +677,9 @@ class Fst8InputWriter(Fst8InputBase):
 		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_u))
 		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_v))
 		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_w))
-		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.nx         ))
-		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.ny         ))
-		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.nz         ))
+		f.write('{:3}\n'.format(self.fst_vt.hawc_wind_params.nx         ))
+		f.write('{:3}\n'.format(self.fst_vt.hawc_wind_params.ny         ))
+		f.write('{:3}\n'.format(self.fst_vt.hawc_wind_params.nz         ))
 		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dx         ))
 		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dy         ))
 		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dz         ))
@@ -722,9 +722,23 @@ class Fst8InputWriter(Fst8InputBase):
 
 	def AeroDynWriter(self):
 
+		# ======= Airfoil Files ========
+		# make directory for airfoil files
+		if not os.path.isdir(os.path.join(self.fst_directory,'AeroData')):
+			os.mkdir(os.path.join(self.fst_directory,'AeroData'))
+
+		# create write airfoil objects to files
+		for i in range(self.fst_vt.blade_aero.NumFoil):
+			 af_name = os.path.join(self.fst_directory, 'AeroData', 'Airfoil' + str(i) + '.dat')
+			 self.fst_vt.blade_aero.FoilNm[i] = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
+			 self.writeAirfoilFile(af_name, i, 2)
+
+
 		ad_file = os.path.join(self.fst_directory,self.fst_vt.input_files.AeroFile)
 		f = open(ad_file,'w')
 		
+
+		# ======= Aerodyn Input File ========
 		f.write('Aerodyn input file for FAST\n')
 		
 		f.write('{:}\n'.format(self.fst_vt.aerodyn.SysUnits))
@@ -735,8 +749,6 @@ class Fst8InputWriter(Fst8InputBase):
 		f.write('{:.3f}\n'.format(self.fst_vt.aerodyn.AToler))
 		f.write('{:}\n'.format(self.fst_vt.aerodyn.TLModel))
 		f.write('{:}\n'.format(self.fst_vt.aerodyn.HLModel))
-		f.write('"{:}"\n'.format(self.fst_vt.aerodyn.WindFile))  
-		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.HH))  
 		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.TwrShad))  
 		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.ShadHWid))  
 		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.T_Shad_Refpt))  
@@ -761,15 +773,6 @@ class Fst8InputWriter(Fst8InputBase):
 
 		f.close()		
 
-		# make directory for airfoil files
-		if not os.path.isdir(os.path.join(self.fst_directory,'AeroData')):
-			os.mkdir(os.path.join(self.fst_directory,'AeroData'))
-
-		# create write airfoil objects to files
-		for i in range(self.fst_vt.blade_aero.NumFoil):
-			 af_name = os.path.join(self.fst_directory, 'AeroData', 'Airfoil' + str(i) + '.dat')
-			 self.fst_vt.blade_aero.FoilNm[i] = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
-			 self.writeAirfoilFile(af_name, i, 2)
 
 
 	def writeAirfoilFile(self, filename, a_i, mode=2):
@@ -952,7 +955,7 @@ class Fst8InputWriter(Fst8InputBase):
 		f.write('{:}\n'.format(self.fst_vt.bladed_interface.DLL_Ramp    ))
 		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.BPCutoff    ))
 		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.NacYaw_North))
-		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Cntrl  ))
+		f.write('{:3}\n'.format(self.fst_vt.bladed_interface.Ptch_Cntrl  ))
 		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_SetPnt ))
 		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Min    ))
 		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Max    ))
@@ -998,5 +1001,5 @@ class Fst8InputWriter(Fst8InputBase):
 
 
 if __name__=="__main__":
-	
+
 	pass
