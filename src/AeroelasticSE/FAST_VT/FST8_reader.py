@@ -133,7 +133,7 @@ class Fst8InputReader(Fst8InputBase):
                 sys.exit("Wind reader for file extension {} not yet implemented".format(exten))
         elif self.fst_vt.inflow_wind.WindType == 4:
             print "Assuming binary bladed-style FilenameRoot is of type .wnd"
-            self.WndWindReader("{0}.wnd".format(self.fst_vt.bladed_wind_params.Filenameroot))
+            self.WndWindReader("{0}.wnd".format(self.fst_vt.bladed_wind_params.FilenameRoot))
         else:
             sys.exit("Reader functionality for wind type {} not yet implemented".format(self.fst_vt.inflow_wind.WindType))
         self.AeroDynReader()
@@ -381,10 +381,8 @@ class Fst8InputReader(Fst8InputBase):
             self.fst_vt.ed_out_params.TwrGagNd[-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][:-1]
         self.fst_vt.ed_out_params.NBlGages = int(f.readline().split()[0])
         blg = f.readline().split(',')
-        print "blg: ", blg
         if self.fst_vt.ed_out_params.NBlGages != 0:
             for i in range(self.fst_vt.ed_out_params.NBlGages):
-                print "i: ", i
                 self.fst_vt.ed_out_params.BldGagNd.append(blg[i])
             self.fst_vt.ed_out_params.BldGagNd[-1] = self.fst_vt.ed_out_params.BldGagNd[-1][:-1]
         else:
@@ -1025,7 +1023,7 @@ class Fst8InputReader(Fst8InputBase):
             for i in range(len(channel_list)):
                 channel_list[i] = channel_list[i].replace(' ','')
                 if channel_list[i] in self.fst_vt.outlist.servodyn_vt.__dict__.keys():
-                    self.fst_vt.outlist.inflow_wind_vt.__dict__[channel_list[i]] = True
+                    self.fst_vt.outlist.servodyn_vt.__dict__[channel_list[i]] = True
             data = f.readline()
 
         f.close()

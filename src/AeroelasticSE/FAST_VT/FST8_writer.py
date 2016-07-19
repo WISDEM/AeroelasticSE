@@ -240,13 +240,32 @@ class Fst8InputWriter(Fst8InputBase):
 
 		# Call other writers
 		self.ElastoDynWriter()
-		# self.BladeStrucWriter()
-		# self.TowerWriter()
-		# self.InflowWindWriter()
-		# if:
-			# self.WndWindWriter()
-		# self.AeroDynWriter()
-		# self.ServoDynWriter()
+		self.BladeStrucWriter()
+		self.TowerWriter()
+		self.InflowWindWriter()
+		# Wnd wind file if necessary
+		if self.fst_vt.inflow_wind.WindType == 1:
+			#simple wind, no file necessary
+			pass
+		elif self.fst_vt.inflow_wind.WindType == 2:
+			exten = self.fst_vt.uniform_wind_params.Filename.split('.')[1]
+			if exten == "wnd":
+				self.WndWindWriter(self.fst_vt.uniform_wind_params.Filename)
+			else:
+				sys.exit("Wind writer for file extension {} not yet implemented".format(exten))
+		elif self.fst_vt.inflow_wind.WindType == 3:
+			exten = self.fst_vt.turbsim_wind_params.Filename.split('.')[1]
+			if exten == "wnd":
+				self.WndWindWriter(self.fst_vt.turbsim_wind_params.Filename)
+			else:
+				sys.exit("Wind writer for file extension {} not yet implemented".format(exten))
+		elif self.fst_vt.inflow_wind.WindType == 4:
+			print "Assuming binary bladed-style FilenameRoot is of type .wnd"
+			self.WndWindWriter("{0}.wnd".format(self.fst_vt.bladed_wind_params.FilenameRoot))
+		else:
+			sys.exit("Reader functionality for wind type {} not yet implemented".format(self.fst_vt.inflow_wind.WindType))
+		self.AeroDynWriter()
+		self.ServoDynWriter()
 
 
 	def ElastoDynWriter(self):
@@ -502,13 +521,480 @@ class Fst8InputWriter(Fst8InputBase):
 		f.close()
 
 
-	# def Blade
-		# Blank line: f.write('---\n')
-		# BOOL: f.write('{:}\n'.format())
-		# INT: f.write('{:3}\n'.format())
-		# DOUBLE: f.write('{:.5f}\n'.format())
-		# STRING: f.write('"{:}"\n'.format())
+	def BladeStrucWriter(self):
 
+		blade_file = os.path.join(self.fst_directory,self.fst_vt.blade_struc.BldFile1)
+		f = open(blade_file, 'w')
+		
+		f.write('---\n')
+		f.write('---\n')
+		f.write('---\n')
+		f.write('{:4}\n'.format(self.fst_vt.blade_struc.NBlInpSt))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.BldFlDmp1))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.BldFlDmp2))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.BldEdDmp1))
+		f.write('---\n')
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.FlStTunr1))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.FlStTunr2))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.AdjBlMs))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.AdjFlSt))
+		f.write('{:.6f}\n'.format(self.fst_vt.blade_struc.AdjEdSt))
+		f.write('Distributed blade properties\n')
+		f.write('---\n')
+		f.write('---\n')
+		
+		bf = self.fst_vt.blade_struc.BlFract
+		# ac = self.fst_vt.blade_struc.AeroCent
+		pa = self.fst_vt.blade_struc.PitchAxis
+		st = self.fst_vt.blade_struc.StrcTwst
+		bm = self.fst_vt.blade_struc.BMassDen
+		fs = self.fst_vt.blade_struc.FlpStff
+		es = self.fst_vt.blade_struc.EdgStff
+		# gs = self.fst_vt.blade_struc.GJStff
+		# eas = self.fst_vt.blade_struc.EAStff #[AH] was es (overwrote EdgStiff) -- changed to eas
+		# a = self.fst_vt.blade_struc.Alpha
+		# fi = self.fst_vt.blade_struc.FlpIner
+		# ei = self.fst_vt.blade_struc.EdgIner 
+		# pr = self.fst_vt.blade_struc.PrecrvRef
+		# ps = self.fst_vt.blade_struc.PreswpRef
+		# fo = self.fst_vt.blade_struc.FlpcgOf       
+		# eo = self.fst_vt.blade_struc.Edgcgof
+		# feo = self.fst_vt.blade_struc.FlpEAOf
+		# eeo = self.fst_vt.blade_struc.EdgEAOf      
+
+		for a1, a2, a3, a4, a5, a6 in \
+			zip(bf, pa, st, bm, fs, es):
+			f.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
+			format(a1, a2, a3, a4, a5, a6))
+ 
+		f.write('Blade Mode Shapes\n')
+		for i in range(5):
+			f.write('{:.4f}\n'.format(self.fst_vt.blade_struc.BldFl1Sh[i]))
+		for i in range(5):
+			f.write('{:.4f}\n'.format(self.fst_vt.blade_struc.BldFl2Sh[i]))           
+		for i in range(5):
+			f.write('{:.4f}\n'.format(self.fst_vt.blade_struc.BldEdgSh[i]))      
+		 
+		f.close()
+
+
+	def TowerWriter(self):
+
+		tower_file = os.path.join(self.fst_directory,self.fst_vt.tower.TwrFile)
+		f = open(tower_file, 'w')
+
+		f.write('---\n')
+		f.write('---\n')
+		f.write('Tower Parameters\n')
+		f.write('{:3}\n'.format(self.fst_vt.tower.NTwInptSt))
+		f.write('{:5}\n'.format(self.fst_vt.tower.TwrFADmp1))
+		f.write('{:5}\n'.format(self.fst_vt.tower.TwrFADmp2))
+		f.write('{:5}\n'.format(self.fst_vt.tower.TwrSSDmp1))
+		f.write('{:5}\n'.format(self.fst_vt.tower.TwrSSDmp2))
+	
+		# Tower Adjustment Factors
+		f.write('Tower Adjustment Factors\n')
+		f.write('{:5}\n'.format(self.fst_vt.tower.FAStTunr1))
+		f.write('{:5}\n'.format(self.fst_vt.tower.FAStTunr2))
+		f.write('{:5}\n'.format(self.fst_vt.tower.SSStTunr1))
+		f.write('{:5}\n'.format(self.fst_vt.tower.SSStTunr2))
+		f.write('{:5}\n'.format(self.fst_vt.tower.AdjTwMa))
+		f.write('{:5}\n'.format(self.fst_vt.tower.AdjFASt))
+		f.write('{:5}\n'.format(self.fst_vt.tower.AdjSSSt))
+	 
+		# Distributed Tower Properties   
+		f.write('Distributed Tower Properties\n')
+		f.write('---\n')
+		f.write('---\n')
+		hf = self.fst_vt.tower.HtFract
+		md = self.fst_vt.tower.TMassDen
+		fs = self.fst_vt.tower.TwFAStif
+		ss = self.fst_vt.tower.TwSSStif
+		# gs = self.fst_vt.tower.TwGJStif
+		# es = self.fst_vt.tower.TwEAStif
+		# fi = self.fst_vt.tower. TwFAIner
+		# si = self.fst_vt.tower.TwSSIner
+		# fo = self.fst_vt.tower.TwFAcgOf
+		# so = self.fst_vt.tower.TwSScgOf
+		for a1, a2, a3, a4 in zip(hf, md, fs, ss):
+			f.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
+			format(a1, a2, a3, a4))          
+		
+		# Tower Mode Shapes
+		f.write('Tower Fore-Aft Mode Shapes\n')
+		for i in range(5):
+			f.write('{:5}\n'.format(self.fst_vt.tower.TwFAM1Sh[i]))
+		for i in range(5):
+			f.write('{:5}\n'.format(self.fst_vt.tower.TwFAM2Sh[i]))        
+		f.write('Tower Side-to-Side Mode Shapes\n')         
+		for i in range(5):
+			f.write('{:5}\n'.format(self.fst_vt.tower.TwSSM1Sh[i]))
+		for i in range(5):
+			f.write('{:5}\n'.format(self.fst_vt.tower.TwSSM2Sh[i])) 
+		
+		f.close()
+
+
+	def InflowWindWriter(self):
+
+		inflow_file = os.path.join(self.fst_directory,self.fst_vt.input_files.InflowFile)
+		f = open(inflow_file, 'w')
+
+		f.write('---\n')
+		f.write('---\n')
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.inflow_wind.Echo          ))
+		f.write('{:3}\n'.format(self.fst_vt.inflow_wind.WindType      ))
+		f.write('{:.5f}\n'.format(self.fst_vt.inflow_wind.PropogationDir))
+		f.write('{:3}\n'.format(self.fst_vt.inflow_wind.NWindVel      ))
+		f.write('{:.5f}\n'.format(self.fst_vt.inflow_wind.WindVxiList   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.inflow_wind.WindVyiList   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.inflow_wind.WindVziList   ))
+
+		# Parameters for Steady Wind Conditions [used only for WindType = 1] (steady_wind_params)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.steady_wind_params.HWindSpeed))
+		f.write('{:.5f}\n'.format(self.fst_vt.steady_wind_params.RefHt     ))
+		f.write('{:.5f}\n'.format(self.fst_vt.steady_wind_params.PLexp     ))
+
+		# Parameters for Uniform wind file   [used only for WindType = 2] (uniform_wind_params)
+		f.write('---\n')
+		f.write('"{:}"\n'.format(self.fst_vt.uniform_wind_params.Filename ))
+		f.write('{:.5f}\n'.format(self.fst_vt.uniform_wind_params.RefHt    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.uniform_wind_params.RefLength))
+
+		# Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] (turbsim_wind_params)
+		f.write('---\n')
+		f.write('"{:}"\n'.format(self.fst_vt.turbsim_wind_params.Filename ))
+
+		# Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] (bladed_wind_params)
+		f.write('---\n')
+		f.write('"{:}"\n'.format(self.fst_vt.bladed_wind_params.FilenameRoot))
+		f.write('{:}\n'.format(self.fst_vt.bladed_wind_params.TowerFile))
+
+		# Parameters for HAWC-format binary files  [Only used with WindType = 5] (hawc_wind_params)
+		f.write('---\n')
+		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_u))
+		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_v))
+		f.write('"{:}"\n'.format(self.fst_vt.hawc_wind_params.FileName_w))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.nx         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.ny         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.nz         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dx         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dy         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.dz         ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.RefHt      ))
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.hawc_wind_params.ScaleMethod))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SFx        ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SFy        ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SFz        ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SigmaFx    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SigmaFy    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.SigmaFz    ))
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.URef       ))
+		f.write('{:3}\n'.format(self.fst_vt.hawc_wind_params.WindProfile))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.PLExp      ))
+		f.write('{:.5f}\n'.format(self.fst_vt.hawc_wind_params.Z0         ))
+
+		# InflowWind Output Parameters (inflow_out_params)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.inflow_out_params.SumPrint))
+		f.write('OutList\n')
+		# No inflow wind outputs currently implemented in FAST 8
+		f.write('END\n')
+
+
+	def WndWindWriter(self, wndfile):
+
+		wind_file = os.path.join(self.fst_directory,wndfile)
+		f = open(wind_file, 'w')
+
+		for i in range(self.fst_vt.wnd_wind.TimeSteps):
+			f.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.format(\
+					  self.fst_vt.wnd_wind.Time[i], self.fst_vt.wnd_wind.HorSpd[i], self.fst_vt.wnd_wind.WindDir[i],\
+					  self.fst_vt.wnd_wind.VerSpd[i], self.fst_vt.wnd_wind.HorShr[i],\
+					  self.fst_vt.wnd_wind.VerShr[i], self.fst_vt.wnd_wind.LnVShr[i], self.fst_vt.wnd_wind.GstSpd[i]))
+
+		f.close()
+
+
+	def AeroDynWriter(self):
+
+		ad_file = os.path.join(self.fst_directory,self.fst_vt.input_files.AeroFile)
+		f = open(ad_file,'w')
+		
+		f.write('Aerodyn input file for FAST\n')
+		
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.SysUnits))
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.StallMod))        
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.UseCm))
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.InfModel))
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.IndModel))
+		f.write('{:.3f}\n'.format(self.fst_vt.aerodyn.AToler))
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.TLModel))
+		f.write('{:}\n'.format(self.fst_vt.aerodyn.HLModel))
+		f.write('"{:}"\n'.format(self.fst_vt.aerodyn.WindFile))  
+		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.HH))  
+		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.TwrShad))  
+		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.ShadHWid))  
+		f.write('{:.1f}\n'.format(self.fst_vt.aerodyn.T_Shad_Refpt))  
+		f.write('{:.3f}\n'.format(self.fst_vt.aerodyn.AirDens))  
+		f.write('{:.9f}\n'.format(self.fst_vt.aerodyn.KinVisc))  
+		f.write('{:2}\n'.format(self.fst_vt.aerodyn.DTAero))        
+
+		f.write('{:2}\n'.format(self.fst_vt.blade_aero.NumFoil))
+		for i in range (self.fst_vt.blade_aero.NumFoil):
+			f.write('"{:}"\n'.format(self.fst_vt.blade_aero.FoilNm[i]))
+
+		f.write('{:2}\n'.format(self.fst_vt.blade_aero.BldNodes))
+		rnodes = self.fst_vt.blade_aero.RNodes
+		twist = self.fst_vt.blade_aero.AeroTwst
+		drnodes = self.fst_vt.blade_aero.DRNodes
+		chord = self.fst_vt.blade_aero.Chord
+		nfoil = self.fst_vt.blade_aero.NFoil
+		prnelm = self.fst_vt.blade_aero.PrnElm
+		f.write('Nodal properties\n')
+		for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
+			f.write('{:.5f}\t{:.3f}\t{:.4f}\t{:.3f}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
+
+		f.close()		
+
+		# make directory for airfoil files
+		if not os.path.isdir(os.path.join(self.fst_directory,'AeroData')):
+			os.mkdir(os.path.join(self.fst_directory,'AeroData'))
+
+		# create write airfoil objects to files
+		for i in range(self.fst_vt.blade_aero.NumFoil):
+			 af_name = os.path.join(self.fst_directory, 'AeroData', 'Airfoil' + str(i) + '.dat')
+			 self.fst_vt.blade_aero.FoilNm[i] = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
+			 self.writeAirfoilFile(af_name, i, 2)
+
+
+	def writeAirfoilFile(self, filename, a_i, mode=2):
+		"""
+		Write the airfoil section data to a file using AeroDyn input file style.
+
+		Arguments:
+		filename - name (+ relative path) of where to write file
+
+		Returns:
+		nothing
+
+		"""
+
+		f = open(filename, 'w')
+
+		if (mode == 0):
+			'''print >> f, 'AeroDyn airfoil file.  Compatible with AeroDyn v13.0.'
+			print >> f, 'auto generated by airfoil.py'
+			print >> f, 'airfoil.py is part of rotor TEAM'
+			print >> f, '{0:<10d}\t{1:40}'.format(len(self.polars), 'Number of airfoil tables in this file')
+			for p in self.polars:
+				print >> f, '{0:<10g}\t{1:40}'.format(p.Re/1e6, 'Reynolds number in millions.')
+				param = p.computeAerodynParameters(debug=debug)
+				print >> f, '{0:<10f}\t{1:40}'.format(param[0], 'Control setting')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[1], 'Stall angle (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[2], 'Angle of attack for zero Cn for linear Cn curve (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[3], 'Cn slope for zero lift for linear Cn curve (1/rad)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[4], 'Cn at stall value for positive angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[5], 'Cn at stall value for negative angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[6], 'Angle of attack for minimum CD (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[7], 'Minimum CD value')
+				for a, cl, cd in zip(p.alpha, p.cl, p.cd):
+					print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a*R2D, cl, cd)
+				print >> f, 'EOT'
+				## PG (1-19-13) added mode 2: coming from newer Aerodyn(?), but written for FAST 7 (?) ##'''
+		elif (mode == 2):
+			print >> f, 'AeroDyn airfoil file.'
+			print >> f, 'auto generated by airfoil.py (part of rotor TEAM)'
+			print >> f, '{0:<10d}\t{1:40}'.format(self.fst_vt.blade_aero.af_data[a_i].number_tables, 'Number of airfoil tables in this file')
+			for i in range(self.fst_vt.blade_aero.af_data[a_i].number_tables):
+				param = self.fst_vt.blade_aero.af_data[a_i].af_tables[i]
+				print >> f, '{0:<10g}\t{1:40}'.format(i, 'Table ID parameter')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.StallAngle, 'Stall angle (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(0, 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(0, 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(0, 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.ZeroCn, 'Angle of attack for zero Cn for linear Cn curve (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.CnSlope, 'Cn slope for zero lift for linear Cn curve (1/rad)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.CnPosStall, 'Cn at stall value for positive angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.CnNegStall, 'Cn at stall value for negative angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.alphaCdMin, 'Angle of attack for minimum CD (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param.CdMin, 'Minimum CD value')
+				# for a, cl, cd, cm in zip(param.alpha, param.cl, param.cd, param.cm):
+				#[AH] 'cm' removed here as well--double-check what this is all about
+				for a, cl, cd in zip(param.alpha, param.cl, param.cd):
+					# print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}\t{3:<10f}'.format(a, cl, cd, cm)
+					print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a, cl, cd)
+		else:
+			'''print >> f, 'AeroDyn airfoil file.'
+			print >> f, 'auto generated by airfoil.py (part of rotor TEAM)'
+			print >> f, '{0:<10d}\t{1:40}'.format(len(self.polars), 'Number of airfoil tables in this file')
+			for i,p in enumerate(self.polars):
+				param = p.computeAerodynParameters(mode=1,debug=debug)
+				print >> f, '{0:<10g}\t{1:40}'.format(param[0], 'Table ID parameter')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[1], 'Stall angle (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[2], 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[3], 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[4], 'No longer used, enter zero')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[5], 'Angle of attack for zero Cn for linear Cn curve (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[6], 'Cn slope for zero lift for linear Cn curve (1/rad)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[7], 'Cn at stall value for positive angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[8], 'Cn at stall value for negative angle of attack for linear Cn curve')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[9], 'Angle of attack for minimum CD (deg)')
+				print >> f, '{0:<10f}\t{1:40}'.format(param[10], 'Minimum CD value') # is this 'Zero lift drag'?
+				for a, cl, cd in zip(p.alpha, p.cl, p.cd):
+					print >> f, '{0:7.2f}\t{1:<7.3f}\t{2:<7.3}'.format(a*R2D, cl, cd)
+					#print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a*R2D, cl, cd)'''
+		
+		f.close()
+
+
+	def ServoDynWriter(self):
+
+		sd_file = os.path.join(self.fst_directory,self.fst_vt.input_files.ServoFile)
+		f = open(sd_file,'w')
+
+		f.write('---\n')
+		f.write('---\n')
+		
+		# ServoDyn Simulation Control (sd_sim_ctrl)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.sd_sim_ctrl.Echo))
+		f.write('{:.5f}\n'.format(self.fst_vt.sd_sim_ctrl.DT))
+
+		# Pitch Control (pitch_ctrl)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.pitch_ctrl.PCMode    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.TPCOn     ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.TPitManS1 ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.TPitManS2 ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.TPitManS3 ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.PitManRat1))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.PitManRat2))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.PitManRat3))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.BlPitchF1 ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.BlPitchF2 ))
+		f.write('{:.5f}\n'.format(self.fst_vt.pitch_ctrl.BlPitchF3 ))
+
+		# Generator and Torque Control (gen_torq_ctrl)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.gen_torq_ctrl.VSContrl))
+		f.write('{:3}\n'.format(self.fst_vt.gen_torq_ctrl.GenModel))
+		f.write('{:.5f}\n'.format(self.fst_vt.gen_torq_ctrl.GenEff  ))
+		f.write('{:}\n'.format(self.fst_vt.gen_torq_ctrl.GenTiStr))
+		f.write('{:}\n'.format(self.fst_vt.gen_torq_ctrl.GenTiStp))
+		f.write('{:.5f}\n'.format(self.fst_vt.gen_torq_ctrl.SpdGenOn))
+		f.write('{:.5f}\n'.format(self.fst_vt.gen_torq_ctrl.TimGenOn))
+		f.write('{:.5f}\n'.format(self.fst_vt.gen_torq_ctrl.TimGenOf))
+
+		# Simple Variable-Speed Torque Control (var_speed_torq_ctrl)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.var_speed_torq_ctrl.VS_RtGnSp))
+		f.write('{:.5f}\n'.format(self.fst_vt.var_speed_torq_ctrl.VS_RtTq  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.var_speed_torq_ctrl.VS_Rgn2K ))
+		f.write('{:.5f}\n'.format(self.fst_vt.var_speed_torq_ctrl.VS_SlPc  ))
+
+		# Simple Induction Generator (induct_gen)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.induct_gen.SIG_SlPc))
+		f.write('{:.5f}\n'.format(self.fst_vt.induct_gen.SIG_SySp))
+		f.write('{:.5f}\n'.format(self.fst_vt.induct_gen.SIG_RtTq))
+		f.write('{:.5f}\n'.format(self.fst_vt.induct_gen.SIG_PORt))
+
+		# Thevenin-Equivalent Induction Generator (theveq_induct_gen)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_Freq))
+		f.write('{:3}\n'.format(self.fst_vt.theveq_induct_gen.TEC_NPol))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_SRes))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_RRes))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_VLL ))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_SLR ))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_RLR ))
+		f.write('{:.5f}\n'.format(self.fst_vt.theveq_induct_gen.TEC_MR  ))
+
+		# High-Speed Shaft Brake (shaft_brake)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.shaft_brake.HSSBrMode))
+		f.write('{:.5f}\n'.format(self.fst_vt.shaft_brake.THSSBrDp ))
+		f.write('{:.5f}\n'.format(self.fst_vt.shaft_brake.HSSBrDT  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.shaft_brake.HSSBrTqF ))
+
+		# Nacelle-Yaw Control (nac_yaw_ctrl)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.nac_yaw_ctrl.YCMode   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.TYCOn    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.YawNeut  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.YawSpr   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.YawDamp  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.TYawManS ))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.YawManRat))
+		f.write('{:.5f}\n'.format(self.fst_vt.nac_yaw_ctrl.NacYawF  ))
+
+		# Tuned Mass Damper (tuned_mass_damper)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.tuned_mass_damper.CompNTMD))
+		f.write('"{:}"\n'.format(self.fst_vt.tuned_mass_damper.NTMDfile))
+		f.write('{:}\n'.format(self.fst_vt.tuned_mass_damper.CompTTMD))
+		f.write('"{:}"\n'.format(self.fst_vt.tuned_mass_damper.TTMDfile))
+
+		# Bladed Interface (bladed_interface)
+		f.write('---\n')
+		f.write('"{:}"\n'.format(self.fst_vt.bladed_interface.DLL_FileName))
+		f.write('"{:}"\n'.format(self.fst_vt.bladed_interface.DLL_InFile  ))
+		f.write('"{:}"\n'.format(self.fst_vt.bladed_interface.DLL_ProcName))
+		try:
+			f.write('{:3}\n'.format(self.fst_vt.bladed_interface.DLL_DT))
+		except:
+			f.write('"{:}"\n'.format(self.fst_vt.bladed_interface.DLL_DT))
+		f.write('{:}\n'.format(self.fst_vt.bladed_interface.DLL_Ramp    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.BPCutoff    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.NacYaw_North))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Cntrl  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_SetPnt ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Min    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Ptch_Max    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.PtchRate_Min))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.PtchRate_Max))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.Gain_OM     ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.GenSpd_MinOM))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.GenSpd_MaxOM))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.GenSpd_Dem  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.GenTrq_Dem  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.bladed_interface.GenPwr_Dem  ))
+
+		# Bladed Interface Torque-Speed Look-Up Table (bladed_interface)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.bladed_interface.DLL_NumTrq))
+		f.write('---\n')
+		f.write('---\n')
+		for i in range(self.fst_vt.bladed_interface.DLL_NumTrq):
+			a1 = self.fst_vt.bladed_interface.GenSpd_TLU[i]
+			a2 = self.fst_vt.bladed_interface.GenTrq_TLU[i]
+			f.write('{:.5f}\t{:.5f}\n'.format(a1, a2))
+
+		# ServoDyn Output Params (sd_out_params)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.sd_out_params.SumPrint))
+		f.write('{:3}\n'.format(self.fst_vt.sd_out_params.OutFile ))
+		f.write('{:}\n'.format(self.fst_vt.sd_out_params.TabDelim))
+		f.write('"{:}"\n'.format(self.fst_vt.sd_out_params.OutFmt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.sd_out_params.TStart  ))
+
+		# ======== OutList =====
+		f.write('OutList\n')
+		out_list = []
+		for i in self.fst_vt.outlist.servodyn_vt.__dict__.keys():
+			if self.fst_vt.outlist.servodyn_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		f.write('END\n')
 
 
 #         # FAST Inputs
