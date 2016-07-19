@@ -8,30 +8,30 @@ import copy
 # Builder
 
 class Fst8InputBuilder(object):
-    """
-    base class for setting up HAWC2 input data
+	"""
+	base class for setting up HAWC2 input data
 
-    add additional design variables and methods in derived classes
-    """
+	add additional design variables and methods in derived classes
+	"""
 
-    fstIn = FstModel()
-    fstS = FstModel()
-    fstOut = FstModel()
-    
-    def __init__(self):
-        
-        super(FstInputBuilder,self).__init__()
+	fstIn = FstModel()
+	fstS = FstModel()
+	fstOut = FstModel()
+	
+	def __init__(self):
+		
+		super(FstInputBuilder,self).__init__()
 
-    def initialize_inputs(self):
+	def initialize_inputs(self):
 
-        self._logger.info('dublicating inputs')
-        self.fstS = self.fstIn.copy()
+		self._logger.info('dublicating inputs')
+		self.fstS = self.fstIn.copy()
 
-    def execute(self):
+	def execute(self):
 
-        self._logger.info('updating inputs')
-        # update outputs
-        self.fstOut = self.fstS.copy()
+		self._logger.info('updating inputs')
+		# update outputs
+		self.fstOut = self.fstS.copy()
 
 # class FUSEDWindInputBuilder(FstInputBuilder):
 #     """
@@ -39,9 +39,9 @@ class Fst8InputBuilder(object):
 #     """
 
 #     # inputs = Instance(iotype='in')   #[AH] no Instance in omdao1
-    
+	
 #     def __init__(self):
-        
+		
 #         super(FUSEDWindInputBuilder,self).__init__()
 
 #     def execute(self):
@@ -56,7 +56,7 @@ class Fst8InputBuilder(object):
 
 #             self.fstS.aero_vt.AirDens = self.inputs.environment.density
 #             self.fstS.aero_vt.KinVisc = self.inputs.environment.viscosity
-            
+			
 #             # Ignore TI, kappa, z0 (TODO: turbsim input file structure)
 #             self.fstS.simple_wind_vt.TimeSteps = 2
 
@@ -112,74 +112,75 @@ class Fst8InputBuilder(object):
 
 class Fst8InputWriter(Fst8InputBase):
 
-    def __init__(self):
+	def __init__(self):
 
-        self.fst_vt = FstModel()
+		self.fst_vt = FstModel()
 
-        self.fst_infile = ''   #Master FAST file
-        self.fst_directory = ''   #Directory of master FAST file set
-        self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
-        
-        # 
-        # self.fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
-        # self.case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
+		self.fst_infile = ''   #Master FAST file
+		self.fst_directory = ''   #Directory of master FAST file set
+		self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
+		
+		# 
+		# self.fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
+		# self.case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
 
-        self.fst_file = ''   #Case FAST file
+		self.fst_file = ''   #Case FAST file
 
-    # def InputConfig(self, **kwargs):
-    #     for k, w in kwargs.iteritems():
-    #         try:
-    #             success = False
-    #             if hasattr(self, k):
-    #                 setattr(self,k,w)
-    #                 success = True
-    #             # [AH] Not sure if checking against all vartrees is a good idea
-    #             # (problems if variables in different trees have same name)
-    #             if hasattr(self.fst_vt, k):
-    #                 setattr(self.fst_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.simple_wind_vt, k):
-    #                 setattr(self.fst_vt.simple_wind_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.wnd_wind_vt, k):
-    #                 setattr(self.fst_vt.wnd_wind_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.platform_vt, k):
-    #                 setattr(self.fst_vt.platform_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.aero_vt, k):
-    #                 setattr(self.fst_vt.aero_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.fst_blade_vt, k):
-    #                 setattr(self.fst_vt.fst_blade_vt,k,w)
-    #                 success = True
-    #             if hasattr(self.fst_vt.fst_tower_vt, k):
-    #                 setattr(self.fst_vt.fst_tower_vt,k,w)
-    #                 success = True
-    #             # elif hasattr(self.fst_output_vt, k):
-    #             #     setattr(self.fst_output_vt,k,w)
-    #             # [AH] Not including outputs for now (has multiple sub-vartrees)
-    #             if not success:
-    #                 pass
-    #                 # print "No object definition or variable tree has the attribute '{0}'.".format(k)
-    #         except:
-    #             pass
-    #             # print "Error: Could assign attribute '{0}'".format(k)
+	# def InputConfig(self, **kwargs):
+	#     for k, w in kwargs.iteritems():
+	#         try:
+	#             success = False
+	#             if hasattr(self, k):
+	#                 setattr(self,k,w)
+	#                 success = True
+	#             # [AH] Not sure if checking against all vartrees is a good idea
+	#             # (problems if variables in different trees have same name)
+	#             if hasattr(self.fst_vt, k):
+	#                 setattr(self.fst_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.simple_wind_vt, k):
+	#                 setattr(self.fst_vt.simple_wind_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.wnd_wind_vt, k):
+	#                 setattr(self.fst_vt.wnd_wind_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.platform_vt, k):
+	#                 setattr(self.fst_vt.platform_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.aero_vt, k):
+	#                 setattr(self.fst_vt.aero_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.fst_blade_vt, k):
+	#                 setattr(self.fst_vt.fst_blade_vt,k,w)
+	#                 success = True
+	#             if hasattr(self.fst_vt.fst_tower_vt, k):
+	#                 setattr(self.fst_vt.fst_tower_vt,k,w)
+	#                 success = True
+	#             # elif hasattr(self.fst_output_vt, k):
+	#             #     setattr(self.fst_output_vt,k,w)
+	#             # [AH] Not including outputs for now (has multiple sub-vartrees)
+	#             if not success:
+	#                 pass
+	#                 # print "No object definition or variable tree has the attribute '{0}'.".format(k)
+	#         except:
+	#             pass
+	#             # print "Error: Could assign attribute '{0}'".format(k)
 
-    def execute(self):
 
-        # Keep simple for now:
+	def execute(self):
+
+		# Keep simple for now:
 		self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
-        # if self.case_id == 'DEFAULT':
-        #     self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
-        # else:
-        #     case_file = self.case_id + '_' + self.fst_infile
-        #     self.fst_file = os.path.join(self.fst_directory,case_file)
+		# if self.case_id == 'DEFAULT':
+		#     self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
+		# else:
+		#     case_file = self.case_id + '_' + self.fst_infile
+		#     self.fst_file = os.path.join(self.fst_directory,case_file)
 		f = open(self.fst_file, 'w')
 
 
-        # ===== .fst Input File =====
-        # Simulation Control (fst_sim_ctrl)
+		# ===== .fst Input File =====
+		# Simulation Control (fst_sim_ctrl)
 		f.write('---\n')
 		f.write('---\n')
 		f.write('---\n')
@@ -237,25 +238,278 @@ class Fst8InputWriter(Fst8InputBase):
 
 		f.close()
 
-        # Blank line: f.write('---\n')
-        # BOOL: f.write('{:}\n'.format())
-        # INT: f.write('{:3}\n'.format())
-        # DOUBLE: f.write('{:.5f}\n'.format())
-        # STRING: f.write('"{:}"\n'.format())
+		# Call other writers
+		self.ElastoDynWriter()
+		# self.BladeStrucWriter()
+		# self.TowerWriter()
+		# self.InflowWindWriter()
+		# if:
+			# self.WndWindWriter()
+		# self.AeroDynWriter()
+		# self.ServoDynWriter()
 
 
+	def ElastoDynWriter(self):
+
+		ed_file = os.path.join(self.fst_directory,self.fst_vt.input_files.EDFile)
+		f = open(ed_file, 'w')
+
+		f.write('---\n')
+		f.write('---\n')
+
+		# ElastoDyn Simulation Control (ed_sim_ctrl)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.ed_sim_ctrl.Echo  ))
+		f.write('{:3}\n'.format(self.fst_vt.ed_sim_ctrl.Method))
+		f.write('{:.5f}\n'.format(self.fst_vt.ed_sim_ctrl.DT    ))
+
+		# Environmental Condition (envir_cond)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.envir_cond.Gravity))
+
+		# Degrees of Freedom (dof)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.dof.FlapDOF1 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.FlapDOF2 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.EdgeDOF  ))
+		f.write('{:}\n'.format(self.fst_vt.dof.TeetDOF  ))
+		f.write('{:}\n'.format(self.fst_vt.dof.DrTrDOF  ))
+		f.write('{:}\n'.format(self.fst_vt.dof.GenDOF   ))
+		f.write('{:}\n'.format(self.fst_vt.dof.YawDOF   ))
+		f.write('{:}\n'.format(self.fst_vt.dof.TwFADOF1 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.TwFADOF2 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.TwSSDOF1 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.TwSSDOF2 ))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmSgDOF))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmSwDOF))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmHvDOF))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmRDOF ))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmPDOF ))
+		f.write('{:}\n'.format(self.fst_vt.dof.PtfmYDOF ))
+
+		# Initial Conditions (init_conds)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.OoPDefl   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.IPDefl    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.BlPitch1  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.BlPitch2  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.BlPitch3  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.TeetDefl  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.Azimuth   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.RotSpeed  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.NacYaw    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.TTDspFA   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.TTDspSS   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmSurge ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmSway  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmHeave ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmRoll  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmPitch ))
+		f.write('{:.5f}\n'.format(self.fst_vt.init_conds.PtfmYaw   ))
+
+		# Turbine Configuration (turb_config)
+		f.write('---\n')
+		f.write('{:3f}\n'.format(self.fst_vt.turb_config.NumBl     ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.TipRad    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.HubRad    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PreCone1  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PreCone2  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PreCone3  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.HubCM     ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.UndSling  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.Delta3    ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.AzimB1Up  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.OverHang  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.ShftGagL  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.ShftTilt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NacCMxn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NacCMyn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NacCMzn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NcIMUxn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NcIMUyn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.NcIMUzn   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.Twr2Shft  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.TowerHt   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.TowerBsHt ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PtfmCMxt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PtfmCMyt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PtfmCMzt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.turb_config.PtfmRefzt ))
+
+		# Mass and Inertia (mass_inertia)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.TipMass1  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.TipMass2  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.TipMass3  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.HubMass   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.HubIner   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.GenIner   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.NacMass   ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.NacYIner  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.YawBrMass ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.PtfmMass  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.PtfmRIner ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.PtfmPIner ))
+		f.write('{:.5f}\n'.format(self.fst_vt.mass_inertia.PtfmYIner ))
+
+		# Blade (blade_struc)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.blade_struc.BldNodes))
+		f.write('"{:}"\n'.format(self.fst_vt.blade_struc.BldFile1))
+		f.write('"{:}"\n'.format(self.fst_vt.blade_struc.BldFile2))
+		f.write('"{:}"\n'.format(self.fst_vt.blade_struc.BldFile3))
+
+		# Rotor-Teeter (rotor_teeter)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.rotor_teeter.TeetMod ))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetDmpP))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetDmp ))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetCDmp))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetSStP))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetHStP))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetSSSp))
+		f.write('{:.5f}\n'.format(self.fst_vt.rotor_teeter.TeetHSSp))
+
+		# Drivetrain (drivetrain)
+		f.write('---\n')
+		f.write('{:.5f}\n'.format(self.fst_vt.drivetrain.GBoxEff ))
+		f.write('{:.5f}\n'.format(self.fst_vt.drivetrain.GBRatio ))
+		f.write('{:.5f}\n'.format(self.fst_vt.drivetrain.DTTorSpr))
+		f.write('{:.5f}\n'.format(self.fst_vt.drivetrain.DTTorDmp))
+
+		# Furling (furling)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.furling.Furling))
+		f.write('"{:}"\n'.format(self.fst_vt.furling.FurlFile))
+
+		# Tower (tower)
+		f.write('---\n')
+		f.write('{:3}\n'.format(self.fst_vt.tower.TwrNodes))
+		f.write('"{:}"\n'.format(self.fst_vt.tower.TwrFile))
+
+		# ElastoDyn Output Params (ed_out_params)
+		f.write('---\n')
+		f.write('{:}\n'.format(self.fst_vt.ed_out_params.SumPrint))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.OutFile ))
+		f.write('{:}\n'.format(self.fst_vt.ed_out_params.TabDelim))
+		f.write('"{:}"\n'.format(self.fst_vt.ed_out_params.OutFmt  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.ed_out_params.TStart  ))
+		f.write('{:.5f}\n'.format(self.fst_vt.ed_out_params.DecFact ))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.NTwGages))
+		for i in range(self.fst_vt.ed_out_params.NTwGages-1):
+			f.write('{:3}, '.format(self.fst_vt.ed_out_params.TwrGagNd[i]))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.TwrGagNd[-1]))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.NBlGages))
+		for i in range(self.fst_vt.ed_out_params.NBlGages-1):
+			f.write('{:3}, '.format(self.fst_vt.ed_out_params.BldGagNd[i]))
+		f.write('{:3}\n'.format(self.fst_vt.ed_out_params.BldGagNd[-1]))
+	
+		# Outlist (outlist.subvartree)
+		f.write('Outlist\n')
+		# Wind Motions
+		out_list = []
+		for i in self.fst_vt.outlist.wind_mot_vt.__dict__.keys():
+			if self.fst_vt.outlist.wind_mot_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Blade Motions
+		out_list = []
+		for i in self.fst_vt.outlist.blade_mot_vt.__dict__.keys():
+			if self.fst_vt.outlist.blade_mot_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Hub and Nacelle Motions
+		out_list = []
+		for i in self.fst_vt.outlist.hub_nacelle_mot_vt.__dict__.keys():
+			if self.fst_vt.outlist.hub_nacelle_mot_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Tower and Support Motions
+		out_list = []
+		for i in self.fst_vt.outlist.tower_support_mot_vt.__dict__.keys():
+			if self.fst_vt.outlist.tower_support_mot_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Wave Motions
+		out_list = []
+		for i in self.fst_vt.outlist.wave_mot_vt.__dict__.keys():
+			if self.fst_vt.outlist.wave_mot_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Blade Loads
+		out_list = []
+		for i in self.fst_vt.outlist.blade_loads_vt.__dict__.keys():
+			if self.fst_vt.outlist.blade_loads_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Hub and Nacelle Loads
+		out_list = []
+		for i in self.fst_vt.outlist.hub_nacelle_loads_vt.__dict__.keys():
+			if self.fst_vt.outlist.hub_nacelle_loads_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# Tower and Support Loads
+		out_list = []
+		for i in self.fst_vt.outlist.tower_support_loads_vt.__dict__.keys():
+			if self.fst_vt.outlist.tower_support_loads_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+		# DOF
+		out_list = []
+		for i in self.fst_vt.outlist.dof_vt.__dict__.keys():
+			if self.fst_vt.outlist.dof_vt.__dict__[i] == True:
+				out_list.append(i)
+		f.write('"')
+		for i in range(len(out_list)):
+			if out_list[i][0] != '_':
+				f.write('{:}, '.format(out_list[i]))
+		f.write('"\n')
+
+		f.write('END\n')
+		
+		f.close()
 
 
+	# def Blade
+		# Blank line: f.write('---\n')
+		# BOOL: f.write('{:}\n'.format())
+		# INT: f.write('{:3}\n'.format())
+		# DOUBLE: f.write('{:.5f}\n'.format())
+		# STRING: f.write('"{:}"\n'.format())
 
 
-        # self.ElastoDynWriter()
-        # self.BladeStrucWriter()
-        # self.TowerWriter()
-        # self.InflowWindWriter()
-        # if:
-        	# self.WndWindWriter()
-        # self.AeroDynWriter()
-        # self.ServoDynWriter()
 
 #         # FAST Inputs
 #         ofh.write('---\n')
@@ -445,12 +699,12 @@ class Fst8InputWriter(Fst8InputBase):
 #         for i in range(self.fst_vt.NBlGages-1):
 #             ofh.write('{:3}, '.format(self.fst_vt.BldGagNd[i]))
 #         ofh.write('{:3}\n'.format(self.fst_vt.BldGagNd[-1]))
-    
+	
 #         # Outlist ********
 #         ofh.write('Outlist\n')
 #         # Wind Motions
 #         out_list = []
-#         for i in self.fst_vt.fst_output_vt.wind_mot_vt.__dict__.keys():
+#         for i in self.fst_vt.outlist.wind_mot_vt.__dict__.keys():
 #             if self.fst_vt.fst_output_vt.wind_mot_vt.__dict__[i] == True:
 #                 out_list.append(i)
 #         ofh.write('"')
@@ -540,14 +794,14 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('"\n')
 
 #         ofh.write('END\n')
-        
+		
 #         ofh.close()
-    
+	
 #     def PlatformWriter(self):
-      
+	  
 #         platform_file = os.path.join(self.fst_directory,self.fst_vt.PtfmFile)
 #         ofh = open(platform_file, 'w')
-        
+		
 #         ofh.write('---\n')
 #         ofh.write('---\n')
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.description))
@@ -559,7 +813,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.PtfmRDOF))
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.PtfmPDOF))
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.PtfmYDOF))
-        
+		
 #         # INITIAL CONDITIONS (CONT)
 #         ofh.write('Initial conditions\n')
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmSurge))
@@ -568,31 +822,31 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmRoll))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmPitch))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmYaw))
-        
+		
 #         # TURBINE CONFIGURATION (CONT)
 #         ofh.write('Turbine Configuration\n')
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.TwrDraft))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmCM))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmRef))
-        
+		
 #         # MASS AND INERTIA (CONT) 
 #         ofh.write('Mass and inertia\n')
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmMass))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmRIner))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmPIner))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.PtfmYIner))
-        
+		
 #         # PLATFORM (CONT) 
 #         ofh.write('Platform\n')
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.PtfmLdMod))
-        
+		
 #         # TOWER (CONT) 
 #         ofh.write('Tower\n')
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.TwrLdMod))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.TwrDiam))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.TwrCA))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.TwrCD))
-        
+		
 #         # WAVES 
 #         ofh.write('Waves\n')
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.WtrDens))
@@ -611,7 +865,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:5}\n'.format(self.fst_vt.platform_vt.WaveSeed1))
 #         ofh.write('{:5}\n'.format(self.fst_vt.platform_vt.WaveSeed2))
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.GHWvFile))
-    
+	
 #         # CURRENT
 #         ofh.write('Current\n')
 #         ofh.write('{:}\n'.format(self.fst_vt.platform_vt.CurrMod))
@@ -626,7 +880,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.CurrNSDir))
 #         ofh.write('{:.5f}\n'.format( self.fst_vt.platform_vt.CurrDIV))
 #         ofh.write('{:.5f}\n'.format(self.fst_vt.platform_vt.CurrDIDir))
-    
+	
 #         # OUTPUT (CONT) 
 #         ofh.write('Output\n')
 #         ofh.write('{:5}\n'.format(self.fst_vt.platform_vt.NWaveKin))
@@ -634,9 +888,9 @@ class Fst8InputWriter(Fst8InputBase):
 #             ofh.write('{:5}\n'.format(self.fst_vt.platform_vt.WaveKinNd)) 
 #         else:
 #             ofh.write('\n')  
-        
+		
 #         ofh.close()
-    
+	
 #     def TowerWriter(self):
 
 #         tower_file = os.path.join(self.fst_directory,self.fst_vt.TwrFile)
@@ -652,7 +906,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.TwrFADmp2))
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.TwrSSDmp1))
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.TwrSSDmp2))
-    
+	
 #         # Tower Adjustment Factors
 #         ofh.write('Tower Adjustment Factors\n')
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.FAStTunr1))
@@ -662,7 +916,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.AdjTwMa))
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.AdjFASt))
 #         ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.AdjSSSt))
-     
+	 
 #         # Distributed Tower Properties   
 #         ofh.write('Distributed Tower Properties\n')
 #         ofh.write('---\n')
@@ -680,7 +934,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         for a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 in zip(hf, md, fs, ss, gs, es, fi, si, fo, so):
 #             ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
 #             format(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10))          
-        
+		
 #         # Tower Mode Shapes
 #         ofh.write('Tower Fore-Aft Mode Shapes\n')
 #         for i in range(5):
@@ -692,14 +946,14 @@ class Fst8InputWriter(Fst8InputBase):
 #             ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.TwSSM1Sh[i]))
 #         for i in range(5):
 #             ofh.write('{:5}\n'.format(self.fst_vt.fst_tower_vt.TwSSM2Sh[i])) 
-        
+		
 #         ofh.close()
-    
+	
 #     def BladeWriter(self):
-        
+		
 #         blade_file = os.path.join(self.fst_directory,self.fst_vt.BldFile1)
 #         ofh = open(blade_file, 'w')
-        
+		
 #         ofh.write('---\n')
 #         ofh.write('---\n')
 #         ofh.write('{:}\n'.format(self.fst_vt.fst_blade_vt.description))
@@ -718,7 +972,7 @@ class Fst8InputWriter(Fst8InputBase):
 #         ofh.write('Blade properties\n')
 #         ofh.write('---\n')
 #         ofh.write('---\n')
-        
+		
 #         bf = self.fst_vt.fst_blade_vt.BlFract
 #         ac = self.fst_vt.fst_blade_vt.AeroCent
 #         st = self.fst_vt.fst_blade_vt.StrcTwst
@@ -749,9 +1003,9 @@ class Fst8InputWriter(Fst8InputBase):
 #             ofh.write('{:.4f}\n'.format(self.fst_vt.fst_blade_vt.BldFl2Sh[i]))           
 #         for i in range(5):
 #             ofh.write('{:.4f}\n'.format(self.fst_vt.fst_blade_vt.BldEdgSh[i]))      
-         
+		 
 #         ofh.close() 
-    
+	
 #     def AeroWriter(self):
 
 #         if not os.path.isdir(os.path.join(self.fst_directory,'AeroData')):
@@ -765,9 +1019,9 @@ class Fst8InputWriter(Fst8InputBase):
 
 #         ad_file = os.path.join(self.fst_directory,self.fst_vt.ADFile)
 #         ofh = open(ad_file,'w')
-        
+		
 #         ofh.write('Aerodyn input file for FAST\n')
-        
+		
 #         ofh.write('{:}\n'.format(self.fst_vt.aero_vt.SysUnits))
 #         ofh.write('{:}\n'.format(self.fst_vt.aero_vt.StallMod))        
 #         ofh.write('{:}\n'.format(self.fst_vt.aero_vt.UseCm))
@@ -878,18 +1132,18 @@ class Fst8InputWriter(Fst8InputBase):
 #                 for a, cl, cd in zip(p.alpha, p.cl, p.cd):
 #                     print >> f, '{0:7.2f}\t{1:<7.3f}\t{2:<7.3}'.format(a*R2D, cl, cd)
 #                     #print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a*R2D, cl, cd)'''
-            
+			
 #         f.close()
 
 #     # Wind Writer
 
 #     def WindWriter(self):
-      
+	  
 #         if self.fst_vt.aero_vt.wind_file_type == 'hh':
-    
+	
 #             wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
 #             ofh = open(wind_file,'w')
-        
+		
 #             #ofh.write('{:}\n'.format(self.fst_vt.simple_wind_vt.description))
 #             #for i in range(6):
 #             #    ofh.write('! \n')
@@ -898,22 +1152,22 @@ class Fst8InputWriter(Fst8InputBase):
 #                           self.fst_vt.simple_wind_vt.Time[i], self.fst_vt.simple_wind_vt.HorSpd[i], self.fst_vt.simple_wind_vt.WindDir[i],\
 #                           self.fst_vt.simple_wind_vt.VerSpd[i], self.fst_vt.simple_wind_vt.HorShr[i],\
 #                           self.fst_vt.simple_wind_vt.VerShr[i], self.fst_vt.simple_wind_vt.LnVShr[i], self.fst_vt.simple_wind_vt.GstSpd[i]))
-    
+	
 #             ofh.close()
 
 #         elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
 
 #             wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
 #             ofh = open(wind_file,'w')
-        
+		
 #             for i in range(self.fst_vt.wnd_wind_vt.TimeSteps):
 #                 ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.format(\
 #                           self.fst_vt.wnd_wind_vt.Time[i], self.fst_vt.wnd_wind_vt.HorSpd[i], self.fst_vt.wnd_wind_vt.WindDir[i],\
 #                           self.fst_vt.wnd_wind_vt.VerSpd[i], self.fst_vt.wnd_wind_vt.HorShr[i],\
 #                           self.fst_vt.wnd_wind_vt.VerShr[i], self.fst_vt.wnd_wind_vt.LnVShr[i], self.fst_vt.wnd_wind_vt.GstSpd[i]))
-    
+	
 #             ofh.close()
-        
+		
 #         else:
 #             print "TODO: Other wind file types bts and wnd"
 
@@ -945,6 +1199,6 @@ class Fst8InputWriter(Fst8InputBase):
 
 if __name__=="__main__":
 
-    #noise_example()
-    
-    oc3_example()
+	#noise_example()
+	
+	oc3_example()

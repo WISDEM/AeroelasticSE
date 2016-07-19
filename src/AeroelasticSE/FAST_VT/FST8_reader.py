@@ -375,19 +375,21 @@ class Fst8InputReader(Fst8InputBase):
         if self.fst_vt.ed_out_params.NTwGages != 0: #loop over elements if there are gauges to be added, otherwise assign directly
             for i in range(self.fst_vt.ed_out_params.NTwGages):
                 self.fst_vt.ed_out_params.TwrGagNd.append(twrg[i])
-            self.fst_vt.ed_out_params.TwrGagNd[-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][0:2]
+            self.fst_vt.ed_out_params.TwrGagNd[-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][:-1]   #remove last (newline) character
         else:
             self.fst_vt.ed_out_params.TwrGagNd = twrg
-            self.fst_vt.ed_out_params.TwrGagNd[-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][0:4]
+            self.fst_vt.ed_out_params.TwrGagNd[-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][:-1]
         self.fst_vt.ed_out_params.NBlGages = int(f.readline().split()[0])
         blg = f.readline().split(',')
+        print "blg: ", blg
         if self.fst_vt.ed_out_params.NBlGages != 0:
             for i in range(self.fst_vt.ed_out_params.NBlGages):
+                print "i: ", i
                 self.fst_vt.ed_out_params.BldGagNd.append(blg[i])
-            self.fst_vt.ed_out_params.BldGagNd[-1] = self.fst_vt.ed_out_params.BldGagNd[-1][0:2]
+            self.fst_vt.ed_out_params.BldGagNd[-1] = self.fst_vt.ed_out_params.BldGagNd[-1][:-1]
         else:
             self.fst_vt.ed_out_params.BldGagNd = blg
-            self.fst_vt.ed_out_params.BldGagNd[-1] = self.fst_vt.ed_out_params.BldGagNd[-1][0:4]
+            self.fst_vt.ed_out_params.BldGagNd[-1] = self.fst_vt.ed_out_params.BldGagNd[-1][:-1]
 
         # Outlist (TODO - detailed categorization)
         f.readline()
