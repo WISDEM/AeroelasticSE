@@ -126,45 +126,28 @@ class Fst8InputWriter(Fst8InputBase):
 
 		self.fst_file = ''   #Case FAST file
 
-	# def InputConfig(self, **kwargs):
-	#     for k, w in kwargs.iteritems():
-	#         try:
-	#             success = False
-	#             if hasattr(self, k):
-	#                 setattr(self,k,w)
-	#                 success = True
-	#             # [AH] Not sure if checking against all vartrees is a good idea
-	#             # (problems if variables in different trees have same name)
-	#             if hasattr(self.fst_vt, k):
-	#                 setattr(self.fst_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.simple_wind_vt, k):
-	#                 setattr(self.fst_vt.simple_wind_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.wnd_wind_vt, k):
-	#                 setattr(self.fst_vt.wnd_wind_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.platform_vt, k):
-	#                 setattr(self.fst_vt.platform_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.aero_vt, k):
-	#                 setattr(self.fst_vt.aero_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.fst_blade_vt, k):
-	#                 setattr(self.fst_vt.fst_blade_vt,k,w)
-	#                 success = True
-	#             if hasattr(self.fst_vt.fst_tower_vt, k):
-	#                 setattr(self.fst_vt.fst_tower_vt,k,w)
-	#                 success = True
-	#             # elif hasattr(self.fst_output_vt, k):
-	#             #     setattr(self.fst_output_vt,k,w)
-	#             # [AH] Not including outputs for now (has multiple sub-vartrees)
-	#             if not success:
-	#                 pass
-	#                 # print "No object definition or variable tree has the attribute '{0}'.".format(k)
-	#         except:
-	#             pass
-	#             # print "Error: Could assign attribute '{0}'".format(k)
+	def InputConfig(self, **kwargs):
+	    for k, w in kwargs.iteritems():
+	        try:
+	            success = False
+	            if hasattr(self, k):
+	                setattr(self,k,w)
+	                success = True
+	            else:
+	            	# Currently only can assign variables at the first level (fst_vt.subtree.variable)
+	            	# This could be re-written to do this recursively
+	                data = k.split('.')   #split input into keys
+	                var_tree = data[-2]
+	                variable = data[-1]
+	                for key, val in self.fst_vt.__dict__.iteritems():
+	                	if key == var_tree:
+	                		setattr(self.fst_vt.__dict__[key],variable,w)
+	                		success = True
+	            if not success:
+	                print "Unable to assign attribute '{0}'.".format(k)
+	        except:
+	            pass
+	            # print "Error: Could not assign attribute '{0}'".format(k)
 
 
 	def execute(self):
