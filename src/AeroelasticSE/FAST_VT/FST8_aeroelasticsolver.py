@@ -157,7 +157,7 @@ class FST8Workflow (Component):
 			unknowns[hdr[i]] = out[:,i]   #assigns values to output channel matching header name
 
 
-class FSTAeroElasticSolver(Group):
+class FST8AeroElasticSolver(Group):
 	"""
 	OpenMDAO group to execute FAST components in parallel.
 
@@ -166,7 +166,7 @@ class FSTAeroElasticSolver(Group):
 	caseid strings.
 	"""
 	def __init__(self, configs, caseids):
-		super(FSTAeroElasticSolver, self).__init__()
+		super(FST8AeroElasticSolver, self).__init__()
 
 		#self._check_config(configs, caseids) #could write function to check setup
 
@@ -175,7 +175,7 @@ class FSTAeroElasticSolver(Group):
 		#Loop over cases, add them to the parallel group
 		case_num = len(caseids)
 		for i in range(case_num):
-			pg.add(caseids[i], FSTWorkflow(configs[caseids[i]], caseids[i]))
+			pg.add(caseids[i], FST8Workflow(configs[caseids[i]], caseids[i]))
 
 
 if __name__=="__main__":
