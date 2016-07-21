@@ -341,7 +341,7 @@ class Fst7InputReader(Fst7InputBase):
             self.fst_vt.fst_out_params.TabDelim = True
 
         self.fst_vt.fst_out_params.OutFmt = f.readline().split()[0]
-        self.fst_vt.fst_out_params.TStart = float(f.readline().split()[0])
+        self.fst_vt.ed_out_params.TStart = float(f.readline().split()[0])
         self.fst_vt.ed_out_params.DecFact = int(f.readline().split()[0])
         self.fst_vt.fst_out_params.SttsTime = float(f.readline().split()[0])
         self.fst_vt.turb_config.NcIMUxn = float(f.readline().split()[0])

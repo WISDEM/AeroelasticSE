@@ -127,27 +127,60 @@ class Fst8InputWriter(Fst8InputBase):
 		self.fst_file = ''   #Case FAST file
 
 	def InputConfig(self, **kwargs):
-	    for k, w in kwargs.iteritems():
-	        try:
-	            success = False
-	            if hasattr(self, k):
-	                setattr(self,k,w)
-	                success = True
-	            else:
-	            	# Currently only can assign variables at the first level (fst_vt.subtree.variable)
-	            	# This could be re-written to do this recursively
-	                data = k.split('.')   #split input into keys
-	                var_tree = data[-2]
-	                variable = data[-1]
-	                for key, val in self.fst_vt.__dict__.iteritems():
-	                	if key == var_tree:
-	                		setattr(self.fst_vt.__dict__[key],variable,w)
-	                		success = True
-	            if not success:
-	                print "Unable to assign attribute '{0}'.".format(k)
-	        except:
-	            pass
-	            # print "Error: Could not assign attribute '{0}'".format(k)
+		# for k, w in kwargs.iteritems():
+			# try:
+			#     success = False
+			#     if hasattr(self, k):
+			#         setattr(self,k,w)
+			#         success = True
+			#     else:
+			#         # Currently only can assign variables at the first level (fst_vt.subtree.variable)
+			#         # This could be re-written to do this recursively
+			#         data = k.split('.')   #split input into keys
+			#         var_tree = data[-2]
+			#         variable = data[-1]
+			#         for key, val in self.fst_vt.__dict__.iteritems():
+			#             if key == var_tree:
+			#                 setattr(self.fst_vt.__dict__[key],variable,w)
+			#                 success = True
+			#     if not success:
+			#         print "Unable to assign attribute '{0}'.".format(k)
+			# except:
+			#     pass
+			#     # print "Error: Could not assign attribute '{0}'".format(k)
+
+
+		"""
+		The approach below assigns values from input config dictionary to variables
+		in sub-variable trees with a name that matches the value's key. Aside from checking
+		the first-level members (i.e. fst_infile), it only navigates
+		"down" a prescribed number of object members (2), so things like af_data (which are a 
+		part of the sub-variable tree blade_aero) would have to be changed directly (or
+		another approach would have to be used). Another drawback is that if any to channels
+		have the same name (i.e. "Echo") they will both be assigned the value in the config
+		dictionary.
+		"""
+		for k, w in kwargs.iteritems():                
+			try:
+				success = False
+				if hasattr(self, k):
+					setattr(self,k,w)
+					success = True
+				else:
+					for key in self.fst_vt.__dict__:
+						subvartree = self.fst_vt.__dict__[key]
+						if hasattr(subvartree, k):
+							setattr(subvartree,k,w)
+							success = True
+				if not success:
+					# These items are specific to FSTWorkflow and are assigned elsewhere
+					if k not in ['fst_masterfile','fst_masterdir','fst_runfile',\
+						'fst_rundir','fst_exe', 'fst_file_type','ad_file_type', \
+						'libmap']:
+						print "Could not find attribute '{0}'.".format(k)
+			except:
+				print "Something went wrong with assignment of attribute '{0}'.".format(k)
+				pass
 
 
 	def execute(self):

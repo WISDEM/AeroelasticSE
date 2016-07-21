@@ -57,7 +57,6 @@ class FstOutputParams(object):
 		self.SttsTime   = 0.0
 		self.ChkptTime  = 0.0
 		self.DT_Out     = 0.0
-		self.TStart     = 0.0
 		self.OutFileFmt = 0
 		self.TabDelim   = False
 		self.OutFmt     = ''
@@ -251,7 +250,7 @@ class Tower(object):
 		self.TwrNodes = 0
 		self.TwrFile = ''
 
-		# General Tower Paramters
+		# General Tower Parameters
 		self.NTwInptSt = 0   #Number of input stations to specify tower geometry
 		self.CalcTMode = False   #calculate tower mode shapes internally {T: ignore mode shapes from below, F: use mode shapes from below} [CURRENTLY IGNORED] (flag)
 		self.TwrFADmp1 = 0.0   #Tower 1st fore-aft mode structural damping ratio (%)
