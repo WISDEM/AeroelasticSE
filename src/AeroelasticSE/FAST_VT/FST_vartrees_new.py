@@ -15,6 +15,8 @@ class FstSimCtrl(object):
 		self.NumCrctn = 0
 		self.DT_UJac = 0.0
 		self.UJacSclFact = 0.0
+		self.ADAMSPrep = 0   #FAST7 only
+		self.AnalMode = 0   #FAST7 only
 
 # Feature Switches and Flags
 class FtrSwtchsFlgs(object):
@@ -27,6 +29,7 @@ class FtrSwtchsFlgs(object):
 		self.CompSub = 0
 		self.CompMooring = 0
 		self.CompIce = 0
+		self.CompNoise = 0   #FAST7 only
 
 # Input Files
 class InputFiles(object):
@@ -42,6 +45,10 @@ class InputFiles(object):
 		self.SubFile = ''
 		self.MooringFile = ''
 		self.IceFile = ''
+		self.ADFile = ''   #FAST7 only
+		self.NoiseFile = ''   #FAST7 only
+		self.ADAMSFile = ''   #FAST7 only
+		self.LinFile = ''   #FAST7 only
 
 # FAST Output Parameters
 class FstOutputParams(object):
@@ -231,6 +238,8 @@ class DriveTrain(object):
 		self.GBRatio  = 0.0
 		self.DTTorSpr = 0.0
 		self.DTTorDmp = 0.0
+		self.GBRevers = 0.0   #FAST7 only
+		self.DynBrkFi = 0.0   #FAST7 only
 
 class Furling(object):
 	def __init__(self):
@@ -275,7 +284,13 @@ class Tower(object):
 		self.TwFAM1Sh = zeros([1])   #Tower Fore-Aft Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
 		self.TwFAM2Sh = zeros([1])   #Tower Fore-Aft Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
 		self.TwSSM1Sh = zeros([1])   #Tower Side-to-Side Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
-		self.TwSSM2Sh = zeros([1])   #Tower Side-to-Side Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6      
+		self.TwSSM2Sh = zeros([1])   #Tower Side-to-Side Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
+
+# Currently FAST7 only
+class Platform(object):
+	def __init__(self):
+		self.PtfmModel = 0
+		self.PtfmFile = ''
 
 class EdOutParams(object):
 	def __init__(self):
@@ -449,12 +464,18 @@ class PitchCtrl(object):
 		self.TPitManS1    = 0.0
 		self.TPitManS2    = 0.0
 		self.TPitManS3    = 0.0
+		self.TPitManE1    = 0.0   #FAST7 only
+		self.TPitManE2    = 0.0   #FAST7 only
+		self.TPitManE3    = 0.0   #FAST7 only
 		self.PitManRat1   = 0.0
 		self.PitManRat2   = 0.0
 		self.PitManRat3   = 0.0
 		self.BlPitchF1    = 0.0
 		self.BlPitchF2    = 0.0
 		self.BlPitchF3    = 0.0
+		self.BlPitch1     = 0.0   #FAST7 only
+		self.BlPitch2     = 0.0   #FAST7 only
+		self.BlPitch3     = 0.0   #FAST7 only
 
 # Generator and Torque Control
 class GenTorqCtrl(object):
@@ -515,6 +536,20 @@ class NacYawCtrl(object):
 		self.TYawManS  = 0.0
 		self.YawManRat = 0.0
 		self.NacYawF   = 0.0
+
+# Tip Brake (used in FAST7 only)
+class TipBrake(object):
+	def __init__(self):
+		self.TiDynBrk  = 0.0
+		self.TTpBrDp1  = 0.0
+		self.TTpBrDp2  = 0.0
+		self.TTpBrDp3  = 0.0
+		self.TBDepISp1 = 0.0
+		self.TBDepISp2 = 0.0
+		self.TBDepISp3 = 0.0
+		self.TBDrConN = 0.0
+		self.TBDrConD = 0.0
+		self.TpBrDT   = 0.0
 
 # Tuned Mass Damper
 class TunedMassDamp(object):
@@ -587,6 +622,7 @@ class FstModel(object):
 		self.rotor_teeter = RotorTeeter()
 		self.drivetrain = DriveTrain()
 		self.furling = Furling()
+		self.platform = Platform()
 		self.tower = Tower()
 		self.ed_out_params = EdOutParams()
 
@@ -613,6 +649,7 @@ class FstModel(object):
 		self.theveq_induct_gen = ThevEqInductGen()
 		self.shaft_brake = ShaftBrake()
 		self.nac_yaw_ctrl = NacYawCtrl()
+		self.tip_brake = TipBrake()
 		self.tuned_mass_damper = TunedMassDamp()
 		self.bladed_interface = BladedInterface()
 		self.sd_out_params = SdOutParams()

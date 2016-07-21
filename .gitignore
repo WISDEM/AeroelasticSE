@@ -8,6 +8,7 @@ openmdao_log.txt
 notes.txt
 workspace.py
 workspace2.py
+workspace3.py
 process_results.py
 *.png
 testclasses.py
