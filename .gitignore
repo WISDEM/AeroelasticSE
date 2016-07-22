@@ -4,14 +4,10 @@
 # OpenMDAO
 openmdao_log.txt
 
-# Test files
+# Extra files
 notes.txt
-workspace.py
-workspace2.py
-workspace3.py
 process_results.py
 *.png
-testclasses.py
 
 # Sphinx
 _build

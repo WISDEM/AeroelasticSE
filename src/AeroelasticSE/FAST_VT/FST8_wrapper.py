@@ -41,12 +41,21 @@ class Fst8Wrapper(Fst8ExternalCode):
         print "Calling ", self.FSTexe
         print "Input file = ", self.input_file
 
+        # Get only tail of input_file (we are changing running directory)
+        (head,tail) = os.path.split(self.input_file)
+
+        # Construct absolute path of executable
+        fstexe_abs = os.path.join(os.getcwd(), self.FSTexe)
+        print "fstexe new: ", fstexe_abs
+
         exec_str = []
-        exec_str.append(self.FSTexe)
-        exec_str.append(self.input_file)
+        exec_str.append(fstexe_abs)
+        exec_str.append(tail)
 
         olddir = os.getcwd()
         os.chdir(self.fst_directory)
+        print "current directory: ", os.getcwd()
+        print "exec_str: ", exec_str
         subprocess.call(exec_str)#, stdin=None, stdout=None, stderr=None, shell=False)
         os.chdir(olddir)
 
