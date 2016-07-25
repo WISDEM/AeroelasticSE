@@ -4,6 +4,11 @@
 # OpenMDAO
 openmdao_log.txt
 
+# Extra files
+notes.txt
+process_results.py
+*.png
+
 # Sphinx
 _build
 generated
@@ -77,6 +82,7 @@ nosetests.xml
 
 # OS generated files #
 ######################
+~$*
 .DS_Store
 .DS_Store?
 ._*

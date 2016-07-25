@@ -1,6 +1,6 @@
 
-from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
+# from openmdao.main.api import VariableTree, Container, Component
+# from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict
 import os,re
 
 from FST_vartrees import FstModel, ADAirfoil, ADAirfoilPolar
@@ -13,21 +13,21 @@ def fix_path(name):
         new = os.path.join(new, name[i])
     return new
 
-class FstInputBase(Component):
+class FstInputBase(object):
 
-    model_name = Str('FAST Model')
+    model_name = 'FAST Model'
 
 class FstInputReader(FstInputBase):
 
-    fst_infile = Str(desc='Master FAST file')
-    fst_directory = Str(desc='Directory of master FAST file set')
-    fst_file_type = Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
-
-    fst_vt = VarTree(FstModel(), iotype='out')
 
     def __init__(self):
-        super(FstInputReader, self).__init__()
+
+        self.fst_infile = ''   #Master FAST file
+        self.fst_directory = ''   #Directory of master FAST file set
+        self.fst_file_type = 0   #Enum(0, (0,1), desc='Fst file type, 0=old FAST, 1 = new FAST')    
+        self.ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
+
+        self.fst_vt = FstModel()
     
     def execute(self):
     	  
@@ -352,14 +352,22 @@ class FstInputReader(FstInputBase):
         self.fst_vt.ShftGagL = float(f.readline().split()[0])
         self.fst_vt.NTwGages = int(f.readline().split()[0])
         twrg = f.readline().split(',')
-        for i in range(self.fst_vt.NTwGages):
-            self.fst_vt.TwrGagNd.append(twrg[i])
-        self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]
+        if self.fst_vt.NTwGages != 0: #loop over elements if there are gauges to be added, otherwise assign directly
+            for i in range(self.fst_vt.NTwGages):
+                self.fst_vt.TwrGagNd.append(twrg[i])
+            self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:2]
+        else:
+            self.fst_vt.TwrGagNd = twrg
+            self.fst_vt.TwrGagNd[-1] = self.fst_vt.TwrGagNd[-1][0:4]
         self.fst_vt.NBlGages = int(f.readline().split()[0])
         blg = f.readline().split(',')
-        for i in range(self.fst_vt.NBlGages):
-            self.fst_vt.BldGagNd.append(blg[i])
-        self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
+        if self.fst_vt.NBlGages != 0:
+            for i in range(self.fst_vt.NBlGages):
+                self.fst_vt.BldGagNd.append(blg[i])
+            self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:2]
+        else:
+            self.fst_vt.BldGagNd = blg
+            self.fst_vt.BldGagNd[-1] = self.fst_vt.BldGagNd[-1][0:4]
     
         # Outlist (TODO - detailed categorization)
         f.readline()
@@ -408,11 +416,14 @@ class FstInputReader(FstInputBase):
         self.AeroReader()
         if self.fst_vt.aero_vt.wind_file_type == 'hh':
             self.SimpleWindReader()
+        elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
+            self.WndWindReader()
         else:
-            print "TODO: not simple wind file"
+            print "TODO: Other wind file type (bts)"
         self.BladeReader()
         self.TowerReader()
-        self.PlatformReader()
+        if self.fst_vt.PtfmFile != 'unused':
+            self.PlatformReader()
     
     def PlatformReader(self):
 
@@ -654,9 +665,9 @@ class FstInputReader(FstInputBase):
         self.fst_vt.fst_blade_vt.NBlInpSt = int(f.readline().split()[0])
         boolflag = f.readline().split()[0]
         if boolflag == 'False':
-            self.fst_vt.CalcBMode = False
+            self.fst_vt.fst_blade_vt.CalcBMode = False
         else:
-            self.fst_vt.CalcBMode = True
+            self.fst_vt.fst_blade_vt.CalcBMode = True
         self.fst_vt.fst_blade_vt.BldFlDmp1 = float(f.readline().split()[0])
         self.fst_vt.fst_blade_vt.BldFlDmp2 = float(f.readline().split()[0])
         self.fst_vt.fst_blade_vt.BldEdDmp1 = float(f.readline().split()[0])
@@ -682,6 +693,7 @@ class FstInputReader(FstInputBase):
         self.fst_vt.fst_blade_vt.FlpIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.EdgIner = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.PrecrvRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
+        self.fst_vt.fst_blade_vt.PreswpRef = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.FlpcgOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.Edgcgof = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
         self.fst_vt.fst_blade_vt.FlpEAOf = [None] * self.fst_vt.fst_blade_vt.NBlInpSt
@@ -700,11 +712,12 @@ class FstInputReader(FstInputBase):
             self.fst_vt.fst_blade_vt.FlpIner[i] = float(data[9])
             self.fst_vt.fst_blade_vt.EdgIner[i] = float(data[10])
             self.fst_vt.fst_blade_vt.PrecrvRef[i] = float(data[11])
-            self.fst_vt.fst_blade_vt.FlpcgOf[i] = float(data[12])
-            self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[13])
-            self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[14])
-            self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[15])
-        
+            self.fst_vt.fst_blade_vt.PreswpRef[i] = float(data[12])
+            self.fst_vt.fst_blade_vt.FlpcgOf[i] = float(data[13])
+            self.fst_vt.fst_blade_vt.Edgcgof[i] = float(data[14])
+            self.fst_vt.fst_blade_vt.FlpEAOf[i] = float(data[15])
+            self.fst_vt.fst_blade_vt.EdgEAOf[i] = float(data[16])
+
         f.readline()
         self.fst_vt.fst_blade_vt.BldFl1Sh = [None] * 5
         self.fst_vt.fst_blade_vt.BldFl2Sh = [None] * 5        
@@ -754,7 +767,7 @@ class FstInputReader(FstInputBase):
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
             af_filename = f.readline().split()[0]
             af_filename = fix_path(af_filename)
-            print af_filename
+            # print af_filename
             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = af_filename[1:-1]
         
         self.fst_vt.aero_vt.blade_vt.BldNodes = int(f.readline().split()[0])
@@ -836,8 +849,7 @@ class FstInputReader(FstInputBase):
                 alpha.append(data[0])
                 cl.append(data[1])
                 cd.append(data[2])
-                cm.append(data[3])
-
+                # cm.append(data[3]) [AH] does not appear to be used in current version...
             polar.alpha = alpha
             polar.cl = cl
             polar.cd = cd
@@ -883,6 +895,43 @@ class FstInputReader(FstInputBase):
             self.fst_vt.simple_wind_vt.VerShr[i] = float(data[i][5])
             self.fst_vt.simple_wind_vt.LnVShr[i] = float(data[i][6])
             self.fst_vt.simple_wind_vt.GstSpd[i] = float(data[i][7])
+
+        f.close()
+
+
+    def WndWindReader(self):
+
+        wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
+        f = open(wind_file)
+
+        data = []
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+            line_split = line.split()
+            if line_split[0] != '!':
+                data.append(line.split())
+
+        self.fst_vt.wnd_wind_vt.TimeSteps = len(data)
+
+        self.fst_vt.wnd_wind_vt.Time = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.HorSpd = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.WindDir = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.VerSpd = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.HorShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.VerShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.LnVShr = [None] * len(data)
+        self.fst_vt.wnd_wind_vt.GstSpd = [None] * len(data)        
+        for i in range(len(data)):
+            self.fst_vt.wnd_wind_vt.Time[i] = float(data[i][0])
+            self.fst_vt.wnd_wind_vt.HorSpd[i] = float(data[i][1])
+            self.fst_vt.wnd_wind_vt.WindDir[i] = float(data[i][2])
+            self.fst_vt.wnd_wind_vt.VerSpd[i] = float(data[i][3])
+            self.fst_vt.wnd_wind_vt.HorShr[i] = float(data[i][4])
+            self.fst_vt.wnd_wind_vt.VerShr[i] = float(data[i][5])
+            self.fst_vt.wnd_wind_vt.LnVShr[i] = float(data[i][6])
+            self.fst_vt.wnd_wind_vt.GstSpd[i] = float(data[i][7])
 
         f.close()
 

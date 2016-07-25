@@ -1,6 +1,3 @@
-
-from openmdao.main.api import VariableTree, Container, Component
-from openmdao.lib.datatypes.api import Int, Str, Float, List, Array, Enum, Bool, VarTree, Dict, Slot, Instance
 import os
 
 from FST_reader import FstInputReader, FstInputBase
@@ -10,16 +7,16 @@ import copy
 
 # Builder
 
-class FstInputBuilder(Component):
+class FstInputBuilder(object):
     """
     base class for setting up HAWC2 input data
 
     add additional design variables and methods in derived classes
     """
 
-    fstIn = VarTree(FstModel(), iotype='in')
-    fstS = VarTree(FstModel(), iotype='in')
-    fstOut = VarTree(FstModel(), iotype='out')
+    fstIn = FstModel()
+    fstS = FstModel()
+    fstOut = FstModel()
     
     def __init__(self):
         
@@ -41,7 +38,7 @@ class FUSEDWindInputBuilder(FstInputBuilder):
     Component for translating FUSED-Wind input vartrees to HAWC2 inputs
     """
 
-    inputs = Instance(iotype='in')
+    # inputs = Instance(iotype='in')   #[AH] no Instance in omdao1
     
     def __init__(self):
         
@@ -114,23 +111,60 @@ class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
 # Writer
 
 class FstInputWriter(FstInputBase):
-    """ Write the new AeroDyn file
-    """
-    fst_vt = VarTree(FstModel(), iotype='in')
-
-    fst_infile = Str(iotype='in', desc='Master FAST file')
-    fst_directory = Str(iotype='in', desc='Directory of master FAST file set')
-    fst_file_type = Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST')    
-    ad_file_type = Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
-    
-    case_id = Str('DEFAULT', iotype='in', desc='Case ID if writer is used as part of a case analyzer analysis')
-
-    fst_file = Str(iotype='out', desc='Case FAST file')
 
     def __init__(self):
 
-        super(FstInputWriter, self).__init__()
-    
+        self.fst_vt = FstModel()
+
+        self.fst_infile = ''   #Master FAST file
+        self.fst_directory = ''   #Directory of master FAST file set
+        self.fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
+        self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
+        
+        self.case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
+
+        self.fst_file = ''   #Case FAST file
+
+    def InputConfig(self, **kwargs):
+        for k, w in kwargs.iteritems():
+            try:
+                success = False
+                if hasattr(self, k):
+                    setattr(self,k,w)
+                    success = True
+                # [AH] Not sure if checking against all vartrees is a good idea
+                # (problems if variables in different trees have same name)
+                if hasattr(self.fst_vt, k):
+                    setattr(self.fst_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.simple_wind_vt, k):
+                    setattr(self.fst_vt.simple_wind_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.wnd_wind_vt, k):
+                    setattr(self.fst_vt.wnd_wind_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.platform_vt, k):
+                    setattr(self.fst_vt.platform_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.aero_vt, k):
+                    setattr(self.fst_vt.aero_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.fst_blade_vt, k):
+                    setattr(self.fst_vt.fst_blade_vt,k,w)
+                    success = True
+                if hasattr(self.fst_vt.fst_tower_vt, k):
+                    setattr(self.fst_vt.fst_tower_vt,k,w)
+                    success = True
+                # elif hasattr(self.fst_output_vt, k):
+                #     setattr(self.fst_output_vt,k,w)
+                # [AH] Not including outputs for now (has multiple sub-vartrees)
+                if not success:
+                    pass
+                    # print "No object definition or variable tree has the attribute '{0}'.".format(k)
+            except:
+                pass
+                # print "Error: Could assign attribute '{0}'".format(k)
+
     def execute(self):
 
         self.WindWriter()
@@ -615,20 +649,21 @@ class FstInputWriter(FstInputBase):
         fs = self.fst_vt.fst_blade_vt.FlpStff
         es = self.fst_vt.fst_blade_vt.EdgStff
         gs = self.fst_vt.fst_blade_vt.GJStff
-        es = self.fst_vt.fst_blade_vt.EAStff
+        eas = self.fst_vt.fst_blade_vt.EAStff #[AH] was es (overwrote EdgStiff) -- changed to eas
         a = self.fst_vt.fst_blade_vt.Alpha
         fi = self.fst_vt.fst_blade_vt.FlpIner
         ei = self.fst_vt.fst_blade_vt.EdgIner 
         pr = self.fst_vt.fst_blade_vt.PrecrvRef
+        ps = self.fst_vt.fst_blade_vt.PreswpRef
         fo = self.fst_vt.fst_blade_vt.FlpcgOf       
         eo = self.fst_vt.fst_blade_vt.Edgcgof
         feo = self.fst_vt.fst_blade_vt.FlpEAOf
         eeo = self.fst_vt.fst_blade_vt.EdgEAOf      
-        
-        for a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16  in \
-            zip(bf, ac, st, bm, fs, es, gs, es, a, fi, ei, pr, fo, eo, feo, eeo):
-            ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
-            format(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16))
+
+        for a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17  in \
+            zip(bf, ac, st, bm, fs, es, gs, eas, a, fi, ei, pr, ps, fo, eo, feo, eeo):
+            ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.\
+            format(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17))
  
         ofh.write('Blade Mode Shapes\n')
         for i in range(5):
@@ -647,8 +682,8 @@ class FstInputWriter(FstInputBase):
 
         # create airfoil objects
         for i in range(self.fst_vt.aero_vt.blade_vt.NumFoil):
-             af_name = os.path.join(self.fst_directory, 'AeroData\\Airfoil' + str(i) + '.dat')
-             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = 'AeroData\\Airfoil' + str(i) + '.dat'
+             af_name = os.path.join(self.fst_directory, 'AeroData', 'Airfoil' + str(i) + '.dat')
+             self.fst_vt.aero_vt.blade_vt.FoilNm[i] = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
              self.writeAirfoilFile(af_name, i, 2)
 
         ad_file = os.path.join(self.fst_directory,self.fst_vt.ADFile)
@@ -686,7 +721,7 @@ class FstInputWriter(FstInputBase):
         prnelm = self.fst_vt.aero_vt.blade_vt.PrnElm
         ofh.write('Nodal properties\n')
         for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
-            ofh.write('{:.4f}\t{:.3f}\t{:.4f}\t{:.3f}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
+            ofh.write('{:.5f}\t{:.3f}\t{:.4f}\t{:.3f}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
 
         ofh.close()
 
@@ -741,8 +776,11 @@ class FstInputWriter(FstInputBase):
                 print >> f, '{0:<10f}\t{1:40}'.format(param.CnNegStall, 'Cn at stall value for negative angle of attack for linear Cn curve')
                 print >> f, '{0:<10f}\t{1:40}'.format(param.alphaCdMin, 'Angle of attack for minimum CD (deg)')
                 print >> f, '{0:<10f}\t{1:40}'.format(param.CdMin, 'Minimum CD value')
-                for a, cl, cd, cm in zip(param.alpha, param.cl, param.cd, param.cm):
-                    print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}\t{3:<10f}'.format(a, cl, cd, cm)
+                # for a, cl, cd, cm in zip(param.alpha, param.cl, param.cd, param.cm):
+                #[AH] 'cm' removed here as well--double-check what this is all about
+                for a, cl, cd in zip(param.alpha, param.cl, param.cd):
+                    # print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}\t{3:<10f}'.format(a, cl, cd, cm)
+                    print >> f, '{0:<10f}\t{1:<10f}\t{2:<10f}'.format(a, cl, cd)
         else:
             '''print >> f, 'AeroDyn airfoil file.'
             print >> f, 'auto generated by airfoil.py (part of rotor TEAM)'
@@ -785,8 +823,22 @@ class FstInputWriter(FstInputBase):
                           self.fst_vt.simple_wind_vt.VerShr[i], self.fst_vt.simple_wind_vt.LnVShr[i], self.fst_vt.simple_wind_vt.GstSpd[i]))
     
             ofh.close()
+
+        elif self.fst_vt.aero_vt.wind_file_type == 'wnd':
+
+            wind_file = os.path.join(self.fst_directory, self.fst_vt.aero_vt.WindFile)
+            ofh = open(wind_file,'w')
+        
+            for i in range(self.fst_vt.wnd_wind_vt.TimeSteps):
+                ofh.write('{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\n'.format(\
+                          self.fst_vt.wnd_wind_vt.Time[i], self.fst_vt.wnd_wind_vt.HorSpd[i], self.fst_vt.wnd_wind_vt.WindDir[i],\
+                          self.fst_vt.wnd_wind_vt.VerSpd[i], self.fst_vt.wnd_wind_vt.HorShr[i],\
+                          self.fst_vt.wnd_wind_vt.VerShr[i], self.fst_vt.wnd_wind_vt.LnVShr[i], self.fst_vt.wnd_wind_vt.GstSpd[i]))
+    
+            ofh.close()
+        
         else:
-           print "TODO: Other wind file types bts and wnd"
+            print "TODO: Other wind file types bts and wnd"
 
 '''def noise_example():
 
