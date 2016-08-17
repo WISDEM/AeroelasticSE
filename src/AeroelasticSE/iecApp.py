@@ -54,7 +54,7 @@ def line_count(fname):
     return num_lines
 
 ## main function that opens input, runs cases, writes output, ie. whole thing.
-def rundlcs(envcmd = None, options=None, args=None, batch_size=5):
+def rundlcs(envcmd = None, options=None, args=None, batch_size=100):
     """ 
     run the whole process, including startup and shutdown
     to do:
