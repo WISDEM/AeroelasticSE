@@ -61,6 +61,17 @@ class FstOutputParams(object):
 		self.TabDelim   = False
 		self.OutFmt     = ''
 
+# Linearization
+class Linearization(object):
+	def __init__(self):
+		self.Linearize = False
+		self.NLinTimes = 2
+		self.LinTimes = (30, 60)
+		self.LinInputs = 1
+		self.LinOutputs = 1
+		self.LinOutJac = False
+		self.LinOutMod = False
+
 # Visualization
 class Visualization(object):
 	def __init__(self):
@@ -608,6 +619,7 @@ class FstModel(object):
 		self.input_files = InputFiles()
 		self.fst_output_params = FstOutputParams()
 		self.visualization = Visualization()
+                self.linearization = Linearization()
 		self.fst_out_params = FstOutputParams()
 		
 		# Elastodyn vartrees

@@ -247,6 +247,16 @@ class Fst8InputWriter(Fst8InputBase):
 
 		# Visualization (visualization) 
 		f.write('---\n')
+		f.write('{}\n'.format(self.fst_vt.linearization.Linearize))
+		f.write('{}\n'.format(self.fst_vt.linearization.NLinTimes))
+		f.write('{}\n'.format(', '.join(self.fst_vt.linearization.LinTimes)))
+		f.write('{}\n'.format(self.fst_vt.linearization.LinInputs))
+		f.write('{}\n'.format(self.fst_vt.linearization.LinOutputs))
+		f.write('{}\n'.format(self.fst_vt.linearization.LinOutJac))
+		f.write('{}\n'.format(self.fst_vt.linearization.LinOutMod))
+
+		# Visualization (visualization) 
+		f.write('---\n')
 		f.write('{:3}\n'.format(self.fst_vt.visualization.WrVTK     ))
 		f.write('{:3}\n'.format(self.fst_vt.visualization.VTK_type  ))
 		f.write('{:}\n'.format(self.fst_vt.visualization.VTK_fields))

@@ -100,6 +100,16 @@ class Fst8InputReader(Fst8InputBase):
             self.fst_vt.fst_out_params.TabDelim = True
         self.fst_vt.fst_out_params.OutFmt = f.readline().split()[0][1:-1]
 
+        # Linearization
+        f.readline()
+        self.fst_vt.linearization.linearize = f.readline().split()[0]
+        self.fst_vt.linearization.NLinTimes = f.readline().split()[0]
+        self.fst_vt.linearization.LinTimes = re.findall(r'[^,\s]+', f.readline())[0:2]
+        self.fst_vt.linearization.LinInputs = f.readline().split()[0]
+        self.fst_vt.linearization.LinOutputs = f.readline().split()[0]
+        self.fst_vt.linearization.LinOutJac = f.readline().split()[0]
+        self.fst_vt.linearization.LinOutMod = f.readline().split()[0]
+
         # Visualization ()
         f.readline()
         self.fst_vt.visualization.WrVTK = int(f.readline().split()[0])
