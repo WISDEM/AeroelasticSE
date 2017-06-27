@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 kwargs = {'author': 'Peter Graf',
  'author_email': 'peter.graf@nrel.gov',
  'include_package_data': True,
- 'install_requires': ['openmdao.main'],
+ #'install_requires': ['openmdao.main'],
  'keywords': ['openmdao'],
  'license' : 'Apache License, Version 2.0',
  'version' : '0.1.0',

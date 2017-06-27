@@ -30,7 +30,7 @@ class FstWrapper(FstExternalCode):
             sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
             return 0
         
-        print "Calling ", self.FSTexe
+        print "Calling ", self.FSTexe ; quit()
         print "Input file = ", self.input_file
 
         exec_str = []

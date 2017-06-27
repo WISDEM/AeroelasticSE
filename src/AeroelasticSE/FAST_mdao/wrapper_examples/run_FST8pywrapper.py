@@ -25,8 +25,8 @@ writer.fst_infile = 'Test01_Case1.fst'   #Name for new .fst file
 writer.fst_directory = './rundir/'   #Running directory
 writer.execute()   #Write new files
 
-wrapper.FSTexe = '../../../../../FAST_v8/bin/FAST_glin64'
-wrapper.libmap = '../../../../../FAST_v8/bin/libmap-1.20.10.dylib'
+wrapper.FSTexe = 'openfast'
+#wrapper.libmap = '../../../../../FAST_v8/bin/libmap-1.20.10.dylib'
 wrapper.FSTInputFile = writer.fst_infile
 wrapper.fst_directory = writer.fst_directory
 wrapper.execute()   #Execute actual FAST analysis

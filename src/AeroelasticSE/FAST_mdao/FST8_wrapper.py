@@ -27,25 +27,26 @@ class Fst8Wrapper(Fst8ExternalCode):
         print "Executing FAST 8"
         self.input_file = os.path.join(self.fst_directory, self.FSTInputFile)
 
-        if (not os.path.exists(self.FSTexe)):
-            sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
-            return 0
-        if (not os.path.exists(self.libmap)):
-            sys.stderr.write("Can't find libmap dynamic library: {:}\n".format(self.libmap))
-            return 0
-        else:
-            print "Copying libmap to running directory\n"
-            (head,tail) = os.path.split(self.libmap)
-            copyfile(self.libmap, os.path.join(self.fst_directory, tail))
+        #if (not os.path.exists(self.FSTexe)):
+        #    sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
+        #    return 0
+        #if (not os.path.exists(self.libmap)):
+        #    sys.stderr.write("Can't find libmap dynamic library: {:}\n".format(self.libmap))
+        #    return 0
+        #else:
+        #    print "Copying libmap to running directory\n"
+        #    (head,tail) = os.path.split(self.libmap)
+        #    copyfile(self.libmap, os.path.join(self.fst_directory, tail))
 
-        print "Calling ", self.FSTexe
+        print "Calling ", self.FSTexe 
         print "Input file = ", self.input_file
 
         # Get only tail of input_file (we are changing running directory)
         (head,tail) = os.path.split(self.input_file)
 
         # Construct absolute path of executable
-        fstexe_abs = os.path.join(os.getcwd(), self.FSTexe)
+        #fstexe_abs = os.path.join(os.getcwd(), self.FSTexe)
+        fstexe_abs = self.FSTexe
         print "fstexe new: ", fstexe_abs
 
         exec_str = []
