@@ -63,7 +63,7 @@ shear.profile     ProfileFile     - Name of the file that contains input profile
 --------Coherent Turbulence Scaling Parameters-------------------
 "Y:\Wind\Archive\Public\Projects\KH_Billow\EventData"    CTEventPath     - Name of the path where event data files are located
 "Random"      CTEventFile     - Type of event files ("LES", "DNS", or "RANDOM")
-true          Randomize       - Randomize the disturbance scale and locations? (true/false)
+True          Randomize       - Randomize the disturbance scale and locations? (true/false)
           1   DistScl         - Disturbance scale [-] (ratio of event dataset height to rotor disk). (Ignored when Randomize = true.)
         0.5   CTLy            - Fractional location of tower centerline from right [-] (looking downwind) to left side of the dataset. (Ignored when Randomize = true.)
         0.5   CTLz            - Fractional location of hub height from the bottom of the dataset. [-] (Ignored when Randomize = true.)
