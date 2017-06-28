@@ -74,9 +74,19 @@ class spatialcoherance(object):
 		self.SCMod2 = '"GENERAL"'
 		self.SCMod3 = '"GENERAL"'
 		self.InCDec1 = [13.75, 0.04]
-		self.InCDec1 = [9.85, 0.0015]
-		self.InCDec1 = [9.5, 0.003]
+		self.InCDec2 = [9.85, 0.0015]
+		self.InCDec3 = [9.5, 0.003]
 		self.CohExp = 0.5
+# Coherent Turbulence Scaling Parameters
+class coherentTurbulence(object):
+     def __init__(self):
+         self.CTEventPath = '"Y:\Wind\Archive\Public\Projects\KH_Billow\EventData"'
+         self.CTEventFile = '"Random"'
+         self.Randomize = True
+         self.DistScl = 1
+         self.CTLy = 0.5
+         self.CTLz = 0.5
+         self.CTStartTime = 30
 
 class turbsiminputs(object):
 
@@ -86,6 +96,7 @@ class turbsiminputs(object):
          self.metboundconds = metboundconds()
          self.noniecboundconds = noniecboundconds()
          self.spatialcoherance = spatialcoherance()
+         self.coherentTurbulence = coherentTurbulence()
 
 ##########################
 ### Turbulance input file ######

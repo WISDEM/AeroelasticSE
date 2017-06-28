@@ -13,7 +13,7 @@ class TurbsimBuilder(turbsiminputs):
 
          # runtime options
          tsinp.write("{}\n".format(self.runtime_options.echo))
-         tsinp.write("{}\n".format(self.runtime_options.RandSeed1))
+         tsinp.write("{}\n".format(int(self.runtime_options.RandSeed1)))
          tsinp.write("{}\n".format(self.runtime_options.RandSeed2))
          tsinp.write("{}\n".format(self.runtime_options.WrBHHTP))
          tsinp.write("{}\n".format(self.runtime_options.WrFHHTP))
@@ -71,6 +71,27 @@ class TurbsimBuilder(turbsiminputs):
          # Spatial Coherence Parameters
          tsinp.write("\n")
          tsinp.write("----\n")
-         tsinp.write("{}\n".format(self.noniecboundconds.Latitude))
+         tsinp.write("{}\n".format(self.spatialcoherance.SCMod1))
+         tsinp.write("{}\n".format(self.spatialcoherance.SCMod2))
+         tsinp.write("{}\n".format(self.spatialcoherance.SCMod3))
+         tsinp.write("{}\n".format(self.spatialcoherance.InCDec1))
+         tsinp.write("{}\n".format(self.spatialcoherance.InCDec2))
+         tsinp.write("{}\n".format(self.spatialcoherance.InCDec3))
+         tsinp.write("{}\n".format(self.spatialcoherance.CohExp))
+
+         # Coherent Turbulence Scaling Parameters
+         tsinp.write("\n")
+         tsinp.write("----\n")
+         tsinp.write("{}\n".format(self.coherentTurbulence.CTEventPath))
+         tsinp.write("{}\n".format(self.coherentTurbulence.CTEventFile))
+         tsinp.write("{}\n".format(self.coherentTurbulence.Randomize))
+         tsinp.write("{}\n".format(self.coherentTurbulence.DistScl))
+         tsinp.write("{}\n".format(self.coherentTurbulence.CTLy))
+         tsinp.write("{}\n".format(self.coherentTurbulence.CTLz))
+         tsinp.write("{}\n".format(self.coherentTurbulence.CTStartTime))
+
+
+
+
 s = TurbsimBuilder()
 s.execute()
