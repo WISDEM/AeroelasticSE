@@ -25,8 +25,9 @@ config['fst_masterfile'] = 'Test01.fst'
 config['fst_masterdir']= './FST8inputfiles/'
 config['fst_runfile'] = caseid
 config['fst_rundir'] = './rundir/'
-config['fst_exe'] = '../../../../../FAST_v8/bin/FAST_glin64'
-config['libmap'] = '../../../../../FAST_v8/bin/libmap-1.20.10.dylib'
+config['fst_exe'] = 'openfast'
+#config['fst_exe'] = '../../../../../FAST_v8/bin/FAST_glin64'
+#config['libmap'] = '../../../../../FAST_v8/bin/libmap-1.20.10.dylib'
 config['ad_file_type'] = 1 
 
 # Additional parameters

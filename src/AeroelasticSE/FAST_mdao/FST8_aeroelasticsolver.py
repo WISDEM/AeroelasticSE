@@ -117,8 +117,8 @@ class FST8Workflow (Component):
 		# outsize = (TMax - TStart)/(DT * DecFact) + 1
 		# self.outsize = ((self.writer.fst_vt.fst_sim_ctrl.TMax - self.writer.fst_vt.fst_out_params.TStart) \
 		# 	/(self.writer.fst_vt.fst_sim_ctrl.DT*self.writer.fst_vt.ed_out_params.DecFact)) + 1
-		self.outsize = ((self.writer.fst_vt.fst_sim_ctrl.TMax - self.writer.fst_vt.fst_out_params.TStart) \
-			/(self.writer.fst_vt.fst_out_params.DT_Out)) + 1
+		self.outsize = int(((self.writer.fst_vt.fst_sim_ctrl.TMax - self.writer.fst_vt.fst_out_params.TStart) \
+			/(self.writer.fst_vt.fst_out_params.DT_Out)) + 1)
 
 		# Loop over number of activated outputs, add them all to the OpenMDAO component
 		ct = 0
