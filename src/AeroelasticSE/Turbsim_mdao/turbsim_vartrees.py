@@ -43,7 +43,7 @@ class tmspecs(object):
 class metboundconds(object):
     def __init__(self):
          self.TurbModel = '"USRINP"'
-         self.UserFile = 'turbulance_user.inp'
+         self.UserFile = 'turbulence_user.inp'
          self.IECstandard = '"1-ED3"'
          self.IECturbc = '"B"'
          self.IEC_WindType = '"NTM"'
