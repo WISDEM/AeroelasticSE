@@ -21,7 +21,7 @@ class TurbsimBuilder(turbsiminputs):
          self.turbulence_template_file = 'TurbsimInputFiles/turbulence_user.inp'
          
          # profile file parameters
-         self.profile_tamplate = 'TurbsimInputFiles/shear.profile'
+         self.profile_template = 'TurbsimInputFiles/shear.profile'
          self.shear_exponent = 0.2
          self.veer = 20
          self.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
@@ -34,7 +34,7 @@ class TurbsimBuilder(turbsiminputs):
          turb_specs(V_ref=float(self.wind_speed), L_u=float(self.L_u), L_v=float(self.L_v), L_w=float(self.L_w), sigma_u=float(self.sigma_u), sigma_v=float(self.sigma_v), sigma_w=float(self.sigma_w), filename=os.sep.join([self.run_dir, self.turbsim_vt.metboundconds.UserFile]), template_file=self.turbulence_template_file)
 
          # Write profile file
-         write_wind(V_ref=float(self.wind_speed), alpha=float(self.shear_exponent), Beta=float(self.veer), Z_hub=float(self.turbsim_vt.tmspecs.HubHt), filename=os.sep.join([self.run_dir, self.turbsim_vt.metboundconds.ProfileFile]), template_file=self.profile_tamplate)
+         write_wind(V_ref=float(self.wind_speed), alpha=float(self.shear_exponent), Beta=float(self.veer), Z_hub=float(self.turbsim_vt.tmspecs.HubHt), filename=os.sep.join([self.run_dir, self.turbsim_vt.metboundconds.ProfileFile]), template_file=self.profile_template)
 
          tsinp = open(os.sep.join([self.run_dir, self.tsim_input_file]), 'w')
          tsinp.write("-----\n")
