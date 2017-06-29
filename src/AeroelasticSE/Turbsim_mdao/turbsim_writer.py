@@ -16,15 +16,22 @@ class TurbsimBuilder(turbsiminputs):
          self.sigma_u=2.65e+00
          self.sigma_v=1.8e0
          self.sigma_w=1.525e0
+         self.turbulence_file_name='tsim_user_turbulence_default.inp'
+         
+         # profile file parameters
+         self.profile_tamplate = 'TurbsimInputFiles/shear.profile'
+         self.shear_exponent = 0.2
+         self.veer = 20
+         self.profile_file_name = 'default.profile'
 
     def execute(self):
 
          # Write turbulence file
          turb_specs(V_ref=self.wind_speed, L_u=self.L_u, L_v=self.L_v, L_w=self.L_w, sigma_u=self.sigma_u,
-                    sigma_v=self.sigma_v, sigma_w=self.sigma_w)
+                    sigma_v=self.sigma_v, sigma_w=self.sigma_w, template_file=self.profile_tamplate, filename=self.profile_file_name)
 
          # Write profile file
-         write_wind(V_ref=self.wind_speed, alpha=self.shear_exponent, beta=self.veer, Z_hub=self.turbsim_vt.tmspecs.HubHt)
+         write_wind(V_ref=self.wind_speed, alpha=self.shear_exponent, Beta=self.veer, Z_hub=self.turbsim_vt.tmspecs.HubHt, template_file=self.profile_tamplate, filename=self.turbulence_file_name)
 
          tsinp = open(self.tsim_input_file, 'w')
          tsinp.write("-----\n")
