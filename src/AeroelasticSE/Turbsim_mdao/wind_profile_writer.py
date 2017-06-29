@@ -4,7 +4,7 @@ import decimal
 import pandas
 from collections import OrderedDict
 
-def write_wind(V_ref, alpha, Beta, Z_hub, filename):
+def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):
 
     Height=(np.array([np.arange(0,141,10)],dtype=float))
     
@@ -28,7 +28,7 @@ def write_wind(V_ref, alpha, Beta, Z_hub, filename):
     df3 =['%.1f'% x for x in Beta1]
     
 
-    with open("UsrShear_8ms.profiles",'r') as f:
+    with open(template_file,'r') as f:
         get_all=f.readlines() 
         
     with open(filename,'w') as f2:
