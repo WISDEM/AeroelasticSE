@@ -59,3 +59,6 @@ for it in range(1, nt):
           ip = ip + 1
  
 print velocity
+
+np.save('velocity', velocity)
+
