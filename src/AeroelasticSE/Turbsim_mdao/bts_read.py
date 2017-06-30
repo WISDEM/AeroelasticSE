@@ -13,7 +13,7 @@ def fread(fid, nelements, dtype):
 
 fid = open('./turbsim_default.bts', 'rb');
 nffc = 3
-fileFmt = 'int16'
+fileFmt = 'int16' # kind 2 ?
 
 tmp   = fread( fid, 1, np.int16);        # TurbSim format identifier (should = 7 or 8 if periodic), INT(2)
 nz    = fread( fid, 1, np.int32);        # the number of grid points vertically, INT(4)
@@ -49,16 +49,15 @@ nvTwr       = nffc*ntwr;
 velocity    = np.zeros([int(s) for s in (nt,nffc,ny,nz)])
 twrVelocity = np.zeros([int(s) for s in (nt,nffc,ntwr)])
 
-for it in range(1, nt):
-  ip = 1
+for it in range(nt):
+  ip = 0
   v_cnt = fread( fid, int(nv), fileFmt )
-  for iz in range(1, nz):
-    for iy in range(1, ny):
-       for k in range(1, nffc):
+  for iz in range(nz):
+    for iy in range(ny):
+       for k in range(nffc):
           velocity[it,k,iy,iz] = ( v_cnt[ip] - Voffset[k])/Vslope[k] 
           ip = ip + 1
  
 print velocity
 
 np.save('velocity', velocity)
-
