@@ -42,6 +42,8 @@ top.driver.add_recorder(recorder)
 
 # Perform setup and run OpenMDAO problem
 top.setup()
+
+top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
 top.run()
 
 top.cleanup()   #Good practice, especially when using recorder
