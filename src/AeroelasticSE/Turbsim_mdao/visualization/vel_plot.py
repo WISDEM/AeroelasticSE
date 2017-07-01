@@ -28,12 +28,15 @@ cax = div.append_axes('right', '5%', '5%')
 cont = ax.contourf(x, x, velocities[0, 0, :, :])
 n_frames = len(velocities[:,0,0,0])
 #quit()
+MULT= int(1/0.05)
+MULT= 1
 def update(frame_number):
     # Get an index which we can use to re-spawn the oldest raindrop.
-    current_index = frame_number % n_frames
-    cont = ax.contourf(x, x, velocities[current_index, 0, :, :])
+    current_index = (frame_number * MULT) % n_frames
+    cont = ax.contourf(x, x, velocities[current_index, 0, :, :], cmap=plt.cm.coolwarm)
     cax.cla()
     colorbar = fig.colorbar(cont, cax=cax)
+    ax.set_title('Time is %f seconds'%(current_index*.05))
     # Update the scatter collection, with the new colors, sizes and positions.
     #scat.set_edgecolors(rain_drops['color'])
     #scat.set_sizes(rain_drops['size'])
@@ -42,6 +45,6 @@ def update(frame_number):
 
 # Construct the animation, using the update function as the animation
 # director.
-animation = FuncAnimation(fig, update, interval=1, frames=n_frames)
+animation = FuncAnimation(fig, update, frames=np.arange(n_frames - 500, n_frames/MULT))
 #plt.show()
-animation.save('flow.gif', dpi=80, writer='imagemagick')
+animation.save('small_flow.gif', dpi=80, writer='imagemagick')

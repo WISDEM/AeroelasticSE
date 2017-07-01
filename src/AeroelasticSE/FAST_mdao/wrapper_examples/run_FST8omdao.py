@@ -44,6 +44,7 @@ top.driver.add_recorder(recorder)
 top.setup()
 
 top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
+top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = 10
 top.run()
-
+print(top.root.fast_component.output['RootMxc1'])
 top.cleanup()   #Good practice, especially when using recorder
