@@ -155,7 +155,6 @@ class FST8Workflow (Component):
 		# This assumes headers match previously assigned ouputs
 		for i in range(0, len(hdr)):
 			unknowns[hdr[i]] = out[:,i]   #assigns values to output channel matching header name
-                        print 'assigning ', out[:,i],' to ', hdr[i]
 
 
 class FST8AeroElasticSolver(Group):

@@ -17,7 +17,7 @@ class turbsimGroup(Group):
         self.wrapper.execute()
 
 test = turbsimGroup()
-test.writer.turbulence_template_file='../Turbsim_mdao/TurbsimInputFiles/turbulence_user.inp'
+test.writer.turbulence_template_file = '../Turbsim_mdao/TurbsimInputFiles/turbulence_user.inp'
 test.writer.profile_template = '../Turbsim_mdao/TurbsimInputFiles/shear.profile'
 test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
 test.solve_nonlinear()

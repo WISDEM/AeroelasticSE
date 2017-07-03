@@ -10,6 +10,7 @@ reader.read_input_file('TurbsimInputFiles/test01.inp')
 
 writer.turbsim_vt = reader.turbsim_vt
 writer.turbsim_vt.spatialcoherance.CohExp = 0.1
+writer.turbulence_template = 'TurbsimInputFiles/turbulence_user.inp'
 writer.run_dir = 'test'
 writer.execute()
 

@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(".."))
 
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from openmdao.api import SqliteRecorder
-from FST8_aeroelasticsolver import FST8Workflow
+from AeroelasticSE.FAST_mdao.FST8_aeroelasticsolver import FST8Workflow
 
 # Initial OpenMDAO problem setup
 top = Problem()
@@ -22,7 +22,7 @@ root = top.root = Group()
 caseid = "omdaoCase1.fst"
 config = {}
 config['fst_masterfile'] = 'Test01.fst' 
-config['fst_masterdir']= './FST8inputfiles/'
+config['fst_masterdir']= '../FAST_mdao/wrapper_examples/FST8inputfiles'
 config['fst_runfile'] = caseid
 config['fst_rundir'] = './rundir/'
 config['fst_exe'] = 'openfast'
@@ -45,7 +45,7 @@ top.driver.add_recorder(recorder)
 top.setup()
 
 top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
-top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../../../Turbsim_mdao/turbsim_default.bts'
+top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../turbsim_default.bts' # one directory below true location....
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX
 top.run()

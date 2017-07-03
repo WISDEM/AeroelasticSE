@@ -2,7 +2,7 @@ import os
 
 from FST8_reader import Fst8InputReader, Fst8InputBase
 from FST_vartrees_new import FstModel
-
+import sys
 import copy
 
 # Builder
@@ -280,9 +280,10 @@ class Fst8InputWriter(Fst8InputBase):
 			else:
 				sys.exit("Wind writer for file extension {} not yet implemented".format(exten))
 		elif self.fst_vt.inflow_wind.WindType == 3:
-			exten = self.fst_vt.turbsim_wind_params.Filename.split('.')[1]
-			if exten == "wnd":
+			exten = self.fst_vt.turbsim_wind_params.Filename.split('.')[-1]
+			if exten =="wnd":
 				self.WndWindWriter(self.fst_vt.turbsim_wind_params.Filename)
+                        elif exten=="bts": pass # Turbsim made this, we don't need to write it
 			else:
 				sys.exit("Wind writer for file extension {} not yet implemented".format(exten))
 		elif self.fst_vt.inflow_wind.WindType == 4:
