@@ -6,11 +6,11 @@ from collections import OrderedDict
 
 def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):
 
-    Height=(np.array([np.arange(0,141,10)],dtype=float))
+    Height=(np.array([np.arange(0,161,10)],dtype=float))
     
     new_Height=(Height/Z_hub).T
     
-    Height=(np.array([np.arange(0,141,10)])).T
+    Height=(np.array([np.arange(0,161,10)])).T
     a=len(Height)
  
     

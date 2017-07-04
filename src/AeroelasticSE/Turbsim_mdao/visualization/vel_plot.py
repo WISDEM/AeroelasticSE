@@ -18,9 +18,9 @@ velocities=np.load('velocity.npy')
 # Create new Figure and an Axes which fills it.
 fig = plt.figure(figsize=(7, 7))
 ax = fig.add_subplot(111)
-x = np.arange(0,30)
-ax.set_xlim(0, 30), ax.set_xticks([])
-ax.set_ylim(0, 30), ax.set_yticks([])
+x = np.arange(0,29)
+ax.set_xlim(0, 29), ax.set_xticks([])
+ax.set_ylim(0, 29), ax.set_yticks([])
 
 div = make_axes_locatable(ax)
 cax = div.append_axes('right', '5%', '5%')
