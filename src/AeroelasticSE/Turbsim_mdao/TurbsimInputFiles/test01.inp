@@ -35,7 +35,7 @@ True          Clockwise       - Clockwise rotation looking downwind? (used only 
 "NTM"         IEC_WindType    - IEC turbulence type ("NTM"=normal, "xETM"=extreme turbulence, "xEWM1"=extreme 1-year wind, "xEWM50"=extreme 50-year wind, where x=wind turbine class 1, 2, or 3)
 "default"     ETMc            - IEC Extreme Turbulence Model "c" parameter [m/s]
 "USR"          WindProfileType - Velocity profile type ("LOG";"PL"=power law;"JET";"H2L"=Log law for TIDAL model;"API";"USR";"TS";"IEC"=PL on rotor disk, LOG elsewhere; or "default")
-shear.profile     ProfileFile     - Name of the file that contains input profiles for WindProfileType="USR" and/or TurbModel="USRVKM" [-]
+8ms_Sobol_row_0.profiles     ProfileFile     - Name of the file that contains input profiles for WindProfileType="USR" and/or TurbModel="USRVKM" [-]
 90   			RefHt           - Height of the reference velocity (U-Ref) [m]
 8   			URef            - Mean (total) velocity at the reference height [m/s] (or "default" for JET velocity profile) [must be 1-hr mean for API model; otherwise is the mean over AnalysisTime seconds]
 "default"     ZJetMax         - Jet height [m] (used only for JET velocity profile, valid 70-490 m)

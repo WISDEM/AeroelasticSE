@@ -5,7 +5,7 @@ from collections import OrderedDict
 import AeroelasticSE
 def turb_specs(V_ref, L_u, L_v, L_w, sigma_u, sigma_v, sigma_w, template_file, filename):
     
-    f=(np.array([np.arange(0.0015873015873015873015873015873, 100.00001, 0.0015873015873015873015873015873)])).T
+    f=(np.array([np.arange(0.0015873015873015873015873015873, 20.00001, 0.0015873015873015873015873015873)])).T
     
     a=int(len(f))
     
