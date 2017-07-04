@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.abspath(".."))
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from openmdao.api import SqliteRecorder
 from AeroelasticSE.FAST_mdao.FST8_aeroelasticsolver import FST8Workflow
+from AeroelasticSE.Turbsim_mdao.turbsim_openmdao import turbsimGroup
 
 # Initial OpenMDAO problem setup
 top = Problem()
@@ -34,7 +35,8 @@ config['ad_file_type'] = 1
 TMAX = 45
 config['TMax'] = TMAX
 
-# Add case to OpenMDAO problem
+# Add Turbsim then FAST
+root.add('turbsim_component', FST8Workflow(config, caseid))
 root.add('fast_component', FST8Workflow(config, caseid))
 
 # # Set up recorder
