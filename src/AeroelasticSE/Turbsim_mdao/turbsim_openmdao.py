@@ -26,4 +26,6 @@ test.writer.turbulence_template_file = '../Turbsim_mdao/TurbsimInputFiles/turbul
 test.reader.turbsim_vt.tmspecs.HubHt = 90.
 test.writer.profile_template = '../Turbsim_mdao/TurbsimInputFiles/shear.profile'
 test.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
+test.shear_exponent = 0.2
+#test.veer = 1.
 test.solve_nonlinear()

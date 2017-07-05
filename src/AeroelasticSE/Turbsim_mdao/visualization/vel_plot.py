@@ -29,7 +29,6 @@ cont = ax.contourf(x, x, velocities[0, 0, :, :])
 n_frames = len(velocities[:,0,0,0])
 #quit()
 MULT= int(1/0.05)
-MULT= 1
 def update(frame_number):
     # Get an index which we can use to re-spawn the oldest raindrop.
     current_index = (frame_number * MULT) % n_frames
@@ -45,6 +44,6 @@ def update(frame_number):
 
 # Construct the animation, using the update function as the animation
 # director.
-animation = FuncAnimation(fig, update, frames=np.arange(n_frames - 500, n_frames/MULT))
+animation = FuncAnimation(fig, update, frames=n_frames/MULT)
 #plt.show()
-animation.save('small_flow.gif', dpi=80, writer='imagemagick')
+animation.save('flow.gif', dpi=80, writer='imagemagick')
