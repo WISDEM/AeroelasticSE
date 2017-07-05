@@ -6,11 +6,11 @@ from collections import OrderedDict
 
 def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):
 
-    Height=(np.array([np.arange(0,161,10)],dtype=float))
+    Height=(np.array([np.arange(0,181,10)],dtype=float))
     
     new_Height=(Height/Z_hub).T
     
-    Height=(np.array([np.arange(0,161,10)])).T
+    Height=(np.array([np.arange(0,181,10)])).T
     a=len(Height)
  
     
@@ -23,9 +23,9 @@ def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):
         Beta1[i,0]= (Beta/63)*(Height[i,0])-90*(Beta/63)
     
     
-    df1= ['%.1f'% x for x in Height]
-    df2 = ['%.1f'% x for x in U]
-    df3 =['%.1f'% x for x in Beta1]
+    df1= ['%.3f'% x for x in Height]
+    df2 = ['%.3f'% x for x in U]
+    df3 =['%.3f'% x for x in Beta1]
     
 
     with open(template_file,'r') as f:

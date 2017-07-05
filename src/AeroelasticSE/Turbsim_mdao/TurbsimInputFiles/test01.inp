@@ -47,9 +47,9 @@ True          Clockwise       - Clockwise rotation looking downwind? (used only 
           0   RICH_NO         - Gradient Richardson number [-]
 "default"     UStar           - Friction or shear velocity [m/s] (or "default")
 "default"     ZI              - Mixing layer depth [m] (or "default")
--0.85        PC_UW           - Hub mean u'w' Reynolds stress [m^2/s^2] (or "default" or "none")
-0.15        PC_UV           - Hub mean u'v' Reynolds stress [m^2/s^2] (or "default" or "none")
--0.1        PC_VW           - Hub mean v'w' Reynolds stress [m^2/s^2] (or "default" or "none")
+"default"        PC_UW           - Hub mean u'w' Reynolds stress [m^2/s^2] (or "default" or "none")
+"default"        PC_UV           - Hub mean u'v' Reynolds stress [m^2/s^2] (or "default" or "none")
+"default"        PC_VW           - Hub mean v'w' Reynolds stress [m^2/s^2] (or "default" or "none")
 
 --------Spatial Coherence Parameters----------------------------
 "GENERAL"     SCMod1           - u-component coherence model ("GENERAL","IEC","API","NONE", or "default")

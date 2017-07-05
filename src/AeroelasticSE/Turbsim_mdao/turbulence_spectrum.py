@@ -14,9 +14,9 @@ def turb_specs(V_ref, L_u, L_v, L_w, sigma_u, sigma_v, sigma_w, template_file, f
     W=np.zeros((a,1),dtype=float)
     
     for i in range(0,a):
-        U[i,0]= (4*L_u/V_ref)*sigma_u**2/((1+6*f[i,0]*L_u/V_ref)**(5/3))
-        V[i,0]= (4*L_v/V_ref)*sigma_v**2/((1+6*f[i,0]*L_v/V_ref)**(5/3))
-        W[i,0]= (4*L_w/V_ref)*sigma_w**2/((1+6*f[i,0]*L_w/V_ref)**(5/3))
+        U[i,0]= (4*L_u/V_ref)*sigma_u**2/((1+6*f[i,0]*L_u/V_ref)**(5./3.))
+        V[i,0]= (4*L_v/V_ref)*sigma_v**2/((1+6*f[i,0]*L_v/V_ref)**(5./3.))
+        W[i,0]= (4*L_w/V_ref)*sigma_w**2/((1+6*f[i,0]*L_w/V_ref)**(5./3.))
         
     df=pandas.DataFrame({'Frequency (Hz)':f[:,0],'u-component PSD (m^2/s)': U[:,0],'v-component PSD (m^2/s)': V[:,0],'w-component PSD (m^2/s)':W[:,0]})
     with open(template_file, 'r') as f:

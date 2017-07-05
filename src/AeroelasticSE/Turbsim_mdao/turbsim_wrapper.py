@@ -7,7 +7,6 @@ class Turbsim_wrapper(object):
          self.run_dir = '.'
     def execute(self):
          exec_string = [self.turbsim_exe, self.turbsim_input]
-         print 'Exectuing ', exec_string, ' in ',self.run_dir
          olddir = os.getcwd()
          os.chdir(self.run_dir)
          subprocess.call(exec_string)
