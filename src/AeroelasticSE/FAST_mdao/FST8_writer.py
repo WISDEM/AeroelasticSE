@@ -1,13 +1,15 @@
 import os
 
 from FST8_reader import Fst8InputReader, Fst8InputBase
-from FST_vartrees_new import FstModel
+from FST_vartrees_params import FstModel
+#from FST_vartrees_new import FstModel
+from openmdao.api import Component
 import sys
 import copy
 
 # Builder
 
-class Fst8InputBuilder(object):
+class Fst8InputBuilder(Component):
 	"""
 	base class for setting up HAWC2 input data
 
