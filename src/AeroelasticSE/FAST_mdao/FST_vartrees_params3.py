@@ -8,7 +8,9 @@ def FstModel(self, firstname):
 		self.add_param('%s:description'%(firstname), val='')
 
                 # I/O
-		self.add_param('%s:fst_directory'%(firstname), val='')
+		self.add_param('%s:fst_directory'%(firstname), val='FST8inputfiles') # Template directory
+		self.add_param('%s:FSTInputFile'%(firstname), val='Test01.fst')  #Master FAST file
+		self.add_param('%s:FSTexe'%(firstname), val='openfast')  #Master FAST file
              
 
                 ###################

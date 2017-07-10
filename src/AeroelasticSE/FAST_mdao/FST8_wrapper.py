@@ -26,7 +26,7 @@ class Fst8Wrapper(Component):
     def solve_nonlinear(self, params, unknowns, resids):
         print "Executing FAST 8"
         #print params['fst_vt:fst_directory'] ; quit()
-        self.input_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:FSTInputFile'])
+        input_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:FSTInputFile'])
 
         #if (not os.path.exists(self.FSTexe)):
         #    sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
@@ -39,15 +39,15 @@ class Fst8Wrapper(Component):
         #    (head,tail) = os.path.split(self.libmap)
         #    copyfile(self.libmap, os.path.join(self.fst_directory, tail))
 
-        print "Calling ", self.FSTexe 
-        print "Input file = ", self.input_file
+        print "Calling ", params['fst_vt:FSTexe']
+        print "Input file = ", input_file
 
         # Get only tail of input_file (we are changing running directory)
-        (head,tail) = os.path.split(self.input_file)
+        (head,tail) = os.path.split(input_file)
 
         # Construct absolute path of executable
         #fstexe_abs = os.path.join(os.getcwd(), self.FSTexe)
-        fstexe_abs = self.FSTexe
+        fstexe_abs = params['fst_vt:FSTexe']
         print "fstexe new: ", fstexe_abs
 
         exec_str = []
@@ -55,7 +55,7 @@ class Fst8Wrapper(Component):
         exec_str.append(tail)
 
         olddir = os.getcwd()
-        os.chdir(self.fst_directory)
+        os.chdir(params['fst_vt:fst_directory'])
         print "current directory: ", os.getcwd()
         print "exec_str: ", exec_str
         subprocess.call(exec_str)#, stdin=None, stdout=None, stderr=None, shell=False)

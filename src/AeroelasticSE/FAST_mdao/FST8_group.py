@@ -1,7 +1,9 @@
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
+from connecting_utility import vtree_connect
 from FST8_reader import Fst8InputReader
 from FST8_writer import Fst8InputWriter
 from FST8_wrapper import Fst8Wrapper
+from FST_vartrees_params3 import FstModel
 import math
 import os
 import numpy as np
@@ -54,6 +56,11 @@ def parseFASTout(fname, directory = None):
 
 # ===================== OpenMDAO Components and Groups =====================
 
+class fst_params(Component):
+   def __init__(self):
+       super(fst_params, self).__init__()
+       FstModel(self, 'fst_vt')
+   def solve_nonlinear(self, params, unknowns, resids): pass
 class FST8Workflow (Group):
 	""" An OpenMDAO Component for running the FST (FAST) workflow
 
@@ -69,9 +76,12 @@ class FST8Workflow (Group):
 		super(FST8Workflow, self).__init__()
 
 		# Initialize objects
-		self.add('reader', Fst8InputReader())
 		self.add('writer', Fst8InputWriter())
+		self.add('reader', Fst8InputReader())
 		self.add('wrapper', Fst8Wrapper())
+                self.add('fst_vars', fst_params())
+                vtree_connect(self, 'fst_vars.fst_vt', 'wrapper.fst_vt')
+                #self.connect('fst_vars.fst_vt:fst_directory', 'wrapper.fst_vt:fst_directory')
 
 		# If present, extract file and directory names/locations from config file, assign to instance
 #		for key in config:
@@ -183,8 +193,5 @@ class FST8AeroElasticSolver(Group):
 if __name__=="__main__":
     s = Problem(FST8Workflow())
     s.setup()
-    s['writer.fst_vt:fst_directory'] = 'FST8inputfiles'
+    s['fst_vars.fst_vt:fst_directory'] = 'FST8inputfiles'
     s.run()
-
-
-

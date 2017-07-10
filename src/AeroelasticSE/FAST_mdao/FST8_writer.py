@@ -34,7 +34,7 @@ class Fst8InputBuilder(Component):
 
 	def solve_nonlinear(self, params, unknowns, resids):
 
-                print unknowns ; quit()
+                print '====> ', params['fst_vt:fst_directory'] ; quit()
 		self._logger.info('updating inputs')
 		# update outputs
 		self.fstOut = self.fstS.copy()
@@ -145,40 +145,39 @@ class Fst8InputWriter(Component):
 		have the same name (i.e. "Echo") they will both be assigned the value in the config
 		dictionary.
 		"""
-                print unkowns ; quit()
-		for k, w in kwargs.iteritems():                
-			try:
-				success = False
-				if hasattr(self, k):
-					setattr(self,k,w)
-					success = True
-				else:
-					for key in self.fst_vt.__dict__:
-						subvartree = self.fst_vt.__dict__[key]
-						if hasattr(subvartree, k):
-							setattr(subvartree,k,w)
-							success = True
-				if not success:
-					# These items are specific to FSTWorkflow and are assigned elsewhere
-					if k not in ['fst_masterfile','fst_masterdir','fst_runfile',\
-						'fst_rundir','fst_exe', 'fst_file_type','ad_file_type', \
-						'libmap']:
-						print "Could not find attribute '{0}'.".format(k)
-			except:
-				print "Something went wrong with assignment of attribute '{0}'.".format(k)
-				pass
+		#for k, w in kwargs.iteritems():                
+	#		try:
+	#			success = False
+	#			if hasattr(self, k):
+	#				setattr(self,k,w)
+	#				success = True
+	#			else:
+	#				for key in self.fst_vt.__dict__:
+#						subvartree = self.fst_vt.__dict__[key]
+#						if hasattr(subvartree, k):
+#							setattr(subvartree,k,w)
+#							success = True
+#				if not success:
+#					# These items are specific to FSTWorkflow and are assigned elsewhere
+#					if k not in ['fst_masterfile','fst_masterdir','fst_runfile',\
+#						'fst_rundir','fst_exe', 'fst_file_type','ad_file_type', \
+#						'libmap']:
+#						print "Could not find attribute '{0}'.".format(k)
+#			except:
+#				print "Something went wrong with assignment of attribute '{0}'.".format(k)
+#				pass
 
 
 	#def execute(self):
 
 		# Keep simple for now:
-		self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
+		fst_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:fst_infile'])
 		# if self.case_id == 'DEFAULT':
 		#     self.fst_file = os.path.join(self.fst_directory,self.fst_infile)
 		# else:
 		#     case_file = self.case_id + '_' + self.fst_infile
 		#     self.fst_file = os.path.join(self.fst_directory,case_file)
-		f = open(self.fst_file, 'w')
+		f = open(fst_file, 'w')
 
 
 		# ===== .fst Input File =====
@@ -186,7 +185,7 @@ class Fst8InputWriter(Component):
 		f.write('---\n')
 		f.write('---\n')
 		f.write('---\n')
-		f.write('{:}\n'.format(self.fst_vt.fst_sim_ctrl.Echo       ))
+		f.write('{:}\n'.format(params['fst_vt:fst_sim_ctrl:Echo']       ))
 		f.write('"{:}"\n'.format(self.fst_vt.fst_sim_ctrl.AbortLevel ))
 		f.write('{:.5f}\n'.format(self.fst_vt.fst_sim_ctrl.TMax       ))
 		f.write('{:.5f}\n'.format(self.fst_vt.fst_sim_ctrl.DT         ))
