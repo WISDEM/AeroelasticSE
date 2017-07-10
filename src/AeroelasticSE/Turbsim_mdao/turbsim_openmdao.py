@@ -27,8 +27,8 @@ test.reader.read_input_file('TurbsimInputFiles/test01.inp')
 test.writer.turbulence_template_file = '../Turbsim_mdao/TurbsimInputFiles/turbulence_user.inp'
 test.reader.turbsim_vt.tmspecs.HubHt = 90.
 test.writer.profile_template = '../Turbsim_mdao/TurbsimInputFiles/shear.profile'
-test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
-#test.shear_exponent = 0.5
-test.run_dir='shearis0.5'
-test.writer.veer = 1.
+#test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
+#test.run_dir='shearis0.5'
+#test.writer.veer = 1.
+test.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
 test.solve_nonlinear()

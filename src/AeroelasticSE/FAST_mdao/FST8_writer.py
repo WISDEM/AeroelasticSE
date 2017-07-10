@@ -1,7 +1,7 @@
 import os
 
 from FST8_reader import Fst8InputReader, Fst8InputBase
-from FST_vartrees_params import FstModel
+from FST_vartrees_params3 import FstModel
 #from FST_vartrees_new import FstModel
 from openmdao.api import Component
 import sys
@@ -16,21 +16,25 @@ class Fst8InputBuilder(Component):
 	add additional design variables and methods in derived classes
 	"""
 
-	fstIn = FstModel()
-	fstS = FstModel()
-	fstOut = FstModel()
+	#fstIn = FstModel()
+	#fstS = FstModel()
+	#fstOut = FstModel()
 	
 	def __init__(self):
 		
 		super(FstInputBuilder,self).__init__()
+                FstModel(self, 'fstIn') # fstIn
+                FstModel(self, 'fstS') # FstModel
+                FstModel(self, 'fstOut') # FstModel
 
-	def initialize_inputs(self):
+	#def initialize_inputs(self):
+#
+#		self._logger.info('dublicating inputs')
+#		self.fstS = self.fstIn.copy()
 
-		self._logger.info('dublicating inputs')
-		self.fstS = self.fstIn.copy()
+	def solve_nonlinear(self, params, unknowns, resids):
 
-	def execute(self):
-
+                print unknowns ; quit()
 		self._logger.info('updating inputs')
 		# update outputs
 		self.fstOut = self.fstS.copy()
@@ -112,46 +116,25 @@ class Fst8InputBuilder(Component):
 
 # Writer
 
-class Fst8InputWriter(Fst8InputBase):
+class Fst8InputWriter(Component):
 
 	def __init__(self):
 
-		self.fst_vt = FstModel()
+                super(Fst8InputWriter, self).__init__()
+		FstModel(self, 'fst_vt')
 
-		self.fst_infile = ''   #Master FAST file
-		self.fst_directory = ''   #Directory of master FAST file set
-		self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
+		#self.fst_infile = ''   #Master FAST file
+		#self.fst_directory = ''   #Directory of master FAST file set
+		#self.ad_file_type = 0   #Enum(0, (0,1), iotype='in', desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn
 		
 		# 
 		# self.fst_file_type = 0   #Enum(0, (0,1),iotype='in', desc='Fst file type, 0=old FAST, 1 = new FAST    
 		# self.case_id = 'DEFAULT'   #Case ID if writer is used as part of a case analyzer analysis
 
-		self.fst_file = ''   #Case FAST file
+		#self.fst_file = ''   #Case FAST file
 
-	def InputConfig(self, **kwargs):
-		# for k, w in kwargs.iteritems():
-			# try:
-			#     success = False
-			#     if hasattr(self, k):
-			#         setattr(self,k,w)
-			#         success = True
-			#     else:
-			#         # Currently only can assign variables at the first level (fst_vt.subtree.variable)
-			#         # This could be re-written to do this recursively
-			#         data = k.split('.')   #split input into keys
-			#         var_tree = data[-2]
-			#         variable = data[-1]
-			#         for key, val in self.fst_vt.__dict__.iteritems():
-			#             if key == var_tree:
-			#                 setattr(self.fst_vt.__dict__[key],variable,w)
-			#                 success = True
-			#     if not success:
-			#         print "Unable to assign attribute '{0}'.".format(k)
-			# except:
-			#     pass
-			#     # print "Error: Could not assign attribute '{0}'".format(k)
-
-
+        def solve_nonlinear(self, params, unknowns, resids):
+	#def InputConfig(self, **kwargs):
 		"""
 		The approach below assigns values from input config dictionary to variables
 		in sub-variable trees with a name that matches the value's key. Aside from checking
@@ -162,6 +145,7 @@ class Fst8InputWriter(Fst8InputBase):
 		have the same name (i.e. "Echo") they will both be assigned the value in the config
 		dictionary.
 		"""
+                print unkowns ; quit()
 		for k, w in kwargs.iteritems():                
 			try:
 				success = False
@@ -185,7 +169,7 @@ class Fst8InputWriter(Fst8InputBase):
 				pass
 
 
-	def execute(self):
+	#def execute(self):
 
 		# Keep simple for now:
 		self.fst_file = os.path.join(self.fst_directory,self.fst_infile)

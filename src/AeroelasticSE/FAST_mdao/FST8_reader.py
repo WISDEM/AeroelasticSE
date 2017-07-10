@@ -1,6 +1,6 @@
 import os,re
 import sys
-
+from openmdao.api import Component
 from FST_vartrees_new import FstModel, ADAirfoil, ADAirfoilPolar
 
 def fix_path(name):
@@ -15,10 +15,10 @@ class Fst8InputBase(object):
 
     model_name = 'FAST Model'
 
-class Fst8InputReader(Fst8InputBase):
+class Fst8InputReader(Component):
 
     def __init__(self):
-
+        super(Fst8InputReader, self).__init__()
         self.fst_infile = ''   #Master FAST file
         self.fst_directory = ''   #Directory of master FAST file set
         self.ad_file_type = 0   #Enum(0, (0,1), desc='Aerodyn file type, 0=old Aerodyn, 1 = new Aerdyn')
@@ -28,12 +28,8 @@ class Fst8InputReader(Fst8InputBase):
 
         self.fst_vt = FstModel()
     
-    def execute(self):
+    def solve_nonlinear(self, params, unknowns, resids):
     	  
-    	  self.read_input_file()
-
-    def read_input_file(self):
-
         fst_file = os.path.join(self.fst_directory, self.fst_infile)
         f = open(fst_file)
 

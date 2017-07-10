@@ -44,7 +44,7 @@ top.driver.add_recorder(recorder)
 # Perform setup and run OpenMDAO problem
 top.setup()
 
-top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
+top['fast_component.fst_vt:steady_wind_params:HWindSpeed'] = 15.12345
 top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../../../Turbsim_mdao/turbsim_default.bts'
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX

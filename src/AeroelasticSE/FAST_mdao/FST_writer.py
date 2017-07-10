@@ -14,13 +14,13 @@ class FstInputBuilder(object):
     add additional design variables and methods in derived classes
     """
 
-    fstIn = FstModel()
-    fstS = FstModel()
-    fstOut = FstModel()
-    
     def __init__(self):
         
         super(FstInputBuilder,self).__init__()
+        fstIn = FstModel()
+        fstS = FstModel()
+        fstOut = FstModel()
+    
 
     def initialize_inputs(self):
 
@@ -113,7 +113,7 @@ class FUSEDWindIECOutputBuilder(FUSEDWindOutputBuilderBase):
 class FstInputWriter(FstInputBase):
 
     def __init__(self):
-
+        super(FstInputWriter).__init__()
         self.fst_vt = FstModel()
 
         self.fst_infile = ''   #Master FAST file
