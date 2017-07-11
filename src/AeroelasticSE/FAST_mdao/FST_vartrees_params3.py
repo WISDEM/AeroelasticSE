@@ -11,6 +11,16 @@ def FstModel(self, firstname):
 		self.add_param('%s:fst_directory'%(firstname), val='FST8inputfiles') # Template directory
 		self.add_param('%s:FSTInputFile'%(firstname), val='Test01.fst')  #Master FAST file
 		self.add_param('%s:FSTexe'%(firstname), val='openfast')  #Master FAST file
+ 
+
+	        self.add_param('%s:fst_out_params:SumPrint'%(firstname), val=True)
+	        self.add_param('%s:fst_out_params:SttsTime'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:ChkptTime'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:DT_Out'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:OutFileFmt'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:TStart'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:TabDelim'%(firstname), val=0.)
+	        self.add_param('%s:fst_out_params:OutFmt'%(firstname), val=1)
              
 
                 ###################
@@ -124,6 +134,7 @@ def FstModel(self, firstname):
 		self.add_param('%s:init_conds:TTDspFA'%(firstname), val=0.0)
 		self.add_param('%s:init_conds:TTDspSS'%(firstname), val=0.0)
 		self.add_param('%s:init_conds:PtfmSurge'%(firstname), val=0.0)
+		self.add_param('%s:init_conds:PtfmSway'%(firstname), val=0.0)
 		self.add_param('%s:init_conds:PtfmHeave'%(firstname), val=0.0)
 		self.add_param('%s:init_conds:PtfmRoll'%(firstname), val=0.0)
 		self.add_param('%s:init_conds:PtfmPitch'%(firstname), val=0.0)
@@ -160,6 +171,7 @@ def FstModel(self, firstname):
 		#self.mass_inertia = MassInertia()
 		self.add_param('%s:mass_inertia:TipMass1'%(firstname), val=0.)
 		self.add_param('%s:mass_inertia:TipMass2'%(firstname), val=0.)
+		self.add_param('%s:mass_inertia:TipMass3'%(firstname), val=0.)
 		self.add_param('%s:mass_inertia:HubMass'%(firstname), val=0.)
 		self.add_param('%s:mass_inertia:HubIner'%(firstname), val=0.)
 		self.add_param('%s:mass_inertia:GenIner'%(firstname), val=0.)

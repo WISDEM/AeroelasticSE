@@ -98,7 +98,7 @@ class Fst8InputReader(Component):
 
         # Linearization
         f.readline()
-        params['fst_vt:linearization:linearize'] = f.readline().split()[0]
+        params['fst_vt:linearization:Linearize'] = f.readline().split()[0]
         params['fst_vt:linearization:NLinTimes'] = f.readline().split()[0]
         params['fst_vt:linearization:LinTimes'] = re.findall(r'[^,\s]+', f.readline())[0:2]
         params['fst_vt:linearization:LinInputs'] = f.readline().split()[0]
@@ -381,10 +381,10 @@ class Fst8InputReader(Component):
         if params['fst_vt:ed_out_params:NTwGages'] != 0: #loop over elements if there are gauges to be added, otherwise assign directly
             for i in range(params['fst_vt:ed_out_params:NTwGages']):
                 params['fst_vt:ed_out_params:TwrGagNd'].append(twrg[i])
-            params['fst_vt:ed_out_params:TwrGagNd'][-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][:-1]   #remove last (newline) character
+            params['fst_vt:ed_out_params:TwrGagNd'][-1] = params['fst_vt:ed_out_params:TwrGagNd'][-1][:-1]   #remove last (newline) character
         else:
             params['fst_vt:ed_out_params:TwrGagNd'] = twrg
-            params['fst_vt:ed_out_params:TwrGagNd'][-1] = self.fst_vt.ed_out_params.TwrGagNd[-1][:-1]
+            params['fst_vt:ed_out_params:TwrGagNd'][-1] = params['fst_vt:ed_out_params:TwrGagNd'][-1][:-1]
         params['fst_vt:ed_out_params:NBlGages'] = int(f.readline().split()[0])
         blg = f.readline().split(',')
         if params['fst_vt:ed_out_params:NBlGages'] != 0:
@@ -731,7 +731,7 @@ class Fst8InputReader(Component):
             params['fst_vt:wnd_wind:GstSpd'][i] = float(data[i][7])
 
         f.close()
-    return params
+        return params
 
     def AeroDynReader(self, params):
 

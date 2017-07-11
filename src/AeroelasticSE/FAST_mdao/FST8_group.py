@@ -76,9 +76,9 @@ class FST8Workflow (Group):
 		super(FST8Workflow, self).__init__()
 
 		# Initialize objects
+		self.add('wrapper', Fst8Wrapper())
 		self.add('writer', Fst8InputWriter())
 		self.add('reader', Fst8InputReader())
-		self.add('wrapper', Fst8Wrapper())
                 self.add('fst_vars', fst_params())
                 vtree_connect('../param_list.txt', self, 'fst_vars.fst_vt', 'wrapper.fst_vt')
                 vtree_connect('../param_list.txt', self, 'fst_vars.fst_vt', 'writer.fst_vt')
