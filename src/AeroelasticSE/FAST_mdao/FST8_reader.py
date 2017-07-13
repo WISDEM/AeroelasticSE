@@ -402,7 +402,9 @@ class Fst8InputReader(Component):
             channels = data.split('"')
             channel_list = channels[1].split(',')
             for variable in channel_list:
-                params['fst_vt:outlist:%s'%variable] = True
+                for param in params.keys():
+                    if ':outlist:' in param:
+                       params[param] = True
             #for i in range(len(channel_list)):
             #    channel_list[i] = channel_list[i].replace(' ','')
             #    if channel_list[i] in params['fst_vt:outlist:wind_mot_vt'].__dict__.keys():
@@ -489,7 +491,7 @@ class Fst8InputReader(Component):
         # self.fst_vt.blade_struc.Edgcgof = [None] * self.fst_vt.blade_struc.NBlInpSt
         # self.fst_vt.blade_struc.FlpEAOf = [None] * self.fst_vt.blade_struc.NBlInpSt
         # self.fst_vt.blade_struc.EdgEAOf = [None] * self.fst_vt.blade_struc.NBlInpSt
-        for i in range(self.fst_vt.blade_struc.NBlInpSt):
+        for i in range(params['fst_vt:blade_struc:NBlInpSt']):
             data = f.readline().split()          
             params['fst_vt:blade_struc:BlFract'][i] = float(data[0])
             params['fst_vt:blade_struc:PitchAxis'][i] = float(data[1])
@@ -526,7 +528,7 @@ class Fst8InputReader(Component):
 
     def TowerReader(self, params):
 
-        tower_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:fst_vt.tower.TwrFile']) 
+        tower_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:tower:TwrFile']) 
         f = open(tower_file)
 
         f.readline()
@@ -564,7 +566,7 @@ class Fst8InputReader(Component):
         # self.fst_vt.tower.TwSSIner = [None] * self.fst_vt.tower.NTwInptSt
         # self.fst_vt.tower.TwFAcgOf = [None] * self.fst_vt.tower.NTwInptSt
         # self.fst_vt.tower.TwSScgOf = [None] * self.fst_vt.tower.NTwInptSt
-        for i in range(self.fst_vt.tower.NTwInptSt):
+        for i in range(params['fst_vt:tower:NTwInptSt']):
             data = f.readline().split()
             params['fst_vt:tower:HtFract'][i] = float(data[0])
             params['fst_vt:tower:TMassDen'][i] = float(data[1])
