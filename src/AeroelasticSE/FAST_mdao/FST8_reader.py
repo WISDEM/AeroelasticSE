@@ -401,42 +401,44 @@ class Fst8InputReader(Component):
         while data.split()[0] != 'END':
             channels = data.split('"')
             channel_list = channels[1].split(',')
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:wind_mot_vt'].__dict__.keys():
-                    params['fst_vt:outlist:wind_mot_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:blade_mot_vt'].__dict__.keys():
-                    params['fst_vt:outlist:blade_mot_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__.keys():
-                    params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:tower_support_mot_vt'].__dict__.keys():
-                    params['fst_vt:outlist:tower_support_mot_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:wave_mot_vt'].__dict__.keys():
-                    params['fst_vt:outlist:wave_mot_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:blade_loads_vt'].__dict__.keys():
-                    params['fst_vt:outlist:blade_loads_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__.keys():
-                    params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:tower_support_loads_vt'].__dict__.keys():
-                    params['fst_vt:outlist:tower_support_loads_vt'].__dict__[channel_list[i]] = True
-            for i in range(len(channel_list)):
-                channel_list[i] = channel_list[i].replace(' ','')
-                if channel_list[i] in params['fst_vt:outlist:dof_vt'].__dict__.keys():
-                    params['fst_vt:outlist:dof_vt'].__dict__[channel_list[i]] = True
+            for variable in channel_list:
+                params['fst_vt:outlist:%s'%variable] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:wind_mot_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:wind_mot_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:blade_mot_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:blade_mot_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:tower_support_mot_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:tower_support_mot_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:wave_mot_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:wave_mot_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:blade_loads_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:blade_loads_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:tower_support_loads_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:tower_support_loads_vt'].__dict__[channel_list[i]] = True
+            #for i in range(len(channel_list)):
+            #    channel_list[i] = channel_list[i].replace(' ','')
+            #    if channel_list[i] in params['fst_vt:outlist:dof_vt'].__dict__.keys():
+            #        params['fst_vt:outlist:dof_vt'].__dict__[channel_list[i]] = True
             data = f.readline()
 
         f.close()

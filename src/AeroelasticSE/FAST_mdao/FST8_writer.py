@@ -439,95 +439,98 @@ class Fst8InputWriter(Component):
 		f.write('Outlist\n')
 		# Wind Motions
 		out_list = []
-		for i in params['fst_vt:outlist:wind_mot_vt'].__dict__.keys():
-			if params['fst_vt:outlist:wind_mot_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Blade Motions
-		out_list = []
-		for i in params['fst_vt:outlist:blade_mot_vt'].__dict__.keys():
-			if params['fst_vt:outlist:blade_mot_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Hub and Nacelle Motions
-		out_list = []
-		for i in params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__.keys():
-			if params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Tower and Support Motions
-		out_list = []
-		for i in params['fst_vt:outlist:tower_support_mot_vt'].__dict__.keys():
-			if params['fst_vt:outlist:tower_support_mot_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Wave Motions
-		out_list = []
-		for i in params['fst_vt:outlist:wave_mot_vt'].__dict__.keys():
-			if params['fst_vt:outlist:wave_mot_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Blade Loads
-		out_list = []
-		for i in params['fst_vt:outlist:blade_loads_vt'].__dict__.keys():
-			if params['fst_vt:outlist:blade_loads_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Hub and Nacelle Loads
-		out_list = []
-		for i in params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__.keys():
-			if params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# Tower and Support Loads
-		out_list = []
-		for i in params['fst_vt:outlist:tower_support_loads_vt'].__dict__.keys():
-			if params['fst_vt:outlist:tower_support_loads_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-		# DOF
-		out_list = []
-		for i in params['fst_vt:outlist:dof_vt'].__dict__.keys():
-			if params['fst_vt:outlist:dof_vt'].__dict__[i] == True:
-				out_list.append(i)
-		f.write('"')
-		for i in range(len(out_list)):
-			if out_list[i][0] != '_':
-				f.write('{:}, '.format(out_list[i]))
-		f.write('"\n')
-
+		for param in params.keys():
+                   if ':outlist:' in param:
+                         if params[param]==True: out_list.append(params[param]) 
+		#for i in params['fst_vt:outlist:wind_mot_vt'].__dict__.keys():
+	#		if params['fst_vt:outlist:wind_mot_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Blade Motions
+#		out_list = []
+#		for i in params['fst_vt:outlist:blade_mot_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:blade_mot_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Hub and Nacelle Motions
+#		out_list = []
+#		for i in params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:hub_nacelle_mot_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Tower and Support Motions
+#		out_list = []
+#		for i in params['fst_vt:outlist:tower_support_mot_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:tower_support_mot_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Wave Motions
+#		out_list = []
+#		for i in params['fst_vt:outlist:wave_mot_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:wave_mot_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Blade Loads
+#		out_list = []
+#		for i in params['fst_vt:outlist:blade_loads_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:blade_loads_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Hub and Nacelle Loads
+#		out_list = []
+#		for i in params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:hub_nacelle_loads_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# Tower and Support Loads
+#		out_list = []
+#		for i in params['fst_vt:outlist:tower_support_loads_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:tower_support_loads_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#		# DOF
+#		out_list = []
+#		for i in params['fst_vt:outlist:dof_vt'].__dict__.keys():
+#			if params['fst_vt:outlist:dof_vt'].__dict__[i] == True:
+#				out_list.append(i)
+#		f.write('"')
+#		for i in range(len(out_list)):
+#			if out_list[i][0] != '_':
+#				f.write('{:}, '.format(out_list[i]))
+#		f.write('"\n')
+#
 		f.write('END\n')
 		
 		f.close()
