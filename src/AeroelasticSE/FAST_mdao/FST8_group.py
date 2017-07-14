@@ -80,9 +80,9 @@ class FST8Workflow (Group):
 		self.add('writer', Fst8InputWriter())
 		self.add('reader', Fst8InputReader())
                 self.add('fst_vars', fst_params())
+                vtree_connect('../param_list.txt', self, 'reader.fst_vt', 'fst_vars.fst_vt')
                 vtree_connect('../param_list.txt', self, 'fst_vars.fst_vt', 'wrapper.fst_vt')
                 vtree_connect('../param_list.txt', self, 'fst_vars.fst_vt', 'writer.fst_vt')
-                vtree_connect('../param_list.txt', self, 'fst_vars.fst_vt', 'reader.fst_vt')
                 #self.connect('fst_vars.fst_vt:fst_directory', 'wrapper.fst_vt:fst_directory')
 
 		# If present, extract file and directory names/locations from config file, assign to instance

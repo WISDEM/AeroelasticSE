@@ -234,7 +234,7 @@ class Fst8InputWriter(Component):
 		f.write('---\n')
 		f.write('{}\n'.format(params['fst_vt:linearization:Linearize']))
 		f.write('{}\n'.format(params['fst_vt:linearization:NLinTimes']))
-		f.write('{}\n'.format(', '.join(params['fst_vt:linearization:LinTimes'])))
+		f.write('{}\n'.format(', '.join([str(s) for s in params['fst_vt:linearization:LinTimes']])))
 		f.write('{}\n'.format(params['fst_vt:linearization:LinInputs']))
 		f.write('{}\n'.format(params['fst_vt:linearization:LinOutputs']))
 		f.write('{}\n'.format(params['fst_vt:linearization:LinOutJac']))
@@ -250,10 +250,10 @@ class Fst8InputWriter(Component):
 		f.close()
 
 		# Call other writers
-		self.ElastoDynWriter()
-		self.BladeStrucWriter()
-		self.TowerWriter()
-		self.InflowWindWriter()
+		self.ElastoDynWriter(params)
+		self.BladeStrucWriter(params)
+		self.TowerWriter(params)
+		self.InflowWindWriter(params)
 		# Wnd wind file if necessary
 		if params['fst_vt:inflow_wind:WindType'] == 1:
 			#simple wind, no file necessary
@@ -276,13 +276,15 @@ class Fst8InputWriter(Component):
 			self.WndWindWriter("{0}.wnd".format(params['fst_vt:bladed_wind_params:FilenameRoot']))
 		else:
 			sys.exit("Reader functionality for wind type {} not yet implemented".format(params['fst_vt:inflow_wind:WindType']))
-		self.AeroDynWriter()
-		self.ServoDynWriter()
+		self.AeroDynWriter(params)
+		self.ServoDynWriter(params)
 
 
-	def ElastoDynWriter(self):
+	def ElastoDynWriter(self, params):
 
-		ed_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:input_files:EDFile'])
+		ed_file = os.sep.join([params['fst_vt:fst_directory'], params['fst_vt:input_files:EDFile']])
+                print '----> ', params['fst_vt:input_files:EDFile']
+                print ed_file ; quit()
 		f = open(ed_file, 'w')
 
 		f.write('---\n')
@@ -593,7 +595,7 @@ class Fst8InputWriter(Component):
 		f.close()
 
 
-	def TowerWriter(self):
+	def TowerWriter(self, params):
 
 		tower_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:tower:TwrFile'])
 		f = open(tower_file, 'w')
@@ -650,7 +652,7 @@ class Fst8InputWriter(Component):
 		f.close()
 
 
-	def InflowWindWriter(self):
+	def InflowWindWriter(self, params):
 
 		inflow_file = os.path.join(params['fst_vt:fst_directory'],params['fst_vt:input_files:InflowFile'])
 		f = open(inflow_file, 'w')
@@ -660,7 +662,7 @@ class Fst8InputWriter(Component):
 		f.write('---\n')
 		f.write('{:}\n'.format(params['fst_vt:inflow_wind:Echo']          ))
 		f.write('{:3}\n'.format(params['fst_vt:inflow_wind:WindType']      ))
-		f.write('{:.5f}\n'.format(params['fst_vt:inflow_wind:PropogationDir']))
+		f.write('{:.5f}\n'.format(params['fst_vt:inflow_wind:PropagationDir']))
 		f.write('{:3}\n'.format(params['fst_vt:inflow_wind:NWindVel']      ))
 		f.write('{:.5f}\n'.format(params['fst_vt:inflow_wind:WindVxiList']   ))
 		f.write('{:.5f}\n'.format(params['fst_vt:inflow_wind:WindVyiList']   ))
@@ -721,7 +723,7 @@ class Fst8InputWriter(Component):
 		f.write('END\n')
 
 
-	def WndWindWriter(self, wndfile):
+	def WndWindWriter(self, wndfile, params):
 
 		wind_file = os.path.join(params['fst_vt:fst_directory'],wndfile)
 		f = open(wind_file, 'w')
@@ -735,7 +737,7 @@ class Fst8InputWriter(Component):
 		f.close()
 
 
-	def AeroDynWriter(self):
+	def AeroDynWriter(self, params):
 
 		# ======= Airfoil Files ========
 		# make directory for airfoil files
@@ -870,7 +872,7 @@ class Fst8InputWriter(Component):
 		f.close()
 
 
-	def ServoDynWriter(self):
+	def ServoDynWriter(self, params):
 
 		sd_file = os.path.join(params['fst_vt:fst_directory'],params['fst_vt:input_files:ServoFile'])
 		f = open(sd_file,'w')

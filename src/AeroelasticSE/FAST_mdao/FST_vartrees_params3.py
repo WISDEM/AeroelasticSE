@@ -10,7 +10,9 @@ def FstModel(self, firstname):
                 # I/O
 		self.add_param('%s:fst_directory'%(firstname), val='FST8inputfiles') # Template directory
 		self.add_param('%s:FSTInputFile'%(firstname), val='Test01.fst')  #Master FAST file
+		self.add_param('%s:fst_infile'%(firstname), val='default.fst')  # main file being written
 		self.add_param('%s:FSTexe'%(firstname), val='openfast')  #Master FAST file
+		self.add_param('%s:ad_file_type'%(firstname), val=0)  #Master FAST file
  
 
 	        self.add_param('%s:fst_out_params:SumPrint'%(firstname), val=True)
@@ -362,7 +364,7 @@ def FstModel(self, firstname):
 		#self.aerodyn = AeroDyn()
 		self.add_param('%s:aerodyn:SysUnits'%(firstname), val='SI')
 		self.add_param('%s:aerodyn:StallMod'%(firstname), val='BEDOES')
-		self.add_param('%s:aerodyn:UseCM'%(firstname), val='NO_CM')
+		self.add_param('%s:aerodyn:UseCm'%(firstname), val='NO_CM')
 		self.add_param('%s:aerodyn:InfModel'%(firstname), val='EQUIL')
 		self.add_param('%s:aerodyn:IndModel'%(firstname), val='SWIRL')
 		self.add_param('%s:aerodyn:AToler'%(firstname), val=0.)
@@ -383,8 +385,10 @@ def FstModel(self, firstname):
 		self.add_param('%s:blade_aero:FoilNm'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:af_data'%(firstname), val=[])
 		self.add_param('%s:blade_aero:BldNodes'%(firstname), val=zeros([1]))
+		self.add_param('%s:blade_aero:RNodes'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:AeroTwst'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:DRNodes'%(firstname), val=zeros([1]))
+		#self.add_param('%s:blade_aero:DRNodes'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:Chord'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:NFoil'%(firstname), val=zeros([1]))
 		self.add_param('%s:blade_aero:PrnElm'%(firstname), val=zeros([1]))
@@ -498,6 +502,7 @@ def FstModel(self, firstname):
 		self.add_param('%s:bladed_interface:GenSpd_MinOM'%(firstname), val=0.)
 		self.add_param('%s:bladed_interface:GenSpd_MaxOM'%(firstname), val=0.)
 		self.add_param('%s:bladed_interface:GenSpd_Dem'%(firstname), val=0.)
+		self.add_param('%s:bladed_interface:GenTrq_Dem'%(firstname), val=0.)
 		self.add_param('%s:bladed_interface:GenPwr_Dem'%(firstname), val=0.)
 		self.add_param('%s:bladed_interface:DLL_NumTrq'%(firstname), val=0.)
 		self.add_param('%s:bladed_interface:GenSpd_TLU'%(firstname), val=zeros([0]))
