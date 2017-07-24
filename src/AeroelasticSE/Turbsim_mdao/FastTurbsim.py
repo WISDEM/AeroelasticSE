@@ -9,7 +9,7 @@ variables to the correct locations in the variable tree.
 # Hacky way of doing relative imports
 import os, sys
 sys.path.insert(0, os.path.abspath(".."))
-
+import matplotlib.pyplot as plt
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from openmdao.api import SqliteRecorder
 from AeroelasticSE.FAST_mdao.FST8_aeroelasticsolver import FST8Workflow
@@ -36,8 +36,8 @@ TMAX = 45
 config['TMax'] = TMAX
 
 # Add Turbsim then FAST
-root.add('turbsim_component', FST8Workflow(config, caseid))
 root.add('fast_component', FST8Workflow(config, caseid))
+root.add('turbsim_component', turbsimGroup())
 
 # # Set up recorder
 recorder = SqliteRecorder('omdaoCase1.sqlite')
@@ -50,6 +50,9 @@ top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
 top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../turbsim_default.bts' # one directory below true location....
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX
-top.run()
-print(top['fast_component.RootMxc1'])
+for rs in range(2):
+   top.root.turbsim_component.writer.turbsim_vt.runtime_options.RandSeed1 = 10000 + rs
+   top.run()
+   plt.plot(top['fast_component.RootMxc1'])
 top.cleanup()   #Good practice, especially when using recorder
+plt.savefig('seeds.pdf')

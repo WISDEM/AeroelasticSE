@@ -169,7 +169,7 @@ class MassInertia(object):
 	def __init__(self):
 		self.TipMass1   = 0.0
 		self.TipMass2   = 0.0
-		self.TipMass3   = 0.0
+		self.TipMass2   = 0.0
 		self.HubMass    = 0.0
 		self.HubIner    = 0.0
 		self.GenIner    = 0.0

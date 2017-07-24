@@ -44,10 +44,15 @@ top.driver.add_recorder(recorder)
 # Perform setup and run OpenMDAO problem
 top.setup()
 
-top['fast_component.fst_vt:steady_wind_params:HWindSpeed'] = 15.12345
+top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
 top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../../../Turbsim_mdao/turbsim_default.bts'
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
+#top.root.fast_component.writer.fst_vt.fst_output_params.GenPwr = True
+#top.root.fast_component.writer.fst_vt.outlist.hub_nacelle_loads_vt.GenPwr = True
+#top.root.fast_component.writer.fst_vt.bladed_interface.GenPwr_Dem = True
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX
 top.run()
 print(top['fast_component.RootMxc1'])
+print '--'
+#print(top['fast_component.GenPwr'])
 top.cleanup()   #Good practice, especially when using recorder

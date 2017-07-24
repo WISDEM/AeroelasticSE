@@ -1,4 +1,4 @@
-from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup, Assembly
+from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from FST8_reader import Fst8InputReader
 from FST8_writer import Fst8InputWriter
 from FST8_wrapper import Fst8Wrapper
@@ -91,9 +91,9 @@ class FST8Workflow (Component):
 			elif key == 'ad_file_type':
 				self.reader.ad_file_type = config[key]
 
-		self.reader.run()   #Read/populate vartrees
+		self.reader.execute()   #Read/populate vartrees
 		self.writer.fst_vt = self.reader.fst_vt   #Pass vartrees from reader to writer
-		self.writer.solve_nonlinear()#**config)   #Edit vartrees according to keys in config dictionary
+		self.writer.InputConfig(**config)   #Edit vartrees according to keys in config dictionary
 
 		# Pass file and directory names from writer to wrapper
 		self.wrapper.FSTInputFile = self.writer.fst_infile

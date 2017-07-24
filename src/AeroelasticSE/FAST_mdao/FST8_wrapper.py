@@ -2,31 +2,30 @@ import os
 import sys
 import subprocess
 from shutil import copyfile
-from openmdao.api import Component
+
 from FST8_writer import Fst8InputWriter
 from FST8_reader import Fst8InputReader
-from FST_vartrees_params3 import FstModel
+from FST_vartrees_new import FstModel
 
 class Fst8ExternalCode(object):
 
     pass
 
 
-class Fst8Wrapper(Component):
+class Fst8Wrapper(Fst8ExternalCode):
 
     def __init__(self):
         super(Fst8Wrapper, self).__init__()
 
-        #self.FSTexe = None   #Path to executable
-        #self.libmap = None   #Path to libmap library
-        #self.FSTInputFile = None   #FAST input file (ext=.fst)
-        #self.fst_directory = None   #Path to fst directory files
-        FstModel(self, 'fst_vt')
+        self.FSTexe = None   #Path to executable
+        self.libmap = None   #Path to libmap library
+        self.FSTInputFile = None   #FAST input file (ext=.fst)
+        self.fst_directory = None   #Path to fst directory files
 
-    def solve_nonlinear(self, params, unknowns, resids):
+    def execute(self):
+
         print "Executing FAST 8"
-        #print params['fst_vt:fst_directory'] ; quit()
-        input_file = os.path.join(params['fst_vt:fst_directory'], params['fst_vt:FSTInputFile'])
+        self.input_file = os.path.join(self.fst_directory, self.FSTInputFile)
 
         #if (not os.path.exists(self.FSTexe)):
         #    sys.stderr.write("Can't find FAST executable: {:}\n".format(self.FSTexe))
@@ -39,15 +38,15 @@ class Fst8Wrapper(Component):
         #    (head,tail) = os.path.split(self.libmap)
         #    copyfile(self.libmap, os.path.join(self.fst_directory, tail))
 
-        print "Calling ", params['fst_vt:FSTexe']
-        print "Input file = ", input_file
+        print "Calling ", self.FSTexe 
+        print "Input file = ", self.input_file
 
         # Get only tail of input_file (we are changing running directory)
-        (head,tail) = os.path.split(input_file)
+        (head,tail) = os.path.split(self.input_file)
 
         # Construct absolute path of executable
         #fstexe_abs = os.path.join(os.getcwd(), self.FSTexe)
-        fstexe_abs = params['fst_vt:FSTexe']
+        fstexe_abs = self.FSTexe
         print "fstexe new: ", fstexe_abs
 
         exec_str = []
@@ -55,7 +54,7 @@ class Fst8Wrapper(Component):
         exec_str.append(tail)
 
         olddir = os.getcwd()
-        os.chdir(params['fst_vt:fst_directory'])
+        os.chdir(self.fst_directory)
         print "current directory: ", os.getcwd()
         print "exec_str: ", exec_str
         subprocess.call(exec_str)#, stdin=None, stdout=None, stderr=None, shell=False)

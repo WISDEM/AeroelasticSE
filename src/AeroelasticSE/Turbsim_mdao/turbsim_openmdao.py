@@ -13,7 +13,7 @@ class turbsimGroup(Group):
         self.wrapper = Turbsim_wrapper()
         self.run_dir = self.writer.run_dir
 
-    def solve_nonlinear(self):
+    def execute(self):
         if not os.path.exists(self.run_dir): os.makedirs(self.run_dir)
         self.writer.run_dir = self.run_dir
         self.reader.run_dir = self.run_dir
@@ -22,13 +22,14 @@ class turbsimGroup(Group):
         self.writer.execute()
         self.wrapper.execute()
 
-test = turbsimGroup()
-test.reader.read_input_file('TurbsimInputFiles/test01.inp')
-test.writer.turbulence_template_file = '../Turbsim_mdao/TurbsimInputFiles/turbulence_user.inp'
-test.reader.turbsim_vt.tmspecs.HubHt = 90.
-test.writer.profile_template = '../Turbsim_mdao/TurbsimInputFiles/shear.profile'
+if __name__=='__main__':
+   test = turbsimGroup()
+   test.reader.read_input_file('TurbsimInputFiles/test01.inp')
+   test.writer.turbulence_template_file = '../Turbsim_mdao/TurbsimInputFiles/turbulence_user.inp'
+   test.reader.turbsim_vt.tmspecs.HubHt = 90.
+   test.writer.profile_template = '../Turbsim_mdao/TurbsimInputFiles/shear.profile'
 #test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
 #test.run_dir='shearis0.5'
 #test.writer.veer = 1.
-test.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
-test.solve_nonlinear()
+   test.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
+   test.solve_nonlinear()
