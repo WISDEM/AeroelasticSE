@@ -2,6 +2,7 @@ from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from FST8_reader import Fst8InputReader
 from FST8_writer import Fst8InputWriter
 from FST8_wrapper import Fst8Wrapper
+import sys
 import math
 import os
 import numpy as np

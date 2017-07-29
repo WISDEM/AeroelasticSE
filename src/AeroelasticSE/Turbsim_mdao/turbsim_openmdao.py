@@ -14,6 +14,7 @@ class turbsimGroup(Group):
         self.run_dir = self.writer.run_dir
 
     def execute(self):
+    #def solve_nonlinear(self, params, unknowns, resids):
         if not os.path.exists(self.run_dir): os.makedirs(self.run_dir)
         self.writer.run_dir = self.run_dir
         self.reader.run_dir = self.run_dir
@@ -31,5 +32,5 @@ if __name__=='__main__':
 #test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
 #test.run_dir='shearis0.5'
 #test.writer.veer = 1.
-   test.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
+   test.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
    test.solve_nonlinear()

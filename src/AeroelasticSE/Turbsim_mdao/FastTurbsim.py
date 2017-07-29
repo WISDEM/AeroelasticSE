@@ -32,7 +32,7 @@ config['fst_exe'] = 'openfast'
 config['ad_file_type'] = 1 
 
 # Additional parameters
-TMAX = 45
+TMAX = 90
 config['TMax'] = TMAX
 
 # Add Turbsim then FAST
@@ -46,12 +46,15 @@ top.driver.add_recorder(recorder)
 # Perform setup and run OpenMDAO problem
 top.setup()
 
-top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
-top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = '../turbsim_default.bts' # one directory below true location....
+top.root.turbsim_component.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
+#top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
+top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = './turbsim_default.bts' # one directory below true location....
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX
-for rs in range(2):
+top.root.turbsim_component.run_dir = './rundir/'
+for rs in range(10):
    top.root.turbsim_component.writer.turbsim_vt.runtime_options.RandSeed1 = 10000 + rs
+   top.root.turbsim_component.execute()
    top.run()
    plt.plot(top['fast_component.RootMxc1'])
 top.cleanup()   #Good practice, especially when using recorder
