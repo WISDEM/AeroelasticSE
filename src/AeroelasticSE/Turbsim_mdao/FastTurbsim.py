@@ -7,6 +7,7 @@ wish to explicitly define into a dictionary. The input config function assigns t
 variables to the correct locations in the variable tree.
 """
 # Hacky way of doing relative imports
+import numpy as np
 import os, sys
 sys.path.insert(0, os.path.abspath(".."))
 import matplotlib.pyplot as plt
@@ -46,16 +47,20 @@ top.driver.add_recorder(recorder)
 # Perform setup and run OpenMDAO problem
 top.setup()
 
-top.root.turbsim_component.wrapper.turbsim_exe = '/Users/jquick/SE/TurbSim/bin/TurbSim_glin64'
+top.root.turbsim_component.wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
 #top.root.fast_component.writer.fst_vt.steady_wind_params.HWindSpeed = 15.12345
 top.root.fast_component.writer.fst_vt.turbsim_wind_params.Filename = './turbsim_default.bts' # one directory below true location....
 top.root.fast_component.writer.fst_vt.inflow_wind.WindType = 3
 top.root.fast_component.writer.fst_vt.fst_sim_ctrl.TMax = TMAX
-top.root.turbsim_component.run_dir = './rundir/'
-for rs in range(10):
-   top.root.turbsim_component.writer.turbsim_vt.runtime_options.RandSeed1 = 10000 + rs
-   top.root.turbsim_component.execute()
-   top.run()
-   plt.plot(top['fast_component.RootMxc1'])
+#top.root.turbsim_component.run_dir = './rundir/'
+#for i in range(2): # Can't set fst rundir
+#top.root.turbsim_component.run_dir = './rundir%i/'%i
+top.root.turbsim_component.run_dir = './rundir'
+#top.root.fast_component.writer.fst_file = './rundir%i/'%i
+top.root.turbsim_component.writer.turbsim_vt.runtime_options.RandSeed1 = 10000 + 11
+top.root.turbsim_component.execute()
+top.run()
+plt.plot(top['fast_component.RootMxc1'])
+np.save('fout', top['fast_component.RootMxc1'])
 top.cleanup()   #Good practice, especially when using recorder
 plt.savefig('seeds.pdf')
