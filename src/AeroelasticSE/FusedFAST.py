@@ -21,13 +21,26 @@ import logging
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+import pyts
+#from pyts import api as api
+#    from pyts import plot as pt
+#import pyts.io.write as write
+import pyts.runInput.main as ptsm
+import pyts.io.input as ptsin
+from pyts.base import tsGrid
+
+from pyts.phaseModels.main import Rinker, Uniform
+
+
 class openFAST(openAeroCode):
     
     code_input = Instance(FASTRunCase, iotype='in')
 
     def __init__(self, filedict):
+        print "openFAST __init__"
         self.runfast = runFASText(filedict)
-        self.runts = runTurbSimext(filedict)
+#        self.runts = runTurbSimext(filedict)
+        self.runts = runTurbSimpy(filedict)
 
         ## this is repeated in runFASText, should consolodate
         self.basedir = os.path.join(os.getcwd(),"all_runs")
@@ -35,13 +48,12 @@ class openFAST(openAeroCode):
             self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
 
         super(openFAST, self).__init__()
-        print "openFAST __init__"
 
     def getRunCaseBuilder(self):
         return FASTRunCaseBuilder()
 
     def configure(self):
-        print "openFAST configure"
+        print "openFAST configure", self.runfast, self.runts
         self.add('tsrunner', self.runts)
         self.driver.workflow.add(['tsrunner'])
         self.add('runner', self.runfast)
@@ -50,6 +62,7 @@ class openFAST(openAeroCode):
         self.connect('code_input', 'tsrunner.inputs')
         self.connect('runner.outputs', 'outputs')        
         self.connect('tsrunner.tswind_file', 'runner.tswind_file')
+        self.connect('tsrunner.tswind_dir', 'runner.tswind_dir')
 
     def execute(self):
         print "openFAST.execute(), case = ", self.inputs
@@ -87,6 +100,7 @@ class runTurbSimext(Component):
     
     inputs = Instance(IECRunCaseBaseVT, iotype='in')
     tswind_file = Str(iotype='out')
+    tswind_dir = Str(iotype='out')
 
     def __init__(self, filedict):
         super(runTurbSimext,self).__init__()
@@ -152,7 +166,162 @@ class runTurbSimext(Component):
 
         # here we link turbsim -> fast
         self.tswind_file = tsoutname
+        self.tswind_dir = run_dir
 
+
+class runTurbSimpy(Component):
+    """ a component to run TurbSim.
+        will try to make it aware of whether the wind file already exists"""
+    
+    inputs = Instance(IECRunCaseBaseVT, iotype='in')
+    tswind_file = Str(iotype='out')
+    tswind_dir = Str(iotype='out')
+
+    def create_tsr(self, rho, U, tmax, dt):
+        tsr = api.tsrun()
+        tsr.grid = api.tsGrid(center=10, ny=self.ny, nz=self.nz,
+                              height=10, width=10, time_sec=tmax, dt=dt)
+        tsr.prof = api.profModels.pl(U, 90)
+
+        tsr.spec = api.specModels.tidal(self.ustar, 10)
+
+        #tsr.cohere = api.cohereModels.nwtc()
+        tsr.cohere = pyts.cohereModels.main.none()
+
+        tsr.stress = api.stressModels.uniform(0.0, 0.0, 0.0)
+
+        tsr.cohere = pyts.cohereModels.main.none()
+        tsr.stress = pyts.stressModels.main.uniform(0,0,0)
+
+        from pyts.phaseModels.main import Rinker, Uniform
+        tsr.phase = Rinker(rho, self.mu)
+        #tsr.phase = Uniform()
+        # tsr.stress=np.zeros(tsr.grid.shape,dtype='float32')
+
+        self.tsr = tsr
+        return tsr
+
+
+    def add_phase_dist(self, tsr, rho, tmax):
+#        tsr.cohere = pyts.cohereModels.main.none()
+        tsr.cohere = pyts.cohereModels.main.nwtc()
+        tsr.stress = pyts.stressModels.main.uniform(0,0,0)
+        tsr.phase = Rinker(rho, self.mu)
+        cg = tsr.grid
+        tsr.grid = tsGrid(center=cg.center, ny=cg.n_y, nz=cg.n_z,
+                          height=cg.height, width=cg.width,
+                          time_sec=tmax, dt=cg.dt)
+        
+        return tsr
+        
+    def __init__(self, filedict):
+        super(runTurbSimpy,self).__init__()
+
+#        self.rawts.ts_exe = filedict['ts_exe']
+        self.ts_dir = filedict['ts_dir']
+        self.ts_file = filedict['ts_file']
+
+        self.ustar = .8
+##        self.U = 17.
+        self.ny = 15
+        self.nz = 15
+        self.dt = 0.05  # these (should/have in past) come from TurbSim template file
+        self.mid = self.nz/2
+
+##        self.rho = 0.9999
+        self.mu = np.pi
+
+###        np.random.seed(1)  ## probably don't want this in this context
+
+#        self.rawts.run_name = self.run_name
+
+
+        self.basedir = os.path.join(os.getcwd(),"allts_runs")
+        if 'run_dir' in filedict:
+            self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+        if (not os.path.exists(self.basedir)):
+            os.mkdir(self.basedir)
+
+    def execute(self):
+        case = self.inputs
+        print "CASE", case.fst_params
+        ws=case.fst_params['Vhub']
+        rho = case.fst_params['Rho']   #case.fst_params['rho'] ####### TODO: how does this get here?
+        rs = case.fst_params['RandSeed1'] if 'RandSeed1' in case.fst_params else None
+        tmax = 2  ## should not be hard default ##
+        if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
+            tmax = case.fst_params['TMax']
+
+        # run TurbSim to generate the wind:        
+        # for now, turbsim params we mess with are possibly: TMax, RandomSeed, Tmax.  These should generate
+        # new runs, otherwise we should just use wind file we already have
+            # for now, just differentiate by wind speed
+        ts_case_name = "TurbSim-Vhub%.4f" % ws
+        if rs != None:
+            ts_case_name = "%s-Rseed%d" % (ts_case_name, rs)
+
+        run_dir = os.path.join(self.basedir, ts_case_name)
+        if (not os.path.exists(run_dir)):
+            os.mkdir(run_dir)
+
+        self._logger.info("running TurbSim in %s " % run_dir)
+        print "running TurbSim in " , run_dir
+#        self.rawts.run_dir = run_dir
+        tsdict = dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax}.items() + case.fst_params.items())
+#        self.rawts.set_dict(tsdict)
+        print case.fst_params
+        tsoutname = self.ts_file.replace("inp", "wnd")  #self.rawts.ts_file.replace("inp", "wnd")
+        tsoutname = os.path.join(run_dir, tsoutname)
+        tssumname = tsoutname.replace("wnd", "sum")
+        reuse_run = False
+        if (False and os.path.isfile(tsoutname) and os.path.isfile(tssumname)):
+            # maybe there's an old results we can use:
+            while (not reuse_run):
+                ln = file(tssumname).readlines()
+                if (ln != None and len(ln) > 0):
+                    ln1 = ln[-1] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
+                    ln1 = ln1.split(".")
+                    ln2 = ln[-2] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
+                    ln2 = ln2.split(".")
+                    if ((len(ln1) > 0 and ln1[0] == "Processing complete") or (len(ln2) > 0 and ln2[0] == "Processing complete")):
+                        print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
+                        reuse_run = True
+                if (not reuse_run):
+                    time.sleep(2)
+                    print "waiting for ", tsoutname
+                    self._logger.info("waiting for %s" % tsoutname)
+            self._logger.info("DONE waiting for %s" % tsoutname)
+        
+        if (not reuse_run):
+
+            tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
+            tsr = ptsm.cfg2tsrun(tsinput)
+
+            tsr = self.add_phase_dist(tsr, rho, tmax)
+            #            tsdata=ptsm.run(tsinput)
+            tsdata = tsr()  ## actually runs turbsim
+            dphi_prob = tsr.phase.delta_phi_prob
+            ptsm.write(tsdata, tsinput, fname=tsoutname)
+            
+            #fout = file("uhub.out", "w")
+            #hubdat = tsdata.uturb[0, self.mid, self.mid, :]
+            #for i in range(len(hubdat)):
+            #    fout.write("%d  %e  %e\n" % ( i, tsdata.time[i], hubdat[i]))
+            #fout.close()
+            print "dphi prob is ", dphi_prob
+            fout = file(os.path.join(run_dir, "delta_phis_prob.out"), "w")
+            fout.write("%e\n" % dphi_prob)
+            fout.close()
+            
+#            tsr = self.create_tsr(rho, ws, tmax, self.dt)
+#            tsdat = tsr()
+#            print "writing data to ", tsdat, tsoutname
+#            tsdat.write_bladed(tsoutname)
+            ### check for errors!!?? ###
+            
+        # here we link turbsim -> fast
+        self.tswind_file = tsoutname
+        self.tswind_dir = run_dir
 
 class runFASText(Component):
     """ 
@@ -164,6 +333,7 @@ class runFASText(Component):
 #    input = Instance(GenericRunCase, iotype='in')
     outputs = Instance(RunResult, iotype='out')  ## never used, never even set
     tswind_file = Str(iotype='in')
+    tswind_dir = Str(iotype='in')
 
     ## just a template, meant to be reset by caller
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
@@ -228,7 +398,15 @@ class runFASText(Component):
 
         # gather output directly
         self.output = FASTRunResult(self)
-        
+
+
+        ### special hack for getting phase difference probability file back in directory ultimate caller
+        ### will know about:
+        probfile = os.path.join(self.tswind_dir, "delta_phis_prob.out")
+        if os.path.isfile(probfile):
+            shutil.copy(probfile, os.path.join(run_dir, "delta_phis_prob.out"))
+        ###
+            
         # also, copy all the output and input back "home"
         if (self.copyback_files):
             self.results_dir = os.path.join(self.basedir, case.case_name)
