@@ -33,16 +33,16 @@ def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):
         
     with open(filename,'w') as f2:
         for i,line in enumerate(get_all,1):
-                if i < 12:  
-                        f2.writelines(line)
-                else:
-                        for p in range(len(df1)):
-                                if len(str(df1[p]))<5 :
-                                        f2.write(str(df1[p]) + "            " + str(df2[p]) + "            " + str(df3[p]) + "\n")
-                                else:
-                                        f2.write(str(df1[p]) + "           " + str(df2[p]) + "            " + str(df3[p]) + "\n")
-                        break
-                        f2.close()
+            if i < 12:  
+                f2.writelines(line)
+            else:
+                for p in range(len(df1)):
+                    if len(str(df1[p]))<5 :
+                        f2.write(str(df1[p]) + "            " + str(df2[p]) + "            " + str(df3[p]) + "\n")
+                    else:
+                        f2.write(str(df1[p]) + "           " + str(df2[p]) + "            " + str(df3[p]) + "\n")
+                break
+                f2.close()
                         
 
 

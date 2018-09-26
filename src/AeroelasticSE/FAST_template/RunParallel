@@ -1,3 +1,0 @@
-#!/bin/sh
-# Command line for parallel run
-mpirun -np 4 python2.7 callv8Wrapper.py

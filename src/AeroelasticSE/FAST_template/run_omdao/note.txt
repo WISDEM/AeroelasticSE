@@ -1,1 +1,0 @@
-FASTv8_aeroelasticsolver component and parallel group expect this directory (run_omdao) to exist.
