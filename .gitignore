@@ -1,6 +1,8 @@
 *.py[cod]
 *.pyc
 
+src/AeroelasticSE/temp
+
 # OpenMDAO
 openmdao_log.txt
 

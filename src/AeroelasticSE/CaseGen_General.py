@@ -21,6 +21,8 @@ def save_case_matric(matrix_out, change_vars, dir_matrix):
         row_str += '\n'
         text_out.append(row_str)
 
+    if not os.path.exists(dir_matrix):
+            os.makedirs(dir_matrix)
     ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
     for row in text_out:
         ofh.write(row)
@@ -46,8 +48,10 @@ def convert_str(val):
         return int(val)
     elif try_type(val, float):
         return float(val)
-    elif val=='True' or val=='False':
-        return bool(val)
+    elif val=='True':
+        return True
+    elif val=='False':
+        return False
     else:
         return val
 

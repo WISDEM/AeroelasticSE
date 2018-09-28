@@ -117,7 +117,7 @@ class pyIECWind_extreme():
         # Write Files
         self.fname_out = []
         self.fname_type = []
-        fname = self.case_name + '_EOG_Vhub%2.1f.wnd'%V_hub_in
+        fname = self.case_name + '_EOG_U%2.1f.wnd'%V_hub_in
         data = np.column_stack((t, V, V_dir, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust_t))
         hd = []
         hd.append('! Extreme operating guest\n')
@@ -174,7 +174,7 @@ class pyIECWind_extreme():
         self.fname_type = []
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '+':
             ## Vert
-            fname = self.case_name + '_EDC_P_Vhub%2.1f.wnd'%V_hub_in
+            fname = self.case_name + '_EDC_P_U%2.1f.wnd'%V_hub_in
             data = np.column_stack((t, V, Theta_p, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust))
             hd = []
             hd.append('! Exteme Vertical Wind Shear, positive\n')
@@ -187,7 +187,7 @@ class pyIECWind_extreme():
 
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '-':
             ## Vert
-            fname = self.case_name + '_EDC_N_Vhub%2.1f.wnd'%V_hub_in
+            fname = self.case_name + '_EDC_N_U%2.1f.wnd'%V_hub_in
             data = np.column_stack((t, V, Theta_n, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust))
             hd = []
             hd.append('! Exteme Vertical Wind Shear, negative\n')
@@ -247,7 +247,7 @@ class pyIECWind_extreme():
         self.fname_type = []
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '+':
             ## Vert
-            fname = self.case_name + '_ECD_P_Vhub%2.1f.wnd'%V_hub_in
+            fname = self.case_name + '_ECD_P_U%2.1f.wnd'%V_hub_in
             data = np.column_stack((t, V, Theta_p, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust))
             hd = []
             hd.append('! Exteme coherent gust with direction change, positive\n')
@@ -260,7 +260,7 @@ class pyIECWind_extreme():
 
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '-':
             ## Vert
-            fname = self.case_name + '_ECD_N_Vhub%2.1f.wnd'%V_hub_in
+            fname = self.case_name + '_ECD_N_U%2.1f.wnd'%V_hub_in
             data = np.column_stack((t, V, Theta_n, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust))
             hd = []
             hd.append('! Exteme coherent gust with direction change, negative\n')
@@ -309,7 +309,7 @@ class pyIECWind_extreme():
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '+':
             if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'v':
                 ## Vert
-                fname = self.case_name + '_EWS_V_P_Vhub%2.1f.wnd'%V_hub_in
+                fname = self.case_name + '_EWS_V_P_U%2.1f.wnd'%V_hub_in
                 data = np.column_stack((t, V, V_dir, V_vert, np.zeros_like(t), shear_vert, shear_lin_p, V_gust))
                 hd = []
                 hd.append('! Exteme Vertical Wind Shear, positive\n')
@@ -321,7 +321,7 @@ class pyIECWind_extreme():
 
             if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'h':
                 # Horz
-                fname = self.case_name + '_EWS_H_P_Vhub%2.1f.wnd'%V_hub_in
+                fname = self.case_name + '_EWS_H_P_U%2.1f.wnd'%V_hub_in
                 data = np.column_stack((t, V, V_dir, V_vert, shear_lin_p, shear_vert, np.zeros_like(t), V_gust))
                 hd = []
                 hd.append('! Exteme Horizontal Wind Shear, positive\n')
@@ -334,7 +334,7 @@ class pyIECWind_extreme():
         if self.dir_change.lower() == 'both' or self.dir_change.lower() == '-':
             if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'v':
                 ## Vert
-                fname = self.case_name + '_EWS_V_N_Vhub%2.1f.wnd'%V_hub_in
+                fname = self.case_name + '_EWS_V_N_U%2.1f.wnd'%V_hub_in
                 data = np.column_stack((t, V, V_dir, V_vert, np.zeros_like(t), shear_vert, shear_lin_n, V_gust))
                 hd = []
                 hd.append('! Exteme Vertical Wind Shear, negative\n')
@@ -346,7 +346,7 @@ class pyIECWind_extreme():
 
             if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'h':
                 # Horz
-                fname = self.case_name + '_EWS_H_N_Vhub%2.1f.wnd'%V_hub_in
+                fname = self.case_name + '_EWS_H_N_U%2.1f.wnd'%V_hub_in
                 data = np.column_stack((t, V, V_dir, V_vert, shear_lin_n, shear_vert, np.zeros_like(t), V_gust))
                 hd = []
                 hd.append('! Exteme Horizontal Wind Shear, negative\n')
@@ -429,10 +429,14 @@ class pyIECWind_turb():
     def setup(self):
         turbsim_vt = turbsiminputs()
         turbsim_vt.runtime_options.RandSeed1  = self.seed
+        turbsim_vt.runtime_options.WrADTWR    = True
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
         turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.2)
+        turbsim_vt.tmspecs.NumGrid_Z          = 30
+        turbsim_vt.tmspecs.NumGrid_Y          = 30
         turbsim_vt.tmspecs.HFlowAng           = 0.0
+        turbsim_vt.tmspecs.VFlowAng           = 0.0
         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
         turbsim_vt.metboundconds.UserFile     = '"unused"'
         turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
@@ -443,6 +447,8 @@ class pyIECWind_turb():
         turbsim_vt.metboundconds.RefHt        = self.z_hub
         turbsim_vt.metboundconds.URef         = self.Uref
         turbsim_vt.metboundconds.PLExp        = self.PLExp
+
+        print turbsim_vt.tmspecs.GridHeight
         
         return turbsim_vt
 
@@ -454,8 +460,11 @@ class pyIECWind_turb():
         writer = TurbsimBuilder()
         wrapper = Turbsim_wrapper()
 
-        if self.case_name[-3:] != '.in':
-            self.case_name = self.case_name + '.in'
+        # if self.case_name[-3:] != '.in':
+        #     self.case_name = self.case_name + '.in'
+        self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f.in'%self.seed
+        # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
+
         writer.turbsim_vt = turbsim_vt
         writer.run_dir = self.outdir
         writer.tsim_input_file = self.case_name
@@ -465,7 +474,7 @@ class pyIECWind_turb():
         wrapper.run_dir = writer.run_dir
         wrapper.turbsim_exe = self.Turbsim_exe
         wrapper.debug_level = self.debug_level
-        # wrapper.execute()
+        wrapper.execute()
 
         wind_file_out = wrapper.turbsim_input[:-2] + 'bts'
 

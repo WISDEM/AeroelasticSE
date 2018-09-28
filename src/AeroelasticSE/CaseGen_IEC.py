@@ -1,21 +1,61 @@
 import numpy as np
-import os, sys, copy
+import os, sys, copy, itertools
+import multiprocessing as mp
 
 from CaseGen_General import CaseGen_General, save_case_matric
 from pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
+
+# Generate wind files
+def gen_windfile(data):
+    # function for calling wind file execution
+    iecwind = data[0]
+    IEC_WindType = data[1]
+    change_vars = data[2]
+    var_vals = data[3]
+
+    if 'Seeds' in change_vars:
+        iecwind.seed = var_vals[change_vars.index('Seeds')]
+    U = var_vals[change_vars.index('U')]
+
+    wind_file, wind_file_type = iecwind.execute(IEC_WindType, U)
+    if type(wind_file) is str:
+        U_out = [U]
+        WindFile_out = [wind_file]
+        WindFile_type_out = [wind_file_type]
+    elif type(wind_file) is list:
+        U_out = [U]*len(wind_file)
+        WindFile_out = wind_file
+        WindFile_type_out = wind_file_type
+    return [U_out, WindFile_out, WindFile_type_out]
+
 class CaseGen_IEC():
 
     def __init__(self):
-        pass
+        
+        self.init_cond = {} # Dictionary of steady state operating conditions as a function of wind speed, used for setting inital conditions
 
-    def execute(self):
+        self.Turbine_Class = 'I' # I, II, III, IV
+        self.Turbulence_Class = 'A'
+        self.D = 126.
+        self.z_hub = 90.
+
+        # DLC inputs
+        self.dlc_inputs = {}
+        self.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
+        self.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
+
+        self.debug_level = 2
+        self.parallel_windfile_gen = False
+        self.cores = 0
+
+    def execute(self, case_inputs={}):
 
         case_list_all = {}
         dlc_all = []
 
         for i, dlc in enumerate(self.dlc_inputs['DLC']):
-            case_inputs = {}
+            case_inputs_i = copy.copy(case_inputs)
 
             # DLC specific variable changes
             if dlc == 1.1 or dlc == 1.2:
@@ -43,6 +83,7 @@ class CaseGen_IEC():
                 TMax = 90.
 
             # Windfile generation setup
+            iecwind.AnalysisTime = TMax
             iecwind.Turbine_Class = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
             iecwind.IEC_WindType = IEC_WindType
@@ -57,50 +98,74 @@ class CaseGen_IEC():
             iecwind.Turbsim_exe = self.Turbsim_exe
             iecwind.debug_level = self.debug_level
 
-            ## Windfile generation execution
-            def gen_windfile(iecwind, IEC_WindType, U, U_out, WindFile_out, WindFile_type_out):
-
-                wind_file, wind_file_type = iecwind.execute(IEC_WindType, U)
-                if type(wind_file) is str:
-                    U_out.append(U)
-                    WindFile_out.append(wind_file)
-                    WindFile_type_out.append(wind_file_type)
-                elif type(wind_file) is list:
-                    U_out.extend([U]*len(wind_file))
-                    WindFile_out.extend(wind_file)
-                    WindFile_type_out.extend(wind_file_type)
-                return U_out, WindFile_out, WindFile_type_out
-
-            U_out = []
-            WindFile_out = []
-            WindFile_type_out = []
-            for i_U, U in enumerate(iec.dlc_inputs['U'][i]):
-                if iec.dlc_inputs['Seeds'][i]:
-                    for i_seed, seed in enumerate(iec.dlc_inputs['Seeds'][i]):
-                        iecwind.seed = seed
-                        iecwind.case_name = self.case_name_base + '_U%2.1f'%U + '_Seed%2.1f'%seed
-                        U_out, WindFile_out, WindFile_type_out = gen_windfile(iecwind, IEC_WindType, U, U_out, WindFile_out, WindFile_type_out)
+            # Matrix combining N dlc variables that affect wind file generation
+            # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
+            var_list = ['U', 'Seeds']
+            group_len = []
+            change_vars = []
+            change_vals = []
+            for var in var_list:
+                if len(self.dlc_inputs[var][i]) > 0:
+                    group_len.append(len(self.dlc_inputs[var][i]))
+                    change_vars.append(var)
+                    change_vals.append(self.dlc_inputs[var][i])
+            group_idx = [range(n) for n in group_len]
+            matrix_idx = list(itertools.product(*group_idx))
+            matrix_group_idx = [np.where([group_i == group_j for group_j in range(0,len(group_len))])[0].tolist() for group_i in range(0,len(group_len))]
+            matrix_out = []
+            for i, row in enumerate(matrix_idx):
+                row_out = [None]*len(change_vars)
+                for j, val in enumerate(row):
+                    for g in matrix_group_idx[j]:
+                        row_out[g] = change_vals[g][val]
+                matrix_out.append(row_out)
+            matrix_out = np.asarray(matrix_out)
+            
+            if self.parallel_windfile_gen:
+                # Parallel wind file generation (threaded with multiprocessing)
+                if self.cores != 0:
+                    p = mp.Pool(self.cores)
                 else:
-                    U_out, WindFile_out, WindFile_type_out = gen_windfile(iecwind, IEC_WindType, U, U_out, WindFile_out, WindFile_type_out)
+                    p = mp.Pool()
+                data_out = p.map(gen_windfile, [(iecwind, IEC_WindType, change_vars, var_vals) for var_vals in matrix_out])
+                U_out = []
+                WindFile_out = []
+                WindFile_type_out = []
+                for case in data_out:
+                    U_out.extend(case[0])
+                    WindFile_out.extend(case[1])
+                    WindFile_type_out.extend(case[2])
+            else:
+                # Serial
+                U_out = []
+                WindFile_out = []
+                WindFile_type_out = []
+                for var_vals in matrix_out:
+                    [U_out_i, WindFile_out_i, WindFile_type_out_i] = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
+                    U_out.extend(U_out_i)
+                    WindFile_out.extend(WindFile_out_i)
+                    WindFile_type_out.extend(WindFile_type_out_i)
 
             # Set FAST variables from DLC setup
-            case_inputs[("Fst","TMax")] = {'vals':[TMax], 'group':0}
-            case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
-            case_inputs[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
+            case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
+            case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
+            case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
 
             # Set FAST variables from inital conditions
             if self.init_cond:
                 for var in self.init_cond.keys():
                     inital_cond_i = [np.interp(U, self.init_cond[var]['U'], self.init_cond[var]['val']) for U in U_out]
-                    case_inputs[var] = {'vals':inital_cond_i, 'group':1}
+                    case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
             
             # Append current DLC to full list of cases
-            case_list, case_name = CaseGen_General(case_inputs, self.run_dir, self.case_name_base)
+            case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base)
             case_list_all = self.join_case_dicts(case_list_all, case_list)
             dlc_all.extend([dlc]*len(case_list))
 
         # Save case matrix file
         self.save_joined_case_matrix(case_list_all, dlc_all)
+
+        return case_list_all, [('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
 
 
     def join_case_dicts(self, caselist, caselist_add):
@@ -141,6 +206,8 @@ class CaseGen_IEC():
         change_vars = [('IEC', 'DLC')] + change_vars
         matrix_out = np.hstack((np.asarray([[i] for i in dlc_list]), matrix_out))
 
+        if not os.path.exists(self.run_dir):
+            os.makedirs(self.run_dir)
         save_case_matric(matrix_out, change_vars, self.run_dir)
 
 
@@ -151,8 +218,10 @@ if __name__=="__main__":
 
     # Turbine Data
     iec.init_cond = {} # can leave as {} if data not available
-    iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25], 'val':[6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]}
-    iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25], 'val':[0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]}
+    iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
+    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = [6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]
+    iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
+    iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = [0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]
     iec.init_cond[("ElastoDyn","BlPitch2")] = iec.init_cond[("ElastoDyn","BlPitch1")]
     iec.init_cond[("ElastoDyn","BlPitch3")] = iec.init_cond[("ElastoDyn","BlPitch1")]
 
@@ -163,9 +232,9 @@ if __name__=="__main__":
 
     # DLC inputs
     iec.dlc_inputs = {}
-    iec.dlc_inputs['DLC']   = [1.1, 1.2]
-    iec.dlc_inputs['U']     = [[8, 9, 10], [8, 9, 10]]
-    iec.dlc_inputs['Seeds'] = [[5, 6, 7], [5, 6, 7]]
+    iec.dlc_inputs['DLC']   = [1.1, 1.5]
+    iec.dlc_inputs['U']     = [[8, 9, 10], [8]]
+    iec.dlc_inputs['Seeds'] = [[5, 6, 7], []]
     iec.dlc_inputs['Yaw']   = [[], []]
 
     iec.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
@@ -177,6 +246,9 @@ if __name__=="__main__":
     iec.Turbsim_exe = 'C:/Users/egaertne/WT_Codes/Turbsim_v2.00.07/bin/TurbSim_x64.exe'
     iec.debug_level = 1
     iec.run_dir = 'temp'
+
+    iec.parallel_windfile_gen = True
+    iec.cores = 4
 
     # Run
     iec.execute()

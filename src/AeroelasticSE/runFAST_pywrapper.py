@@ -25,6 +25,7 @@ class runFAST_pywrapper(object):
         self.read_yaml = False
         self.write_yaml = False
         self.case = {}
+        self.debug_level   = 0
 
         # Optional population class attributes from key word arguments
         for k, w in kwargs.iteritems():
@@ -44,7 +45,7 @@ class runFAST_pywrapper(object):
         elif self.FAST_ver.lower() in ['fast8','openfast']:
             reader = InputReader_OpenFAST(FAST_ver=self.FAST_ver)
             writer = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
-        wrapper = FastWrapper(FAST_ver=self.FAST_ver)
+        wrapper = FastWrapper(FAST_ver=self.FAST_ver, debug_level=self.debug_level)
 
         # Read input model, FAST files or Yaml
         if self.read_yaml:
@@ -83,6 +84,7 @@ class runFAST_pywrapper_batch(object):
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
+        self.debug_level        = 0
 
         self.read_yaml          = False
         self.FAST_yamlfile_in   = ''
@@ -107,11 +109,17 @@ class runFAST_pywrapper_batch(object):
     def run_serial(self):
         # Run batch serially
 
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
+
         for case, case_name in zip(self.case_list, self.case_name_list):
-            eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.write_yaml, self.FAST_yamlfile_out, self.post)
+            eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.write_yaml, self.FAST_yamlfile_out, self.debug_level, self.post)
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
+
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
 
         if not cores:
             cores = mp.cpu_count()
@@ -131,6 +139,7 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.FAST_yamlfile_in)
             case_data.append(self.write_yaml)
             case_data.append(self.FAST_yamlfile_out)
+            case_data.append(self.debug_level)
             case_data.append(self.post)
 
             case_data_all.append(case_data)
@@ -142,7 +151,7 @@ class runFAST_pywrapper_batch(object):
         print 'MPI interfaced not yet implimented'
 
 
-def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, write_yaml, FAST_yamlfile_out, post):
+def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, write_yaml, FAST_yamlfile_out, debug_level, post):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
     fast = runFAST_pywrapper(FAST_ver=FAST_ver)
@@ -158,6 +167,7 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
 
     fast.FAST_namingOut     = case_name
     fast.case               = case
+    fast.debug_level        = debug_level
 
     fast.execute()
 
@@ -168,7 +178,7 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
 def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11])
+    eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12])
 
 def example_runFAST_pywrapper_batch():
     """ 
@@ -181,6 +191,7 @@ def example_runFAST_pywrapper_batch():
     fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
     fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
     fastBatch.FAST_runDirectory = 'temp/OpenFAST'
+    fastBatch.debug_level = 2
 
     ## Define case list explicitly
     # case_list = [{}, {}]
@@ -208,6 +219,64 @@ def example_runFAST_pywrapper_batch():
 
     # fastBatch.run_serial()
     fastBatch.run_multi(2)
+
+
+def example_runFAST_CaseGenIEC():
+
+    from CaseGen_IEC import CaseGen_IEC
+    iec = CaseGen_IEC()
+
+    # Turbine Data
+    iec.init_cond = {} # can leave as {} if data not available
+    iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
+    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = [6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]
+    iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
+    iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = [0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]
+    iec.init_cond[("ElastoDyn","BlPitch2")] = iec.init_cond[("ElastoDyn","BlPitch1")]
+    iec.init_cond[("ElastoDyn","BlPitch3")] = iec.init_cond[("ElastoDyn","BlPitch1")]
+
+    iec.Turbine_Class = 'I' # I, II, III, IV
+    iec.Turbulence_Class = 'A'
+    iec.D = 126.
+    iec.z_hub = 90.
+
+    # DLC inputs
+    iec.dlc_inputs = {}
+    iec.dlc_inputs['DLC']   = [1.1, 1.5]
+    iec.dlc_inputs['U']     = [[8, 9, 10], [12]]
+    iec.dlc_inputs['Seeds'] = [[5, 6, 7], []]
+    iec.dlc_inputs['Yaw']   = [[], []]
+
+    iec.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
+    iec.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
+
+    # Naming, file management, etc
+    iec.wind_dir = 'temp/wind'
+    iec.case_name_base = 'testing'
+    iec.Turbsim_exe = 'C:/Users/egaertne/WT_Codes/Turbsim_v2.00.07/bin/TurbSim_x64.exe'
+    iec.debug_level = 2
+    iec.parallel_windfile_gen = True
+    iec.cores = 4
+    iec.run_dir = 'temp/OpenFAST'
+
+    # Run case generator / wind file writing
+    case_inputs = {}
+    case_inputs[('Fst','OutFileFmt')] = {'vals':[1], 'group':0}
+    case_list, case_name_list = iec.execute(case_inputs=case_inputs)
+
+    # Run FAST cases
+    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
+    fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
+    fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+    fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+    fastBatch.FAST_runDirectory = iec.run_dir
+
+    fastBatch.case_list = case_list
+    fastBatch.case_name_list = case_name_list
+    fastBatch.debug_level = 2
+
+    # fastBatch.run_serial()
+    fastBatch.run_multi(4)
 
     
 def example_runFAST_pywrapper():
@@ -252,4 +321,5 @@ def example_runFAST_pywrapper():
 if __name__=="__main__":
 
     # example_runFAST_pywrapper()
-    example_runFAST_pywrapper_batch()
+    # example_runFAST_pywrapper_batch()
+    example_runFAST_CaseGenIEC()
