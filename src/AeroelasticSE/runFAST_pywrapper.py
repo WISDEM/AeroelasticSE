@@ -204,6 +204,7 @@ def example_runFAST_pywrapper_batch():
     case_inputs = {}
     case_inputs[("Fst","TMax")] = {'vals':[10.], 'group':0}
     case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
+    case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
     case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
     case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[9.156, 10.296, 11.431, 11.89, 12.1], 'group':1}
     case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
@@ -321,5 +322,5 @@ def example_runFAST_pywrapper():
 if __name__=="__main__":
 
     # example_runFAST_pywrapper()
-    # example_runFAST_pywrapper_batch()
-    example_runFAST_CaseGenIEC()
+    example_runFAST_pywrapper_batch()
+    # example_runFAST_CaseGenIEC()

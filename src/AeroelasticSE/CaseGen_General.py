@@ -2,16 +2,25 @@ import os, itertools
 import numpy as np
 
 
-def save_case_matric(matrix_out, change_vars, dir_matrix):
+def save_case_matrix(matrix_out, change_vars, dir_matrix):
     # save matrix file
+    if type(change_vars[0]) is tuple:
+        n_header_lines = len(change_vars[0])
+    else:
+        change_vars = [(var,) for var in change_vars]
+        n_header_lines = 1
+
     n_cases = np.shape(matrix_out)[0]
     matrix_out = np.hstack((np.asarray([[i] for i in range(n_cases)]), matrix_out))
-    change_vars = [['Case', 'ID']] + change_vars
 
-    col_len = [max([len(val) for val in matrix_out[:,j]] + [len(change_vars[j][0]), len(change_vars[j][1])]) for j in range(len(change_vars))]
+    change_vars = [('Case_ID',)+('',)*(n_header_lines-1)] + change_vars
+    # col_len = [max([len(val) for val in matrix_out[:,j]] + [len(change_vars[j][0]), len(change_vars[j][1])]) for j in range(len(change_vars))]
+    col_len = [max([len(str(val)) for val in matrix_out[:,j]] + [len(change_vars[j][header_i]) for header_i in range(n_header_lines)]) for j in range(len(change_vars))]
+
     text_out = []
-    text_out.append(''.join([val.center(col+2) for val, col in zip([var[0] for var in change_vars], col_len)])+'\n')
-    text_out.append(''.join([val.center(col+2) for val, col in zip([var[1] for var in change_vars], col_len)])+'\n')
+    for header_i in range(n_header_lines):
+        text_out.append(''.join([val.center(col+2) for val, col in zip([var[header_i] for var in change_vars], col_len)])+'\n')
+    
     for row in matrix_out:
         row_str = ''
         for val, col in zip(row, col_len):
@@ -24,6 +33,7 @@ def save_case_matric(matrix_out, change_vars, dir_matrix):
     if not os.path.exists(dir_matrix):
             os.makedirs(dir_matrix)
     ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
+    print os.path.join(dir_matrix,'case_matrix.txt')
     for row in text_out:
         ofh.write(row)
     ofh.close()
@@ -86,8 +96,9 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase=''):
     n_cases = np.shape(matrix_out)[0]
 
     # Save case matrix
-    if dir_matrix:
-        save_case_matric(matrix_out, change_vars, dir_matrix)
+    if not dir_matrix:
+        dir_matrix = os.getcwd()
+    save_case_matrix(matrix_out, change_vars, dir_matrix)
 
     case_list = []
     for i in range(n_cases):
@@ -116,4 +127,5 @@ if __name__ == "__main__":
 
     case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
     
-    case_list, case_name = CaseGen_General(case_inputs, 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/AeroelasticSE/temp/OpenFAST', 'testing')
+    case_list, case_name = CaseGen_General(case_inputs, 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/', 'testing')
+

@@ -6,6 +6,8 @@ from AeroelasticSE.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 from AeroelasticSE.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
 from AeroelasticSE.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
+from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
+
 class pyIECWind_extreme():
 
     def __init__(self):
@@ -452,13 +454,16 @@ class pyIECWind_turb():
         
         return turbsim_vt
 
-    def execute(self, IEC_WindType, Uref):
+    def execute(self, IEC_WindType, Uref, ver='Turbsim'):
         self.IEC_WindType = IEC_WindType
         self.Uref = Uref
 
         turbsim_vt = self.setup()
         writer = TurbsimBuilder()
-        wrapper = Turbsim_wrapper()
+        if ver.lower() == 'turbsim':
+            wrapper = Turbsim_wrapper()
+        if ver.lower() =='pyturbsim':
+            wrapper = pyTurbsim_wrapper()
 
         # if self.case_name[-3:] != '.in':
         #     self.case_name = self.case_name + '.in'
