@@ -453,6 +453,7 @@ AeroDyn15['Pvap']           = 0.0
 AeroDyn15['FluidDepth']     = 0.0
 
 AeroDyn15['SkewMod']        = 0
+AeroDyn15['SkewModFactor']  = "default"
 AeroDyn15['TipLoss']        = False
 AeroDyn15['HubLoss']        = False
 AeroDyn15['TanInd']         = False
@@ -460,6 +461,9 @@ AeroDyn15['AIDrag']         = False
 AeroDyn15['TIDrag']         = False
 AeroDyn15['IndToler']       = 0.0
 AeroDyn15['MaxIter']        = 0
+
+AeroDyn15['DBEMT_Mod']      = 2
+AeroDyn15['tau1_const']     = 4
 
 AeroDyn15['UAMod']          = 0
 AeroDyn15['FLookup']        = False

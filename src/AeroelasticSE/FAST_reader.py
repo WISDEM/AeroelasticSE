@@ -42,6 +42,7 @@ class InputReader_Common(object):
     def __init__(self, **kwargs):
 
         self.FAST_ver = 'OPENFAST'
+        self.dev_branch = False      # branch: pullrequest/ganesh : 5b78391
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
         self.fst_vt = FstModel
@@ -857,6 +858,8 @@ class InputReader_OpenFAST(InputReader_Common):
         # Blade-Element/Momentum Theory Options
         f.readline()
         self.fst_vt['AeroDyn15']['SkewMod']               = int(f.readline().split()[0])
+        if self.dev_branch:
+            self.fst_vt['AeroDyn15']['SkewModFactor']     = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TipLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['HubLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TanInd']                = bool_read(f.readline().split()[0])
@@ -864,6 +867,12 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['AeroDyn15']['TIDrag']                = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['IndToler']              = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['MaxIter']               = int(f.readline().split()[0])
+
+        # Dynamic Blade-Element/Momentum Theory Options 
+        if self.dev_branch:
+            f.readline()
+            self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
+            self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
 
         # Beddoes-Leishman Unsteady Airfoil Aerodynamics Options
         f.readline()
@@ -1197,7 +1206,6 @@ class InputReader_FAST7(InputReader_Common):
     """ FASTv7.02 input file reader """
     
     def execute(self):
-          
         self.read_MainInput()
         self.read_AeroDyn_FAST7()
         # if self.fst_vt['aerodyn']['wind_file_type'][1]  == 'wnd':

@@ -30,6 +30,7 @@ class InputWriter_Common(object):
     def __init__(self, **kwargs):
 
         self.FAST_ver = 'OPENFAST'
+        self.dev_branch = False       # branch: pullrequest/ganesh : 5b78391
         self.FAST_namingOut = None    #Master FAST file
         self.FAST_runDirectory = None #Output directory
         self.fst_vt = FstModel
@@ -633,6 +634,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:}\n'.format(self.fst_vt['InflowWind']['SumPrint']))
         f.write('OutList\n')
         # No inflow wind outputs currently implemented in FAST 8
+        f.write('\"Wind1VelX\"               X-direction wind velocity at point WindList(1)\n')
+        f.write('\"Wind1VelY\"               Y-direction wind velocity at point WindList(1)\n')
+        f.write('\"Wind1VelZ\"               Z-direction wind velocity at point WindList(1)\n')
         f.write('END\n')
 
 
@@ -655,7 +659,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         # ======= Airfoil Files ========
         # make directory for airfoil files
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
-            os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+            try:
+                os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+            except:
+                print "Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData')
 
         # create write airfoil objects to files
         for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
@@ -773,6 +780,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FluidDepth'], 'FluidDepth', '- Water depth above mid-hub height (m) [used only when CavitCheck=True]\n'))
         f.write('======  Blade-Element/Momentum Theory Options  ====================================================== [used only when WakeMod=1]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewMod'], 'SkewMod', '- Type of skewed-wake correction model (switch) {1=uncoupled, 2=Pitt/Peters, 3=coupled} [used only when WakeMod=1]\n'))
+        if (self.dev_branch):
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewModFactor'], 'SkewModFactor', '- Constant used in Pitt/Peters skewed wake model {or "default" is 15/32*pi} (-) [used only when SkewMod=2; unused when WakeMod=0]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['TipLoss'], 'TipLoss', '- Use the Prandtl tip-loss model? (flag) [used only when WakeMod=1]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['HubLoss'], 'HubLoss', '- Use the Prandtl hub-loss model? (flag) [used only when WakeMod=1]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['TanInd'], 'TanInd', '- Include tangential induction in BEMT calculations? (flag) [used only when WakeMod=1]\n'))
@@ -780,6 +789,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['TIDrag'], 'TIDrag', '- Include the drag term in the tangential-induction calculation? (flag) [used only when WakeMod=1 and TanInd=TRUE]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['IndToler'], 'IndToler', '- Convergence tolerance for BEMT nonlinear solve residual equation {or "default"} (-) [used only when WakeMod=1]\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['MaxIter'], 'MaxIter', '- Maximum number of iteration steps (-) [used only when WakeMod=1]\n'))
+        if (self.dev_branch):
+            f.write('======  Dynamic Blade-Element/Momentum Theory Options  ====================================================== [used only when WakeMod=1]\n')
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewMod'], 'DBEMT_Mod', '- Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1} (-) [used only when WakeMod=2]\n'))
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewMod'], 'tau1_const', '- Time constant for DBEMT (s) [used only when WakeMod=2 and DBEMT_Mod=1]\n'))
         f.write('======  Beddoes-Leishman Unsteady Airfoil Aerodynamics Options  ===================================== [used only when AFAeroMod=2]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAMod'], 'UAMod', "Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]\n"))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FLookup'], 'FLookup', "Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]\n"))
@@ -857,7 +870,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 return '{:<22}'.format(val)
 
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
-            os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+            try:
+                os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+            except:
+                print 'Error tring to make "%s"!'%os.path.join(self.FAST_runDirectory,'Airfoils')
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
 

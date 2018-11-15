@@ -4,7 +4,7 @@ python setting. These functions are constructed to provide a simple interface fo
 programmatically with minimal additional dependencies.
 """
 # Hacky way of doing relative imports
-import os, sys
+import os, sys, time
 import multiprocessing as mp
 # sys.path.insert(0, os.path.abspath(".."))
 
@@ -26,6 +26,7 @@ class runFAST_pywrapper(object):
         self.write_yaml = False
         self.case = {}
         self.debug_level   = 0
+        self.dev_branch = False
 
         # Optional population class attributes from key word arguments
         for k, w in kwargs.iteritems():
@@ -37,7 +38,6 @@ class runFAST_pywrapper(object):
         super(runFAST_pywrapper, self).__init__()
 
     def execute(self):
-
         # FAST version specific initialization
         if self.FAST_ver.lower() == 'fast7':
             reader = InputReader_FAST7(FAST_ver=self.FAST_ver)
@@ -54,12 +54,14 @@ class runFAST_pywrapper(object):
         else:
             reader.FAST_InputFile = self.FAST_InputFile
             reader.FAST_directory = self.FAST_directory
+            reader.dev_branch = self.dev_branch
             reader.execute()
         
         # Initialize writer variables with input model
         writer.fst_vt = reader.fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut = self.FAST_namingOut
+        writer.dev_branch = self.dev_branch
         # Make any case specific variable changes
         if self.case:
             writer.update(fst_update=self.case)
@@ -286,7 +288,8 @@ def example_runFAST_pywrapper():
     """
 
     FAST_ver = 'OpenFAST'
-    fast = runFAST_pywrapper(FAST_ver=FAST_ver)
+    dev_branch = True
+    fast = runFAST_pywrapper(FAST_ver=FAST_ver, dev_branch=dev_branch)
 
     if FAST_ver.lower() == 'fast7':
         fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/FAST.exe'   # Path to executable
@@ -302,25 +305,36 @@ def example_runFAST_pywrapper():
         fast.FAST_runDirectory = 'temp/FAST8'
         fast.FAST_namingOut = 'test'
 
+    # elif FAST_ver.lower() == 'openfast':
+    #     fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
+    #     fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+    #     fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+    #     fast.FAST_runDirectory = 'temp/OpenFAST'
+    #     fast.FAST_namingOut = 'test'
+
+    #     fast.read_yaml = False
+    #     fast.FAST_yamlfile_in = 'temp/OpenFAST/test.yaml'
+
+    #     fast.write_yaml = False
+    #     fast.FAST_yamlfile_out = 'temp/OpenFAST/test.yaml'
     elif FAST_ver.lower() == 'openfast':
-        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
+        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast-dev/build/glue-codes/openfast/openfast.exe'   # Path to executable
         fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
         fast.FAST_runDirectory = 'temp/OpenFAST'
         fast.FAST_namingOut = 'test'
 
-        fast.read_yaml = True
+        fast.read_yaml = False
         fast.FAST_yamlfile_in = 'temp/OpenFAST/test.yaml'
 
         fast.write_yaml = False
         fast.FAST_yamlfile_out = 'temp/OpenFAST/test.yaml'
-
 
     fast.execute()
 
 
 if __name__=="__main__":
 
-    # example_runFAST_pywrapper()
-    example_runFAST_pywrapper_batch()
+    example_runFAST_pywrapper()
+    # example_runFAST_pywrapper_batch()
     # example_runFAST_CaseGenIEC()

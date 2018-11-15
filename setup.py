@@ -16,7 +16,7 @@ kwargs = {'author': 'Peter Graf',
  'name': 'AeroelasticSE',
  'package_data': {'AeroelasticSE': []},
  'package_dir': {'': 'src'},
- 'packages': ['AeroelasticSE','AeroelasticSE.FAST_mdao','AeroelasticSE.rainflow', 'AeroelasticSE.Turbsim_mdao'],
+ 'packages': ['AeroelasticSE','AeroelasticSE.Turbsim_mdao','AeroelasticSE.Util'],
  'zip_safe': False}
 
 
