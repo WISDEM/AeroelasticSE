@@ -24,7 +24,9 @@ class runFAST_pywrapper(object):
         self.FAST_namingOut = None
         self.read_yaml = False
         self.write_yaml = False
-        self.case = {}
+        self.fst_vt = {}
+        self.case = {}                  # dictionary of variable values to change
+        self.channels = {}              # dictionary of output channels to change
         self.debug_level   = 0
         self.dev_branch = False
 
@@ -48,23 +50,29 @@ class runFAST_pywrapper(object):
         wrapper = FastWrapper(FAST_ver=self.FAST_ver, debug_level=self.debug_level)
 
         # Read input model, FAST files or Yaml
-        if self.read_yaml:
-            reader.FAST_yamlfile = self.FAST_yamlfile_in
-            reader.read_yaml()
-        else:
-            reader.FAST_InputFile = self.FAST_InputFile
-            reader.FAST_directory = self.FAST_directory
-            reader.dev_branch = self.dev_branch
-            reader.execute()
+        if self.fst_vt == {}:
+            if self.read_yaml:
+                reader.FAST_yamlfile = self.FAST_yamlfile_in
+                reader.read_yaml()
+            else:
+                reader.FAST_InputFile = self.FAST_InputFile
+                reader.FAST_directory = self.FAST_directory
+                reader.dev_branch = self.dev_branch
+                reader.execute()
         
-        # Initialize writer variables with input model
-        writer.fst_vt = reader.fst_vt
+            # Initialize writer variables with input model
+            writer.fst_vt = reader.fst_vt
+        else:
+            writer.fst_vt = self.fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut = self.FAST_namingOut
         writer.dev_branch = self.dev_branch
         # Make any case specific variable changes
         if self.case:
             writer.update(fst_update=self.case)
+        # Modify any specified output channels
+        if self.channels:
+            writer.update_outlist(self.channels)
         # Write out FAST model
         writer.execute()
         if self.write_yaml:
@@ -77,6 +85,9 @@ class runFAST_pywrapper(object):
         wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
         wrapper.execute()
 
+        FAST_Output = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
+        return FAST_Output
+
 class runFAST_pywrapper_batch(object):
 
     def __init__(self, **kwargs):
@@ -87,14 +98,17 @@ class runFAST_pywrapper_batch(object):
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
         self.debug_level        = 0
+        self.dev_branch         = False
 
         self.read_yaml          = False
         self.FAST_yamlfile_in   = ''
+        self.fst_vt             = {}
         self.write_yaml         = False
         self.FAST_yamlfile_out  = ''
 
         self.case_list          = []
         self.case_name_list     = []
+        self.channels           = {}
 
         self.post               = None
 
@@ -114,8 +128,11 @@ class runFAST_pywrapper_batch(object):
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory)
 
-        for case, case_name in zip(self.case_list, self.case_name_list):
-            eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.write_yaml, self.FAST_yamlfile_out, self.debug_level, self.post)
+        out = [None]*len(self.case_list)
+        for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
+            out[i] = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.dev_branch, self.post)
+
+        return out
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -139,21 +156,24 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.FAST_directory)
             case_data.append(self.read_yaml)
             case_data.append(self.FAST_yamlfile_in)
+            case_data.append(self.fst_vt)
             case_data.append(self.write_yaml)
             case_data.append(self.FAST_yamlfile_out)
+            case_data.append(self.channels)
             case_data.append(self.debug_level)
+            case_data.append(self.dev_branch)
             case_data.append(self.post)
 
             case_data_all.append(case_data)
 
-        pool.map(eval_multi, case_data_all)
+        return pool.map(eval_multi, case_data_all)
 
     def run_mpi(self):
         # Run in parallel with mpi, not yet implimented
         print 'MPI interfaced not yet implimented'
 
 
-def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, write_yaml, FAST_yamlfile_out, debug_level, post):
+def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, dev_branch, post):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
     fast = runFAST_pywrapper(FAST_ver=FAST_ver)
@@ -161,26 +181,33 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
     fast.FAST_InputFile     = FAST_InputFile
     fast.FAST_directory     = FAST_directory
     fast.FAST_runDirectory  = FAST_runDirectory
+    fast.dev_branch         = dev_branch
 
     fast.read_yaml          = read_yaml
     fast.FAST_yamlfile_in   = FAST_yamlfile_in
+    fast.fst_vt             = fst_vt
     fast.write_yaml         = write_yaml
     fast.FAST_yamlfile_out  = FAST_yamlfile_out
 
     fast.FAST_namingOut     = case_name
     fast.case               = case
+    fast.channels           = channels
     fast.debug_level        = debug_level
 
-    fast.execute()
+    FAST_Output = fast.execute()
 
     # Post process
     if post:
-        pass
+        out = post(FAST_Output)
+    else:
+        out = []
+
+    return out
 
 def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12])
+    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15])
 
 def example_runFAST_pywrapper_batch():
     """ 

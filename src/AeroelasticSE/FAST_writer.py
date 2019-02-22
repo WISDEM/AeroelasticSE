@@ -151,12 +151,12 @@ class InputWriter_Common(object):
  
         f.write('Blade Mode Shapes\n')
         for i in range(5):
-            f.write('{:.4f}\n'.format(self.fst_vt['ElastoDynBlade']['BldFl1Sh'][i]))
+            f.write('{:.16f}\n'.format(self.fst_vt['ElastoDynBlade']['BldFl1Sh'][i]))
         for i in range(5):
-            f.write('{:.4f}\n'.format(self.fst_vt['ElastoDynBlade']['BldFl2Sh'][i]))           
+            f.write('{:.16f}\n'.format(self.fst_vt['ElastoDynBlade']['BldFl2Sh'][i]))           
            
         for i in range(5):
-            f.write('{:.4f}\n'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][i]))      
+            f.write('{:.16f}\n'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][i]))      
       
          
         f.close()
@@ -289,6 +289,34 @@ class InputWriter_Common(object):
                 outlist.append(sorted(outlist_i))
 
         return outlist
+
+    def update_outlist(self, channels):
+        """ Loop through a list of output channel names, recursively search the nested outlist dict and set to specified value"""
+        # 'channels' is a dict of channel names as keys with the boolean value they should be set to
+
+        # given a list of nested dictionary keys, return the dict at that point
+        def get_dict(vartree, branch):
+            return reduce(operator.getitem, branch, self.fst_vt['outlist'])
+        # given a list of nested dictionary keys, set the value of the dict at that point
+        def set_dict(vartree, branch, val):
+            get_dict(vartree, branch[:-1])[branch[-1]] = val
+        # recursively loop through outlist dictionaries to set output channels
+        def loop_dict(vartree, search_var, val, branch):
+            for var in vartree.keys():
+                branch_i = copy.copy(branch)
+                branch_i.append(var)
+                if type(vartree[var]) is dict:
+                    loop_dict(vartree[var], search_var, val, branch_i)
+                else:
+                    if var == search_var:
+                        set_dict(self.fst_vt['outlist'], branch_i, val)
+
+        # loop through outchannels on this line, loop through outlist dicts to set to True
+        channel_list = channels.keys()
+        for var in channel_list:
+            val = channels[var]
+            var = var.replace(' ', '')
+            loop_dict(self.fst_vt['outlist'], var, val, [])
 
 
 class InputWriter_OpenFAST(InputWriter_Common):
@@ -875,7 +903,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
             except:
                 print 'Error tring to make "%s"!'%os.path.join(self.FAST_runDirectory,'Airfoils')
 
-        for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
+        self.fst_vt['AeroDyn15']['NumAFfiles'] = len(self.fst_vt['AeroDyn15']['af_data'])
+        self.fst_vt['AeroDyn15']['AFNames'] = ['']*self.fst_vt['AeroDyn15']['NumAFfiles']
+
+        for afi in range(self.fst_vt['AeroDyn15']['NumAFfiles']):
 
             self.fst_vt['AeroDyn15']['AFNames'][afi] = os.path.join('Airfoils', self.FAST_namingOut + '_AeroDyn15_Polar_%02d.dat'%afi)
             af_file = os.path.join(self.FAST_runDirectory, self.fst_vt['AeroDyn15']['AFNames'][afi])
@@ -919,7 +950,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['S4'], 'S4', '! Constant in the f curve best-fit for         AOA< alpha2; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cn1'], 'Cn1', '! Critical value of C0n at leading edge separation. It should be extracted from airfoil data at a given Mach and Reynolds number. It can be calculated from the static value of Cn at either the break in the pitching moment or the loss of chord force at the onset of stall. It is close to the condition of maximum lift of the airfoil at low Mach numbers.\n'))
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cn2'], 'Cn2', '! As Cn1 for negative AOAs.\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh'], 'St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
+                # f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh'], 'St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
+                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh']) + '   {:<11} {:}'.format('St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cd0'], 'Cd0', '! 2D drag coefficient value at 0-lift.\n'))
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cm0'], 'Cm0', '! 2D pitching moment coefficient about 1/4-chord location, at 0-lift, positive if nose up. [If the aerodynamics coefficients table does not include a column for Cm, this needs to be set to 0.0]\n'))
                 f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k0'], 'k0', '! Constant in the \\hat(x)_cp curve best-fit; = (\\hat(x)_AC-0.25).  [ignored if UAMod<>1]\n'))

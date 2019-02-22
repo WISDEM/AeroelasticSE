@@ -6,7 +6,7 @@ from AeroelasticSE.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 from AeroelasticSE.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
 from AeroelasticSE.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
-from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
+# from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
 
 class pyIECWind_extreme():
 
@@ -374,6 +374,10 @@ class pyIECWind_extreme():
         return hd
 
     def write_wnd(self, fname, data, hd):
+
+        # Make sure directory exist
+        if not os.path.isdir(self.outdir):
+            os.makedirs(self.outdir)
 
         # Move transcient event to user definted time
         data[:,0] += self.Tstart

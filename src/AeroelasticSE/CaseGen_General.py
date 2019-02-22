@@ -65,7 +65,7 @@ def convert_str(val):
     else:
         return val
 
-def CaseGen_General(case_inputs, dir_matrix='', namebase=''):
+def CaseGen_General(case_inputs, namebase='', save_matrix=True, dir_matrix=''):
     """ Cartesian product to enumerate over all combinations of set of variables that are changed together"""
 
     # put case dict into lists
@@ -96,9 +96,10 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase=''):
     n_cases = np.shape(matrix_out)[0]
 
     # Save case matrix
-    if not dir_matrix:
-        dir_matrix = os.getcwd()
-    save_case_matrix(matrix_out, change_vars, dir_matrix)
+    if save_matrix:
+        if not dir_matrix:
+            dir_matrix = os.getcwd()
+        save_case_matrix(matrix_out, change_vars, dir_matrix)
 
     case_list = []
     for i in range(n_cases):

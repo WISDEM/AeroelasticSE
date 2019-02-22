@@ -2,8 +2,8 @@ import numpy as np
 import os, sys, copy, itertools
 import multiprocessing as mp
 
-from CaseGen_General import CaseGen_General, save_case_matric
-from pyIECWind import pyIECWind_extreme, pyIECWind_turb
+from AeroelasticSE.CaseGen_General import CaseGen_General, save_case_matrix
+from AeroelasticSE.pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
 
 # Generate wind files
@@ -147,7 +147,8 @@ class CaseGen_IEC():
                     WindFile_type_out.extend(WindFile_type_out_i)
 
             # Set FAST variables from DLC setup
-            case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
+            if ("Fst","TMax") not in case_inputs_i:
+                case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
 
@@ -208,7 +209,7 @@ class CaseGen_IEC():
 
         if not os.path.exists(self.run_dir):
             os.makedirs(self.run_dir)
-        save_case_matric(matrix_out, change_vars, self.run_dir)
+        save_case_matrix(matrix_out, change_vars, self.run_dir)
 
 
 

@@ -1489,7 +1489,7 @@ class InputReader_FAST7(InputReader_Common):
 if __name__=="__main__":
     
     FAST_ver = 'OpenFAST'
-    read_yaml = True
+    read_yaml = False
 
     if read_yaml:
         fast = InputReader_Common(FAST_ver=FAST_ver)
@@ -1513,3 +1513,4 @@ if __name__=="__main__":
             fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
 
         fast.execute()
+

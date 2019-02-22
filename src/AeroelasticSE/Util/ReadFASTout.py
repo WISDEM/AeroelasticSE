@@ -14,32 +14,48 @@ Outputs:
 """
 import numpy as np
 import struct
+import os
 
-def ReadFASToutFormat(FileName, OutFileFmt=0):
+def ReadFASToutFormat(FileName, OutFileFmt=0, Verbose=False):
     
     if OutFileFmt == 2:
+        path,fname = os.path.split(FileName)
+        FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.outb')
         Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTbinary(FileName)
     elif OutFileFmt == 1: 
+        path,fname = os.path.split(FileName)
+        FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.out')
         Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName)
     else:
-        print 'Attempting to read FAST output file: %s, format not specified'%FileName
+        if Verbose:
+            print 'Attempting to read FAST output file: %s, format not specified'%FileName
         error = False
         try:
-            print 'Attempting binary read'
+            if Verbose:
+                print 'Attempting binary read'
+            path,fname = os.path.split(FileName)
+            FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.outb')
             Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTbinary(FileName)
-            print 'Success'
+            if Verbose:
+                print 'Success'
             error = False
         except:
-            print 'Failed'
+            if Verbose:
+                print 'Failed'
             error = True
         if error:
             try:
-                print 'Attempting text read'
+                if Verbose:
+                    print 'Attempting text read'
+                path,fname = os.path.split(FileName)
+                FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.out')
                 Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName)
-                print 'Success'
+                if Verbose:
+                    print 'Success'
                 error = False
             except:
-                print 'Failed'
+                if Verbose:
+                    print 'Failed'
                 error = True
         if error:
             raise NameError('Unable read FAST output file: %s'%FileName)
@@ -170,16 +186,16 @@ def ReadFASTtext(FileName):
 
 if __name__ == "__main__":
 
-    FileName = 'temp/OpenFAST/testing_9.outb'
+    FileName = '0.outb'
     # FileName = 'temp/OpenFAST/09.out'
     
     data, meta = ReadFASToutFormat(FileName, OutFileFmt=2)
 
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # xvar = 'Time'
-    # yvar = 'GenPwr'
-    # plt.plot(data[xvar], data['GenPwr'])
-    # plt.xlabel('%s, %s'%(xvar, meta['units'][xvar]))
-    # plt.ylabel('%s, %s'%(yvar, meta['units'][yvar]))
-    # plt.show()
+    import matplotlib.pyplot as plt
+    plt.figure()
+    xvar = 'Time'
+    yvar = 'GenPwr'
+    plt.plot(data[xvar], data['GenPwr'])
+    plt.xlabel('%s, %s'%(xvar, meta['units'][xvar]))
+    plt.ylabel('%s, %s'%(yvar, meta['units'][yvar]))
+    plt.show()
