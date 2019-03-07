@@ -431,16 +431,17 @@ class pyIECWind_turb():
         self.PLExp = 0.2
         self.AnalysisTime = 630.
         self.debug_level = 0
+        self.overwrite = True
 
     def setup(self):
         turbsim_vt = turbsiminputs()
         turbsim_vt.runtime_options.RandSeed1  = self.seed
-        turbsim_vt.runtime_options.WrADTWR    = True
+        turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
         turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.2)
-        turbsim_vt.tmspecs.NumGrid_Z          = 30
-        turbsim_vt.tmspecs.NumGrid_Y          = 30
+        turbsim_vt.tmspecs.NumGrid_Z          = 15
+        turbsim_vt.tmspecs.NumGrid_Y          = 15
         turbsim_vt.tmspecs.HFlowAng           = 0.0
         turbsim_vt.tmspecs.VFlowAng           = 0.0
         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
@@ -454,8 +455,6 @@ class pyIECWind_turb():
         turbsim_vt.metboundconds.URef         = self.Uref
         turbsim_vt.metboundconds.PLExp        = self.PLExp
 
-        print turbsim_vt.tmspecs.GridHeight
-        
         return turbsim_vt
 
     def execute(self, IEC_WindType, Uref, ver='Turbsim'):
@@ -471,23 +470,31 @@ class pyIECWind_turb():
 
         # if self.case_name[-3:] != '.in':
         #     self.case_name = self.case_name + '.in'
-        self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f.in'%self.seed
+        # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
         # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
 
-        writer.turbsim_vt = turbsim_vt
-        writer.run_dir = self.outdir
-        writer.tsim_input_file = self.case_name
-        writer.execute()
+        case_name = self.case_name + '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
+        tsim_input_file = case_name + '.in'
+        wind_file_out   = case_name + '.bts'
 
-        wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
-        wrapper.run_dir = writer.run_dir
-        wrapper.turbsim_exe = self.Turbsim_exe
-        wrapper.debug_level = self.debug_level
-        wrapper.execute()
+        # If wind file already exists and overwriting is turned off, skip wind file write
+        if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
+            return wind_file_out, 3
 
-        wind_file_out = wrapper.turbsim_input[:-2] + 'bts'
+        # Run wind file generation
+        else:
+            writer.turbsim_vt = turbsim_vt
+            writer.run_dir = self.outdir
+            writer.tsim_input_file = tsim_input_file
+            writer.execute()
 
-        return wind_file_out, 3
+            wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
+            wrapper.run_dir = writer.run_dir
+            wrapper.turbsim_exe = self.Turbsim_exe
+            wrapper.debug_level = self.debug_level
+            wrapper.execute()
+
+            return wind_file_out, 3
 
 
 def example_ExtremeWind():

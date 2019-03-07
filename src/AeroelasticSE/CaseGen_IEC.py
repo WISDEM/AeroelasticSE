@@ -97,6 +97,7 @@ class CaseGen_IEC():
             iecwind.case_name = self.case_name_base
             iecwind.Turbsim_exe = self.Turbsim_exe
             iecwind.debug_level = self.debug_level
+            iecwind.overwrite = False
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
@@ -166,7 +167,7 @@ class CaseGen_IEC():
         # Save case matrix file
         self.save_joined_case_matrix(case_list_all, dlc_all)
 
-        return case_list_all, [('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
+        return case_list_all, [self.case_name_base +'_'+ ('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
 
 
     def join_case_dicts(self, caselist, caselist_add):

@@ -122,7 +122,7 @@ from scipy.stats import vonmises, gamma
 global gIgnoreJointDistn
 gIgnoreJointDistn = True
 
-from CaseGen_General import save_case_matric, case_naming
+# from CaseGen_General import save_case_matric, case_naming
 
 def draw_uniform(x0,x1):
     val = npr.uniform(x0,x1)
