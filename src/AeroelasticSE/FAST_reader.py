@@ -390,7 +390,6 @@ class InputReader_OpenFAST(InputReader_Common):
     def read_MainInput(self):
         # Main FAST v8.16-v8.17 Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
-
         fst_file = os.path.join(self.FAST_directory, self.FAST_InputFile)
         f = open(fst_file)
 

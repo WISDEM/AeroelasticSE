@@ -28,34 +28,34 @@ def ReadFASToutFormat(FileName, OutFileFmt=0, Verbose=False):
         Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName)
     else:
         if Verbose:
-            print 'Attempting to read FAST output file: %s, format not specified'%FileName
+            print('Attempting to read FAST output file: %s, format not specified'%FileName)
         error = False
         try:
             if Verbose:
-                print 'Attempting binary read'
+                print('Attempting binary read')
             path,fname = os.path.split(FileName)
             FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.outb')
             Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTbinary(FileName)
             if Verbose:
-                print 'Success'
+                print('Success')
             error = False
         except:
             if Verbose:
-                print 'Failed'
+                print('Failed')
             error = True
         if error:
             try:
                 if Verbose:
-                    print 'Attempting text read'
+                    print('Attempting text read')
                 path,fname = os.path.split(FileName)
                 FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.out')
                 Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName)
                 if Verbose:
-                    print 'Success'
+                    print('Success')
                 error = False
             except:
                 if Verbose:
-                    print 'Failed'
+                    print('Failed')
                 error = True
         if error:
             raise NameError('Unable read FAST output file: %s'%FileName)

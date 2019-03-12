@@ -1,0 +1,183 @@
+import os, sys
+import numpy as np
+import multiprocessing as mp
+from AeroelasticSE.runFAST_pywrapper import runFAST_pywrapper_batch
+from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
+from AeroelasticSE.CaseGen_General import CaseGen_General, save_case_matrix_direct
+
+class runTS_pywrapper_batch(object):
+
+    def __init__(self, filedict, case_list=None, case_name_list = None):
+        self.case_list          = case_list ### user needs to set this if they don't provide it.
+        self.case_name_list = case_name_list ### ditto
+        self.filedict = filedict
+
+    def common_init(self):
+        pass
+#        if not os.path.exists(self.FAST_runDirectory):
+#            os.makedirs(self.FAST_runDirectory)
+
+    def run_serial(self):
+        # Run batch serially
+        self.common_init()
+
+        res = []
+        for case_idx in range(len(self.case_list)):
+            case = self.case_list[case_idx]
+            case_name = self.case_name_list[case_idx]
+            dat = [case,self.filedict, case_idx, case_name]
+            r = tseval(dat)
+            res.append(r)
+        for r in res:
+            idx = r[0]
+            fname = r[1]
+            self.case_list[idx]['tswind_file'] = fname
+
+    def run_multi(self, cores=None):
+        # Run cases in parallel, threaded with multiprocessing module
+
+        self.common_init()
+
+        if not cores:
+            cores = mp.cpu_count()
+        pool = mp.Pool(cores)
+
+        caseNfile = []
+        for case_idx in range(len(self.case_list)):
+            case = self.case_list[case_idx]
+            case_name = self.case_name_list[case_idx]
+            caseNfile.append([case,self.filedict, case_idx, case_name])
+        res = pool.map(tseval, caseNfile)
+        # map returns a list of all the return vals from each call.
+        # now add them to the cases:
+        for r in res:
+            idx = r[0]
+            fname = r[1]
+            self.case_list[idx]['tswind_file'] = fname
+
+    def run_mpi(self):
+        # Run in parallel with mpi, not yet implimented
+        print 'MPI interfaced not yet implimented'
+
+
+def tseval(dat):
+    # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
+    case = dat[0]
+    filedict = dat[1]
+    case_idx = dat[2]
+    case_name = dat[3]
+    print "running ts", case, filedict
+    pyturb = pyTurbsim_wrapper(filedict, case, case_name) # initialize runner with case variable inputs
+#        pyturb.ny = 20 # example of changing an attribute
+    pyturb.execute() # run
+    #case['tswind_file'] = pyturb.tswind_file  ### need to really return it!
+    #case['tswind_dir'] = pyturb.tswind_dir
+    #batch_wrapper.set_case_outputs(case_idx, pyturb.tswind_dir, pyturb.tswind_file) ### future reference: does not work!
+    return [case_idx, pyturb.tswind_file]
+
+######################### example drivers.... #####
+
+def example_runTSFAST_Batch():
+    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
+
+
+    mac = False
+    if mac:
+        fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb-fast.fst'   # FAST input file (ext=.fst)
+        fastBatch.FAST_exe = '/Users/pgraf/opt/openfast/openfast/install/bin/openfast'   # Path to executable
+        fastBatch.FAST_directory = '/Users/pgraf/work/wese/templates/openfast/5MW_Land_DLL_WTurb-ModifiedForPyturbsim'
+    else:
+        fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb-fast.fst'   # FAST input file (ext=.fst)
+        fastBatch.FAST_exe = '/home/pgraf/opt/openfast/openfast/install/bin/openfast'   # Path to executable
+        fastBatch.FAST_directory = '/home/pgraf/projects/wese/newaero/templates/openfast/5MW_Land_DLL_WTurb-ModifiedForPyturbsim'
+
+    fastBatch.FAST_runDirectory = 'temp/OpenFAST'
+    fastBatch.debug_level = 2
+
+    ## Define case list explicitly
+    # case_list = [{}, {}]
+    # case_list[0]['Fst', 'TMax'] = 4.
+    # case_list[1]['Fst', 'TMax'] = 5.
+    # case_name_list = ['test01', 'test02']
+
+
+    tmaxs = [60.0]
+    vhubs = [12.0]
+    rhos = [0.0]
+    seeds = [1,2]
+
+    case_inputs = {}
+    case_inputs[("WrFMTFF")] = {'vals':[False], 'group':0}
+    case_inputs[("WrBLFF")] = {'vals':[True], 'group':0}
+    case_inputs[("WrADFF")] = {'vals':[True], 'group':0}
+    case_inputs[("WrADTWR")] = {'vals':[False], 'group':0}   #WrADTWR
+    case_inputs[("TMax")] = {'vals':[t + 30 for t in tmaxs], 'group':0}
+    #case_inputs[("TMax")] = {'vals':[t for t in tmaxs], 'group':0}
+    case_inputs[("Vhub")] = {'vals':vhubs, 'group':1}
+    case_inputs[("Rho")] = {'vals':rhos, 'group':1}
+    case_inputs[("RandSeed1")] = {'vals':seeds, 'group':2}
+    case_inputs[("RandSeed")] = {'vals':seeds, 'group':2}
+    ts_case_list, ts_case_name_list = CaseGen_General(case_inputs, dir_matrix='', namebase='pyTurbsim_testing')
+
+    if mac:
+        ts_filedict = {
+            'ts_dir':"/Users/pgraf/work/wese/templates/turbsim/pyturbsim/",
+            'ts_file':"evans_faster.inp",
+            'run_dir':"test_ts_run_dir"}
+    else:
+        ts_filedict = {
+            'ts_dir':"/home/pgraf/projects/wese/newaero/templates/turbsim/pyturbsim/",
+            'ts_file':"evans_faster.inp",
+            'run_dir':"test_ts_run_dir"}
+        
+
+    tsBatch = runTS_pywrapper_batch(ts_filedict, ts_case_list, ts_case_name_list)
+    #tsBatch.run_serial()
+    tsBatch.run_multi(4)
+    ### At this point turbsim is done running and the .bts file names have been added to each case in tsBatch.case_list
+
+    ## Generate case list using General Case Generator
+    ## Specify several variables that change independently or collectly
+    case_inputs = {}
+    case_inputs[("Fst","TMax")] = {'vals':tmaxs, 'group':0}
+#    case_inputs[("AeroDyn15","TwrPotent")] = {'vals':[0], 'group':0}
+#    case_inputs[("AeroDyn15","TwrShadow")] = {'vals':['False'], 'group':0}
+#    case_inputs[("AeroDyn15","TwrAero")] = {'vals':['True'], 'group':0}
+    case_inputs[("InflowWind","WindType")] = {'vals':[3], 'group':0}   # 1 = steady, 3 = turbsim binary
+    case_inputs[("Fst","OutFileFmt")] = {'vals':[1], 'group':0}
+    case_inputs[("InflowWind","HWindSpeed")] = {'vals':vhubs, 'group':1}
+    case_inputs[("InflowWind","Rho")] = {'vals':rhos, 'group':1}
+    case_inputs[("InflowWind","RandSeed1")] = {'vals':seeds, 'group':2}
+
+    # case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[9.156, 10.296, 11.431, 11.89, 12.1], 'group':1}
+    # case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
+    # case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
+    # case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+    # case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
+    case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='testing')
+    # manually adding the wind file names from turb sim run.  This seems a little sketchy
+    ### Note to Evan: I feel I should be able to use ONE call to CaseGen_General, instead of one for turbsim, and one for FAStTunr1
+    ## thoughts?  solution?
+    #####
+    print "ADDING WIND FILE NAMES"
+    for i in range(len(case_list)):
+        case_list[i][("InflowWind","Filename")] = tsBatch.case_list[i]['tswind_file']
+        case_list[i][("InflowWind","FilenameRoot")] = tsBatch.case_list[i]['tswind_file'].replace(".wnd", "")
+#        case_list[i][("InflowWind","InflowFile")] = tsBatch.case_name_list[i]
+        print case_list[i]
+
+    fastBatch.case_list = case_list
+    fastBatch.case_name_list = case_name_list
+
+    #fastBatch.run_serial()
+    fastBatch.run_multi(4)
+    ## at this point FAST has run, and the output file names have been added to the case list.
+    print "ADDED FAST OUTPUT FILE NAMES"
+    for i in range(len(fastBatch.case_list)):
+        print fastBatch.case_list[i]
+    save_case_matrix_direct(fastBatch.case_list, dir_matrix=os.path.join(os.getcwd(),fastBatch.FAST_runDirectory))
+
+if __name__=="__main__":
+
+
+    example_runTSFAST_Batch()

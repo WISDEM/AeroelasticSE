@@ -42,13 +42,13 @@ class turbsimReader(object):
         inpf.readline()
         inpf.readline()
         self.turbsim_vt.metboundconds.TurbModel = inpf.readline().split()[0]
-        self.turbsim_vt.metboundconds.UserFile = inpf.readline().split()[0]
+        self.turbsim_vt.metboundconds.UserFile = inpf.readline().split()[0].replace("'","").replace('"','')
         self.turbsim_vt.metboundconds.IECstandard = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.IECturbc = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.IEC_WindType = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.ETMc = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.WindProfileType = inpf.readline().split()[0]
-        self.turbsim_vt.metboundconds.ProfileFile = inpf.readline().split()[0]
+        self.turbsim_vt.metboundconds.ProfileFile = inpf.readline().split()[0].replace("'","").replace('"','')
         self.turbsim_vt.metboundconds.RefHt = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.URef = inpf.readline().split()[0]
         self.turbsim_vt.metboundconds.ZJetMax = inpf.readline().split()[0]

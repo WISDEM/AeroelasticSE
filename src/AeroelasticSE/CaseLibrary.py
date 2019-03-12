@@ -297,6 +297,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.dlc_inputs = {}
     iec.dlc_inputs['DLC']   = [1.1]
     iec.dlc_inputs['U']     = [[U]]
+    # iec.dlc_inputs['Seeds'] = [[1]]
     iec.dlc_inputs['Seeds'] = [[310414237, 1764051066, 1935526301, 333954657, -960771537, 714191176]] # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw']   = [[]]
     iec.transient_dir_change        = '-'  # '+','-','both': sign for transient events in EDC, EWS

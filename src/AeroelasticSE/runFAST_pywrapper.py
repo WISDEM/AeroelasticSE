@@ -4,6 +4,7 @@ python setting. These functions are constructed to provide a simple interface fo
 programmatically with minimal additional dependencies.
 """
 # Hacky way of doing relative imports
+from __future__ import print_function
 import os, sys, time
 import multiprocessing as mp
 # sys.path.insert(0, os.path.abspath(".."))
@@ -170,7 +171,7 @@ class runFAST_pywrapper_batch(object):
 
     def run_mpi(self):
         # Run in parallel with mpi, not yet implimented
-        print 'MPI interfaced not yet implimented'
+        print('MPI interfaced not yet implimented')
 
 
 def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, dev_branch, post):

@@ -1,6 +1,28 @@
 import os, itertools
 import numpy as np
 
+def save_case_matrix_direct(case_list, dir_matrix):
+    ### assumes all elements of the list are dict for that case that has the same keys!
+    if not os.path.exists(dir_matrix):
+            os.makedirs(dir_matrix)
+    ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
+    case = case_list[0]
+    for key in case.keys():
+        k = key[0]
+        ofh.write("%s  " % k)
+    ofh.write("\n")
+    for key in case.keys():
+        k = key[1]
+        ofh.write("%s  " % k)
+    ofh.write("\n")
+    for i in range(len(case_list)):
+        case = case_list[i]
+        for key in case.keys():
+            ofh.write(str(case[key]))
+            ofh.write("  ")
+        ofh.write("\n")
+    ofh.close()
+
 
 def save_case_matrix(matrix_out, change_vars, dir_matrix):
     # save matrix file
@@ -20,7 +42,7 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
     text_out = []
     for header_i in range(n_header_lines):
         text_out.append(''.join([val.center(col+2) for val, col in zip([var[header_i] for var in change_vars], col_len)])+'\n')
-    
+
     for row in matrix_out:
         row_str = ''
         for val, col in zip(row, col_len):
@@ -33,7 +55,6 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
     if not os.path.exists(dir_matrix):
             os.makedirs(dir_matrix)
     ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
-    print os.path.join(dir_matrix,'case_matrix.txt')
     for row in text_out:
         ofh.write(row)
     ofh.close()
@@ -53,8 +74,9 @@ def convert_str(val):
             return True
         except ValueError:
             return False
+#        return isinstance(val, data_type)  ### this doesn't work b/c of numpy data types; they're not instances of base types
 
-    if try_type(val, int):
+    if try_type(val, int) and int(val) == float(val):
         return int(val)
     elif try_type(val, float):
         return float(val)
@@ -65,7 +87,7 @@ def convert_str(val):
     else:
         return val
 
-def CaseGen_General(case_inputs, namebase='', save_matrix=True, dir_matrix=''):
+def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
     """ Cartesian product to enumerate over all combinations of set of variables that are changed together"""
 
     # put case dict into lists
@@ -76,7 +98,7 @@ def CaseGen_General(case_inputs, namebase='', save_matrix=True, dir_matrix=''):
     # find number of groups and length of groups
     group_set = list(set(change_group))
     group_len = [len(change_vals[change_group.index(i)]) for i in group_set]
-    
+
     # case matrix, as indices
     group_idx = [range(n) for n in group_len]
     matrix_idx = list(itertools.product(*group_idx))
@@ -127,6 +149,5 @@ if __name__ == "__main__":
     case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
 
     case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
-    
-    case_list, case_name = CaseGen_General(case_inputs, 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/', 'testing')
 
+    case_list, case_name = CaseGen_General(case_inputs, 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/', 'testing')
