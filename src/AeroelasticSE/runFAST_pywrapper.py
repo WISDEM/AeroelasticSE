@@ -317,7 +317,7 @@ def example_runFAST_pywrapper():
 
     FAST_ver = 'OpenFAST'
     dev_branch = True
-    fast = runFAST_pywrapper(FAST_ver=FAST_ver, dev_branch=dev_branch)
+    fast = runFAST_pywrapper(FAST_ver=FAST_ver, dev_branch=dev_branch, debug_level=2)
 
     if FAST_ver.lower() == 'fast7':
         fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/FAST.exe'   # Path to executable
@@ -347,10 +347,12 @@ def example_runFAST_pywrapper():
     #     fast.FAST_yamlfile_out = 'temp/OpenFAST/test.yaml'
     elif FAST_ver.lower() == 'openfast':
         fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast-dev/build/glue-codes/openfast/openfast.exe'   # Path to executable
-        fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+        # fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+        # fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+        fast.FAST_InputFile = '5MW_OC3Spar_DLL_WTurb_WavesIrr.fst'   # FAST input file (ext=.fst)
+        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_OC3Spar_DLL_WTurb_WavesIrr'   # Path to fst directory files
         fast.FAST_runDirectory = 'temp/OpenFAST'
-        fast.FAST_namingOut = 'test'
+        fast.FAST_namingOut = 'test_run_spar'
 
         fast.read_yaml = False
         fast.FAST_yamlfile_in = 'temp/OpenFAST/test.yaml'
