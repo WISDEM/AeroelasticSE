@@ -618,7 +618,237 @@ ServoDyn['TabDelim']         = False
 ServoDyn['OutFmt']           = ''            
 ServoDyn['TStart']           = 0.0           
 
+# HydroDyn Input File
+HydroDyn = {}
+HydroDyn['Echo']             = False
 
+# ENVIRONMENTAL CONDITIONS
+HydroDyn['WtrDens']          = 0.
+HydroDyn['WtrDpth']          = 0.
+HydroDyn['MSL2SWL']          = 0.
+
+# WAVES
+HydroDyn['WaveMod']          = 0
+HydroDyn['WaveStMod']        = 0
+HydroDyn['WaveTMax']         = 0.
+HydroDyn['WaveDT']           = 0.
+HydroDyn['WaveHs']           = 0.
+HydroDyn['WaveTp']           = 0.
+HydroDyn['WavePkShp']        = "DEFAULT"
+HydroDyn['WvLowCOff']        = 0.
+HydroDyn['WvHiCOff']         = 0.
+HydroDyn['WaveDir']          = 0.
+HydroDyn['WaveDirMod']       = 0
+HydroDyn['WaveDirSpread']    = 0.
+HydroDyn['WaveNDir']         = 0
+HydroDyn['WaveDirRange']     = 0.
+HydroDyn['WaveSeed1']        = 0.
+HydroDyn['WaveSeed2']        = 0.
+HydroDyn['WaveNDAmp']        = False
+HydroDyn['WvKinFile']        = ""
+HydroDyn['NWaveElev']        = 0.
+HydroDyn['WaveElevxi']       = 0.
+HydroDyn['WaveElevyi']       = 0.
+
+# 2ND-ORDER WAVES
+HydroDyn['WvDiffQTF']        = False
+HydroDyn['WvSumQTF']         = False
+HydroDyn['WvLowCOffD']       = 0.
+HydroDyn['WvHiCOffD']        = 0.
+HydroDyn['WvLowCOffS']       = 0.
+HydroDyn['WvHiCOffS']        = 0.
+
+# CURRENT
+HydroDyn['CurrMod']          = 0
+HydroDyn['CurrSSV0']         = 0.
+HydroDyn['CurrSSDir']        = "DEFAULT"
+HydroDyn['CurrNSRef']        = 0.
+HydroDyn['CurrNSV0']         = 0.
+HydroDyn['CurrNSDir']        = 0.
+HydroDyn['CurrDIV']          = 0.
+HydroDyn['CurrDIDir']        = 0.
+
+# FLOATING PLATFORM
+HydroDyn['PotMod']           = 0
+HydroDyn['PotFile']          = ""
+HydroDyn['WAMITULEN']        = 0.
+HydroDyn['PtfmVol0']         = 0.
+HydroDyn['PtfmCOBxt']        = 0.
+HydroDyn['PtfmCOByt']        = 0.
+HydroDyn['RdtnMod']          = 0
+HydroDyn['RdtnTMax']         = 0.
+HydroDyn['RdtnDT']           = 0.
+
+# 2ND-ORDER FLOATING PLATFORM FORCES
+HydroDyn['MnDrift']          = 0.
+HydroDyn['NewmanApp']        = 0.
+HydroDyn['DiffQTF']          = 0.
+HydroDyn['SumQTF']           = 0.
+
+# FLOATING PLATFORM FORCE FLAGS
+HydroDyn['PtfmSgF']          = True
+HydroDyn['PtfmSwF']          = True
+HydroDyn['PtfmHvF']          = True
+HydroDyn['PtfmRF']           = True
+HydroDyn['PtfmPF']           = True
+HydroDyn['PtfmYF']           = True
+
+# PLATFORM ADDITIONAL STIFFNESS AND DAMPING
+HydroDyn['AddF0']            = np.zeros((1,6))
+HydroDyn['AddCLin']          = np.zeros((6,6))
+HydroDyn['AddBLin']          = np.zeros((6,6))
+HydroDyn['AddBQuad']         = np.zeros((6,6))
+
+# AXIAL COEFFICIENTS
+HydroDyn['NAxCoef']          = 0
+HydroDyn['AxCoefID']         = 0
+HydroDyn['AxCd']             = 0.
+HydroDyn['AxCa']             = 0.
+HydroDyn['AxCp']             = 0.
+
+# MEMBER JOINTS
+HydroDyn['NJoints']          = 0
+HydroDyn['JointID']          = []
+HydroDyn['Jointxi']          = []
+HydroDyn['Jointyi']          = []
+HydroDyn['Jointzi']          = []
+HydroDyn['JointAxID']        = []
+HydroDyn['JointOvrlp']       = []
+
+# MEMBER CROSS-SECTION PROPERTIES
+HydroDyn['NPropSets']        = 0
+HydroDyn['PropSetID']        = []
+HydroDyn['PropD']            = []
+HydroDyn['PropThck']         = []
+
+# SIMPLE HYDRODYNAMIC COEFFICIENTS
+HydroDyn['SimplCd']          = 0.
+HydroDyn['SimplCdMG']        = 0.
+HydroDyn['SimplCa']          = 0.
+HydroDyn['SimplCaMG']        = 0.
+HydroDyn['SimplCp']          = 0.
+HydroDyn['SimplCpMG']        = 0.
+HydroDyn['SimplAxCa']        = 0.
+HydroDyn['SimplAxCaMG']      = 0.
+HydroDyn['SimplAxCp']        = 0.
+HydroDyn['SimplAxCpMG']      = 0.
+
+# DEPTH-BASED HYDRODYNAMIC COEFFICIENTS
+HydroDyn['NCoefDpth']        = 0
+HydroDyn['Dpth']             = []
+HydroDyn['DpthCd']           = []
+HydroDyn['DpthCdMG']         = []
+HydroDyn['DpthCa']           = []
+HydroDyn['DpthCaMG']         = []
+HydroDyn['DpthCp']           = []
+HydroDyn['DpthCpMG']         = []
+HydroDyn['DpthAxCa']         = []
+HydroDyn['DpthAxCaMG']       = []
+HydroDyn['DpthAxCp']         = []
+HydroDyn['DpthAxCpMG']       = []
+
+# MEMBER-BASED HYDRODYNAMIC COEFFICIENTS
+HydroDyn['NCoefMembers']     = 0
+HydroDyn['MemberID_HydC']    = []
+HydroDyn['MemberCd1']        = []
+HydroDyn['MemberCd2']        = []
+HydroDyn['MemberCdMG1']      = []
+HydroDyn['MemberCdMG2']      = []
+HydroDyn['MemberCa1']        = []
+HydroDyn['MemberCa2']        = []
+HydroDyn['MemberCaMG1']      = []
+HydroDyn['MemberCaMG2']      = []
+HydroDyn['MemberCp1']        = []
+HydroDyn['MemberCp2']        = []
+HydroDyn['MemberCpMG1']      = []
+HydroDyn['MemberCpMG2']      = []
+HydroDyn['MemberAxCa1']      = []
+HydroDyn['MemberAxCa2']      = []
+HydroDyn['MemberAxCaMG1']    = []
+HydroDyn['MemberAxCaMG2']    = []
+HydroDyn['MemberAxCp1']      = []
+HydroDyn['MemberAxCp2']      = []
+HydroDyn['MemberAxCpMG1']    = []
+HydroDyn['MemberAxCpMG2']    = []
+
+# MEMBERS
+HydroDyn['NMembers']         = 0
+HydroDyn['MemberID']         = []
+HydroDyn['MJointID1']        = []
+HydroDyn['MJointID2']        = []
+HydroDyn['MPropSetID1']      = []
+HydroDyn['MPropSetID2']      = []
+HydroDyn['MDivSize']         = []
+HydroDyn['MCoefMod']         = []
+HydroDyn['PropPot']          = []
+
+# FILLED MEMBERS
+HydroDyn['NFillGroups']      = 0
+HydroDyn['FillNumM']         = []
+HydroDyn['FillMList']        = []
+HydroDyn['FillFSLoc']        = []
+HydroDyn['FillDens']         = []
+
+# MARINE GROWTH
+HydroDyn['NMGDepths']        = 0
+HydroDyn['MGDpth']           = []
+HydroDyn['MGThck']           = []
+HydroDyn['MGDens']           = []
+
+# MEMBER OUTPUT LIST
+HydroDyn['NMOutputs']        = 0
+HydroDyn['MemberID_out']     = []
+HydroDyn['NOutLoc']          = []
+HydroDyn['NodeLocs']         = []
+
+# JOINT OUTPUT LIST
+HydroDyn['NJOutputs']        = 0
+HydroDyn['JOutLst']          = 0
+
+# OUTPUT
+HydroDyn['HDSum']            = True
+HydroDyn['OutAll']           = False
+HydroDyn['OutSwtch']         = 2
+HydroDyn['OutFmt']           = ""
+HydroDyn['OutSFmt']          = ""
+
+## MAP++ Input File
+# LINE DICTIONARY
+MAP = {}
+MAP['LineType']              = ""
+MAP['Diam']                  = 0.
+MAP['MassDenInAir']          = 0.
+MAP['EA']                    = 0.
+MAP['CB']                    = 0.
+MAP['CIntDamp']              = 0.
+MAP['Ca']                    = 0.
+MAP['Cdn']                   = 0.
+MAP['Cdt']                   = 0.
+
+# NODE PROPERTIES
+MAP['Node']                  = []
+MAP['Type']                  = []
+MAP['X']                     = []
+MAP['Y']                     = []
+MAP['Z']                     = []
+MAP['M']                     = []
+MAP['B']                     = []
+MAP['FX']                    = []
+MAP['FY']                    = []
+MAP['FZ']                    = []
+
+# LINE PROPERTIES
+MAP['Line']                  = 0
+MAP['LineType']              = ""
+MAP['UnstrLen']              = 0.
+MAP['NodeAnch']              = 0
+MAP['NodeFair']              = 0
+MAP['Flags']                 = []
+
+# SOLVER OPTIONS
+MAP['Option']                = []
+
+#######################
 Fst7 = {}
 Fst7['Echo']        = False
 Fst7['ADAMSPrep']   = 0
@@ -796,7 +1026,9 @@ FstModel['AeroDynBlade']      = AeroDynBlade
 FstModel['AeroDynTower']      = AeroDynTower
 FstModel['AeroDynPolar']      = AeroDynPolar
 FstModel['ServoDyn']          = ServoDyn
-FstModel['Fst7']          = ServoDyn
+FstModel['HydroDyn']          = HydroDyn
+FstModel['MAP']               = MAP
+FstModel['Fst7']              = Fst7
         
 # List of Outputs (all input files -- FST, ED, SD)
 # TODO: Update FstOutput for a few new outputs in FAST8
