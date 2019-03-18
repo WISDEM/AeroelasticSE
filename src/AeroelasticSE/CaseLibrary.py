@@ -4,41 +4,107 @@ import numpy as np
 from CaseGen_General import CaseGen_General
 from CaseGen_IEC import CaseGen_IEC
 
-# def power_curve():
+def power_curve_fit(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[]):
 
-#     fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
-
-#     fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-#     fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-#     fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
-#     fastBatch.FAST_runDirectory = 'temp/OpenFAST/power_curve'
-#     namebase = 'power_curve'
-
-#     ## Generate case list using General Case Generator
-#     ## Specify several variables that change independently or collectly
-
-#     # inital conditions
-#     U = [3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]
-#     omega = [6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]
-#     pitch = [0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]
-
-    # case_inputs = {}
-#     case_inputs[("Fst","TMax")] = {'vals':[120.], 'group':0}
-#     case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
-#     case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
-#     case_inputs[("ElastoDyn","RotSpeed")] = {'vals':omega, 'group':1}
-#     case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch, 'group':1}
-#     case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-#     case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+    # Default Runtime
+    T      = 120.
+    TStart = 60.
+    # T      = 60.
+    # TStart = 30.
     
-#     from CaseGen_General import CaseGen_General
-#     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase=namebase)
+    # Overwrite for testing
+    if TMax < T:
+        T      = TMax
+        TStart = 0.
 
-#     fastBatch.case_list = case_list
-#     fastBatch.case_name_list = case_name_list
+    # Run conditions for points which will be used for a cubic polynomial fit
+    # U = [10.]
+    U = [4.,8.,9.,10.]
+    omega = np.interp(U, U_init, Omega_init)
+    pitch = np.interp(U, U_init, pitch_init)
 
-#     # fastBatch.run_serial()
-#     fastBatch.run_multi(4)
+    # Check if floating
+    floating_dof = [fst_vt['ElastoDyn']['PtfmSgDOF'], fst_vt['ElastoDyn']['PtfmSwDOF'], fst_vt['ElastoDyn']['PtfmHvDOF'], fst_vt['ElastoDyn']['PtfmRDOF'], fst_vt['ElastoDyn']['PtfmPDOF'], fst_vt['ElastoDyn']['PtfmYDOF']]
+    if any(floating_dof):
+        floating = True
+        if ptfm_U_init == []:
+            ptfm_U_init     = [4., 5., 6., 7., 8., 9., 10., 10.5, 11., 12., 14., 19., 24.]
+            ptfm_surge_init = [3.8758245863838807, 5.57895688031965, 7.619719770801395, 9.974666446553552, 12.675469235464321, 16.173740623041965, 20.069526574594757, 22.141906121375552, 23.835466098954708, 22.976075549477354, 17.742743260748373, 14.464576583154068, 14.430969814391759]
+            ptfm_heave_init = [0.030777174904620515, 0.008329930604820483, -0.022973502300090893, -0.06506947653943342, -0.12101317451310406, -0.20589689839069836, -0.3169518280533253, -0.3831692055885472, -0.4409624802614755, -0.41411738171337675, -0.2375323506471747, -0.1156867221814119, -0.07029955933167854]
+            ptfm_pitch_init = [0.7519976895165884, 1.104483050851386, 1.5180416334025146, 1.9864587671004394, 2.5152769741130134, 3.1937704945765795, 3.951314212429935, 4.357929703098016, 4.693765745171944, 4.568760630312074, 3.495057478277534, 2.779958240049992, 2.69008798174216]
+        if metocean_U_init == []:
+            metocean_U_init  = [4.00, 6.00, 8.00, 10.00, 12.00, 14.00, 16.00, 18.00, 20.00, 22.00, 24.00]
+            metocean_Hs_init = [1.908567568, 1.960162595, 2.062722244, 2.224539415, 2.489931091, 2.802984019, 3.182301485, 3.652236101, 4.182596165, 4.695439504, 5.422289377]
+            metocean_Tp_init = [12.23645701, 12.14497777, 11.90254947, 11.5196666, 11.05403739, 10.65483551, 10.27562225, 10.13693777, 10.27842325, 10.11660396, 10.96177917]
+
+        ptfm_heave = np.interp(U, ptfm_U_init, ptfm_heave_init)
+        ptfm_surge = np.interp(U, ptfm_U_init, ptfm_surge_init)
+        ptfm_pitch = np.interp(U, ptfm_U_init, ptfm_pitch_init)
+        metocean_Hs = np.interp(U, metocean_U_init, metocean_Hs_init)
+        metocean_Tp = np.interp(U, metocean_U_init, metocean_Tp_init)
+    else:
+        floating = False
+
+    case_inputs = {}
+    # simulation settings
+    # case_inputs[("ElastoDyn","PtfmSgDOF")]     = {'vals':['False'], 'group':0}
+    # case_inputs[("ElastoDyn","PtfmHvDOF")]     = {'vals':['False'], 'group':0}
+    # case_inputs[("ElastoDyn","PtfmPDOF")]     = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","PtfmSwDOF")]     = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","PtfmRDOF")]     = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","PtfmYDOF")]     = {'vals':['False'], 'group':0}
+
+    case_inputs[("Fst","TMax")] = {'vals':[T], 'group':0}
+    case_inputs[("Fst","TStart")] = {'vals':[TStart], 'group':0}
+    case_inputs[("ElastoDyn","YawDOF")]      = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","EdgeDOF")]     = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","DrTrDOF")]     = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","GenDOF")]      = {'vals':['True'], 'group':0} 
+    case_inputs[("ElastoDyn","TwFADOF1")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","TwFADOF2")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","TwSSDOF1")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","TwSSDOF2")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ServoDyn","PCMode")]       = {'vals':[5], 'group':0}
+    case_inputs[("ServoDyn","VSContrl")]     = {'vals':[5], 'group':0}
+    case_inputs[("ServoDyn","YCMode")]       = {'vals':[5], 'group':0}
+    case_inputs[("AeroDyn15","WakeMod")]     = {'vals':[1], 'group':0}
+    case_inputs[("AeroDyn15","AFAeroMod")]   = {'vals':[2], 'group':0}
+    case_inputs[("AeroDyn15","TwrPotent")]   = {'vals':[0], 'group':0}
+    case_inputs[("AeroDyn15","TwrShadow")]   = {'vals':['False'], 'group':0}
+    case_inputs[("AeroDyn15","TwrAero")]     = {'vals':['False'], 'group':0}
+    case_inputs[("AeroDyn15","SkewMod")]     = {'vals':[1], 'group':0}
+    case_inputs[("AeroDyn15","TipLoss")]     = {'vals':['True'], 'group':0}
+    case_inputs[("AeroDyn15","HubLoss")]     = {'vals':['True'], 'group':0}
+    case_inputs[("AeroDyn15","TanInd")]      = {'vals':['True'], 'group':0}
+    case_inputs[("AeroDyn15","AIDrag")]      = {'vals':['True'], 'group':0}
+    case_inputs[("AeroDyn15","TIDrag")]      = {'vals':['True'], 'group':0}
+    case_inputs[("AeroDyn15","IndToler")]    = {'vals':[1.e-5], 'group':0}
+    case_inputs[("AeroDyn15","MaxIter")]     = {'vals':[5000], 'group':0}
+    case_inputs[("AeroDyn15","UseBlCm")]     = {'vals':['True'], 'group':0}
+    # inital conditions
+    case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
+    case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
+    case_inputs[("ElastoDyn","RotSpeed")] = {'vals':omega, 'group':1}
+    case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch, 'group':1}
+    case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
+    case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+    if floating == True:
+        case_inputs[("ElastoDyn","PtfmSurge")] = {'vals':ptfm_surge, 'group':1}
+        case_inputs[("ElastoDyn","PtfmHeave")] = {'vals':ptfm_heave, 'group':1}
+        case_inputs[("ElastoDyn","PtfmPitch")] = {'vals':ptfm_pitch, 'group':1}
+        case_inputs[("HydroDyn","WaveHs")] = {'vals':metocean_Hs, 'group':1}
+        case_inputs[("HydroDyn","WaveTp")] = {'vals':metocean_Tp, 'group':1}
+        case_inputs[("HydroDyn","RdtnDT")] = {'vals':[fst_vt["Fst"]["DT"]], 'group':0}
+        case_inputs[("HydroDyn","WaveMod")] = {'vals':[1], 'group':0}
+
+    from CaseGen_General import CaseGen_General
+    case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=runDir, namebase=namebase)
+
+    channels = ['Wind1VelX','GenPwr']
+
+    return case_list, case_name_list, channels
 
 
 def RotorSE_rated(namebase, TMax, U, Omega, Pitch, rho, mu, shearExp):

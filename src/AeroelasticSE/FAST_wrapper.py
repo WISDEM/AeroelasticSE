@@ -51,7 +51,7 @@ if __name__=="__main__":
 
     fast = FastWrapper(debug_level=2)
 
-    fast.FAST_ver = 'FAST8'
+    fast.FAST_ver = 'OPENFAST'
 
     if fast.FAST_ver == 'FAST7':
         fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/FAST.exe'   # Path to executable
@@ -64,8 +64,10 @@ if __name__=="__main__":
         fast.FAST_directory = 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/FAST_mdao/temp/FAST8'   # Path to fst directory files
 
     elif fast.FAST_ver == 'OPENFAST':
-        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-        fast.FAST_InputFile = 'test.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/FAST_mdao/temp/OpenFAST'   # Path to fst directory files
+        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast-dev/build/glue-codes/openfast/openfast.exe'   # Path to executable
+        # fast.FAST_InputFile = 'test.fst'   # FAST input file (ext=.fst)
+        # fast.FAST_directory = 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/FAST_mdao/temp/OpenFAST'   # Path to fst directory files
+        fast.FAST_InputFile = 'RotorSE_FAST_5MW_0.fst'   # FAST input file (ext=.fst)
+        fast.FAST_directory = "C:/Users/egaertne/WISDEM/RotorSE_yaml/RotorSE/src/rotorse/temp/RotorSE_FAST_5MW"   # Path to fst directory files
 
     fast.execute()
