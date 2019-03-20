@@ -1,5 +1,6 @@
 import os
 import subprocess
+import platform
 
 class FastWrapper(object):
 
