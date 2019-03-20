@@ -24,6 +24,12 @@ class FastWrapper(object):
 
         self.input_file = os.path.join(self.FAST_directory, self.FAST_InputFile)
 
+        try:
+            if platform.system()!='Windows' and self.FAST_exe[-4:]=='.exe':
+                self.FAST_exe = self.FAST_exe[:-4]
+        except:
+            pass
+
         exec_str = []
         exec_str.append(self.FAST_exe)
         exec_str.append(self.FAST_InputFile)
