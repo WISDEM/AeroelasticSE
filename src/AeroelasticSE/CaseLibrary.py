@@ -7,10 +7,10 @@ from CaseGen_IEC import CaseGen_IEC
 def power_curve_fit(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[]):
 
     # Default Runtime
-    T      = 120.
-    TStart = 60.
-    # T      = 60.
-    # TStart = 30.
+    T      = 240.
+    TStart = 120.
+    # T      = 120.
+    # TStart = 60.
     
     # Overwrite for testing
     if TMax < T:
