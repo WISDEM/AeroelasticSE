@@ -124,12 +124,14 @@ class pyTurbsim_wrapper():
 #        tsdict = dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax}.items() + case.items())
         tsdict = dict({"URef": ws,  "UsableTime":tmax}.items() + case.items())
 #        tsoutname = self.ts_file.replace("inp", "wnd")  #self.rawts.ts_file.replace("inp", "wnd")
-        tsoutname = self.ts_file.replace("inp", "bts")  #self.rawts.ts_file.replace("inp", "wnd")
+        # tsoutname = self.ts_file.replace("inp", "bts")  #self.rawts.ts_file.replace("inp", "wnd")
+        tsoutname = case_name + '.bts'
         tsoutname = os.path.join(run_dir, tsoutname)
         tssumname = self.ts_file.replace("inp", "sum")
         print "running TurbSim in dir for case:" , run_dir, case, tsdict
 
         tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
+        
         for key in tsdict:
             tsinput[key] = tsdict[key]
         tsr = ptsm.cfg2tsrun(tsinput)
