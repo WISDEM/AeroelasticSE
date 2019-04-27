@@ -159,9 +159,9 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
     case_inputs[("Fst","TMax")] = {'vals':[T], 'group':0}
     case_inputs[("Fst","TStart")] = {'vals':[TStart], 'group':0}
     case_inputs[("ElastoDyn","YawDOF")]      = {'vals':['True'], 'group':0}
-    case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['True'], 'group':0}
-    case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['True'], 'group':0}
-    case_inputs[("ElastoDyn","EdgeDOF")]     = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","EdgeDOF")]     = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","DrTrDOF")]     = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","GenDOF")]      = {'vals':['True'], 'group':0} 
     case_inputs[("ElastoDyn","TwFADOF1")]    = {'vals':['False'], 'group':0}
@@ -257,9 +257,9 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
     case_inputs[("ElastoDyn","BlPitch2")]    = {'vals':[pitch], 'group':0}
     case_inputs[("ElastoDyn","BlPitch3")]    = {'vals':[pitch], 'group':0}
     case_inputs[("ElastoDyn","YawDOF")]      = {'vals':['False'], 'group':0}
-    case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['True'], 'group':0}
-    case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['True'], 'group':0}
-    case_inputs[("ElastoDyn","EdgeDOF")]     = {'vals':['True'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['False'], 'group':0}
+    case_inputs[("ElastoDyn","EdgeDOF")]     = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","DrTrDOF")]     = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","GenDOF")]      = {'vals':['True'], 'group':0} 
     case_inputs[("ElastoDyn","TwFADOF1")]    = {'vals':['False'], 'group':0}
