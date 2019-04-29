@@ -1,6 +1,6 @@
-from turbsim_vartrees import turbsiminputs
-from turbulence_spectrum import turb_specs
-from wind_profile_writer import write_wind
+from AeroelasticSE.Turbsim_mdao.turbsim_vartrees import turbsiminputs
+from AeroelasticSE.Turbsim_mdao.turbulence_spectrum import turb_specs
+from AeroelasticSE.Turbsim_mdao.wind_profile_writer import write_wind
 import os
 import numpy as np
 class TurbsimBuilder(turbsiminputs):
