@@ -618,7 +618,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             try:
                 os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
             except:
-                print "Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData')
+                print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData'))
 
         # create write airfoil objects to files
         for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
@@ -829,7 +829,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             try:
                 os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
             except:
-                print 'Error tring to make "%s"!'%os.path.join(self.FAST_runDirectory,'Airfoils')
+                print('Error tring to make "%s"!'%os.path.join(self.FAST_runDirectory,'Airfoils'))
 
         self.fst_vt['AeroDyn15']['NumAFfiles'] = len(self.fst_vt['AeroDyn15']['af_data'])
         self.fst_vt['AeroDyn15']['AFNames'] = ['']*self.fst_vt['AeroDyn15']['NumAFfiles']
