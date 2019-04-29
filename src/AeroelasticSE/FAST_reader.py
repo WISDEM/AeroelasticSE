@@ -378,8 +378,8 @@ class InputReader_OpenFAST(InputReader_Common):
     """ OpenFAST / FAST 8.16 input file reader """
     
     def execute(self):
-    	  
-    	self.read_MainInput()
+          
+        self.read_MainInput()
         self.read_ElastoDyn()
         self.read_ElastoDynBlade()
         self.read_ElastoDynTower()
