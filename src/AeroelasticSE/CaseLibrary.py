@@ -121,6 +121,8 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
 
     # Run conditions
     U = [4., 6., 7., 8., 9., 10., 10.5, 11., 11.5, 12., 14., 19., 24.]
+    dt = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+
     # U = [4.,8.,9.,10.]
     omega = np.interp(U, U_init, Omega_init)
     pitch = np.interp(U, U_init, pitch_init)
@@ -158,6 +160,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
 
     case_inputs[("Fst","TMax")] = {'vals':[T], 'group':0}
     case_inputs[("Fst","TStart")] = {'vals':[TStart], 'group':0}
+    case_inputs[("Fst","DT")] = {'vals':dt, 'group':0}
     case_inputs[("ElastoDyn","YawDOF")]      = {'vals':['True'], 'group':0}
     case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['False'], 'group':0}
@@ -198,7 +201,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         case_inputs[("ElastoDyn","PtfmPitch")] = {'vals':ptfm_pitch, 'group':1}
         case_inputs[("HydroDyn","WaveHs")] = {'vals':metocean_Hs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':metocean_Tp, 'group':1}
-        case_inputs[("HydroDyn","RdtnDT")] = {'vals':[fst_vt["Fst"]["DT"]], 'group':0}
+        case_inputs[("HydroDyn","RdtnDT")] = {'vals':dt, 'group':1}
         case_inputs[("HydroDyn","WaveMod")] = {'vals':[1], 'group':0}
 
     from CaseGen_General import CaseGen_General
@@ -213,6 +216,8 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
     # Default Runtime
     T      = 240.
     TStart = 120.
+
+    dt = 0.001
     
     # Overwrite for testing
     if TMax < T:
@@ -247,6 +252,7 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
     case_inputs = {}
     case_inputs[("Fst","TMax")]              = {'vals':[T], 'group':0}
     case_inputs[("Fst","TStart")]            = {'vals':[TStart], 'group':0}
+    case_inputs[("Fst","DT")]                = {'vals':[dt], 'group':0}
     case_inputs[("Fst","OutFileFmt")]        = {'vals':[2], 'group':0}
     
     case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
@@ -291,7 +297,7 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
         case_inputs[("ElastoDyn","PtfmPitch")] = {'vals':ptfm_pitch, 'group':1}
         case_inputs[("HydroDyn","WaveHs")] = {'vals':metocean_Hs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':metocean_Tp, 'group':1}
-        case_inputs[("HydroDyn","RdtnDT")] = {'vals':[fst_vt["Fst"]["DT"]], 'group':0}
+        case_inputs[("HydroDyn","RdtnDT")] = {'vals':[dt], 'group':0}
         case_inputs[("HydroDyn","WaveMod")] = {'vals':[1], 'group':0}
 
     namebase += '_rated'
