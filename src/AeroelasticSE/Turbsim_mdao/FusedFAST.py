@@ -355,7 +355,7 @@ class runFASText(Component):
         have_tags = all([tag in filedict for tag in ["fst_exe", "fst_dir", "fst_file", "ts_exe", "ts_dir", "ts_file"]])
         if (not have_tags):
             print("Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST")
-            raise ValueError, "Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST"
+            raise ValueError("Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST")
 
         self.rawfast.fst_exe = filedict['fst_exe']
         self.rawfast.fst_dir = filedict['fst_dir']

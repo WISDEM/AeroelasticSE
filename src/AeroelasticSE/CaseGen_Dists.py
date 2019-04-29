@@ -216,7 +216,7 @@ def prob_multivariate_normal(x, mu, sigma):
 #    elif (op == "/"):
 #        return v1/v2
 #    else:
-#        raise ValueError, "unknown math op %s" % op
+#        raise ValueError("unknown math op %s" % op)
 
 def is_float(s):
     try:
@@ -345,7 +345,7 @@ class FnDistn(Distribution):
             val = draw_weibull(argvals[0], argvals[1])
 #            print(" sampled Wiebull with args = ", argvals, "got ", val)
         else:
-            raise ValueError,  "Sorry, unknown distribution: %s" % self.fn
+            raise ValueError("Sorry, unknown distribution: %s" % self.fn)
         return val
 
     def calc_prob(self, x):
@@ -378,7 +378,7 @@ class FnDistn(Distribution):
             val = prob_weibull(x,argvals[0], argvals[1])
 #            print("prob W", x, argvals[0], argvals[1], val)
         else:
-            raise ValueError,  "unknown distribution %s" % self.fn
+            raise ValueError("unknown distribution %s" % self.fn)
         
         if (math.isnan(val)):
             print("NAN", val, x, self.fn, argvals)
@@ -589,7 +589,7 @@ class DistnParser(object):
             for d in self.dlist:
                 if a == d.vstr:
                     return self.values[a]
-#            raise ValueError, "did not find variable:%s: in dlist" % a 
+#            raise ValueError("did not find variable:%s: in dlist" % a )
         return a
 
     def resolve_value(self,a):
