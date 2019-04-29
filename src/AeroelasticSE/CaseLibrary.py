@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-from CaseGen_General import CaseGen_General
-from CaseGen_IEC import CaseGen_IEC
+from AeroelasticSE.CaseGen_General import CaseGen_General
+from AeroelasticSE.CaseGen_IEC import CaseGen_IEC
 
 # def power_curve_fit(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[]):
 

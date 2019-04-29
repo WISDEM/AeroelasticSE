@@ -3,8 +3,8 @@ import operator
 import yaml
 import numpy as np
 
-from FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
-from FAST_vars import FstModel
+from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+from AeroelasticSE.FAST_vars import FstModel
 
 
 

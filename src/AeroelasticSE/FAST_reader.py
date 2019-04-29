@@ -4,7 +4,7 @@ import numpy as np
 from functools import reduce
 import operator
 
-from FAST_vars import FstModel
+from AeroelasticSE.FAST_vars import FstModel
 
 
 def fix_path(name):

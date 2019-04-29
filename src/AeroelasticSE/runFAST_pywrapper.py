@@ -9,9 +9,9 @@ import os, sys, time
 import multiprocessing as mp
 # sys.path.insert(0, os.path.abspath(".."))
 
-from FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
-from FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
-from FAST_wrapper import FastWrapper
+from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+from AeroelasticSE.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
+from AeroelasticSE.FAST_wrapper import FastWrapper
 
 class runFAST_pywrapper(object):
 
