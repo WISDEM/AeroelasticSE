@@ -19,7 +19,7 @@ def run1():
     tm0 = time.time()
     tsdat = run(config)
     write(tsdat, config, outname)
-    print 'TurbSim exited normally, runtime was %g seconds' % (time.time() - tm0)
+    print('TurbSim exited normally, runtime was %g seconds' % (time.time() - tm0))
 
 
 def run2():
@@ -39,7 +39,7 @@ def run2():
     tm0 = time.time()
     tsdata = tsr()  ## actually runs turbsim
     ptsm.write(tsdata, tsinput, fname=outname+"2")
-    print 'TurbSim exited normally, runtime was %g seconds' % (time.time() - tm0)
+    print('TurbSim exited normally, runtime was %g seconds' % (time.time() - tm0))
 
 
 run1()

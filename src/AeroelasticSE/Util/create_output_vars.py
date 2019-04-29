@@ -19,7 +19,7 @@ def GetOutlistParameters(fname_vars_out, xl_files_in, sheet_list, write_mode, fi
         sheet_idx = book.sheet_names().index(sheet_name)
         sheet = book.sheet_by_index(sheet_idx)
 
-        print sheet_name, '\t:\t', fname
+        print(sheet_name, '\t:\t', fname)
 
         # get data from sheet
         outlist = {}

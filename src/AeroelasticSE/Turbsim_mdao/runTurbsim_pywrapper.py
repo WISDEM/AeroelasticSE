@@ -57,7 +57,7 @@ class runTS_pywrapper_batch(object):
 
     def run_mpi(self):
         # Run in parallel with mpi, not yet implimented
-        print 'MPI interfaced not yet implimented'
+        print('MPI interfaced not yet implimented')
 
 
 def tseval(dat):
@@ -66,7 +66,7 @@ def tseval(dat):
     filedict = dat[1]
     case_idx = dat[2]
     case_name = dat[3]
-    print "running ts", case, filedict
+    print("running ts", case, filedict)
     pyturb = pyTurbsim_wrapper(filedict, case, case_name) # initialize runner with case variable inputs
 #        pyturb.ny = 20 # example of changing an attribute
     pyturb.execute() # run
@@ -159,12 +159,12 @@ def example_runTSFAST_Batch():
     ### Note to Evan: I feel I should be able to use ONE call to CaseGen_General, instead of one for turbsim, and one for FAStTunr1
     ## thoughts?  solution?
     #####
-    print "ADDING WIND FILE NAMES"
+    print("ADDING WIND FILE NAMES")
     for i in range(len(case_list)):
         case_list[i][("InflowWind","Filename")] = tsBatch.case_list[i]['tswind_file']
         case_list[i][("InflowWind","FilenameRoot")] = tsBatch.case_list[i]['tswind_file'].replace(".wnd", "")
 #        case_list[i][("InflowWind","InflowFile")] = tsBatch.case_name_list[i]
-        print case_list[i]
+        print(case_list[i])
 
     fastBatch.case_list = case_list
     fastBatch.case_name_list = case_name_list
@@ -172,9 +172,9 @@ def example_runTSFAST_Batch():
     #fastBatch.run_serial()
     fastBatch.run_multi(4)
     ## at this point FAST has run, and the output file names have been added to the case list.
-    print "ADDED FAST OUTPUT FILE NAMES"
+    print("ADDED FAST OUTPUT FILE NAMES")
     for i in range(len(fastBatch.case_list)):
-        print fastBatch.case_list[i]
+        print(fastBatch.case_list[i])
     save_case_matrix_direct(fastBatch.case_list, dir_matrix=os.path.join(os.getcwd(),fastBatch.FAST_runDirectory))
 
 if __name__=="__main__":

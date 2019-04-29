@@ -37,7 +37,7 @@ class openFAST(openAeroCode):
     code_input = Instance(FASTRunCase, iotype='in')
 
     def __init__(self, filedict):
-        print "openFAST __init__"
+        print("openFAST __init__")
         self.runfast = runFASText(filedict)
 #        self.runts = runTurbSimext(filedict)
         self.runts = runTurbSimpy(filedict)
@@ -53,7 +53,7 @@ class openFAST(openAeroCode):
         return FASTRunCaseBuilder()
 
     def configure(self):
-        print "openFAST configure", self.runfast, self.runts
+        print("openFAST configure", self.runfast, self.runts)
         self.add('tsrunner', self.runts)
         self.driver.workflow.add(['tsrunner'])
         self.add('runner', self.runfast)
@@ -65,17 +65,17 @@ class openFAST(openAeroCode):
         self.connect('tsrunner.tswind_dir', 'runner.tswind_dir')
 
     def execute(self):
-        print "openFAST.execute(), case = ", self.inputs
+        print("openFAST.execute(), case = ", self.inputs)
         run_case_builder = self.getRunCaseBuilder()
         dlc = self.inputs 
-#        print "executing", dlc.case_name
+#        print("executing", dlc.case_name)
         self.code_input = run_case_builder.buildRunCase(dlc)
         super(openFAST, self).execute()
 
     def getResults(self, keys, results_dir, operation=max):
         myfast = self.runfast.rawfast        
         col = myfast.getOutputValues(keys, results_dir)
-#        print "getting output for keys=", keys
+#        print("getting output for keys=", keys)
         vals = []
         for i in range(len(col)):
             c = col[i]
@@ -91,7 +91,7 @@ class openFAST(openAeroCode):
         if (not isinstance(channels, (list, tuple))):
             channels = [channels]                
         self.runfast.set_fast_outputs(channels)
-        print "set FAST output:", output_params['output_keys']
+        print("set FAST output:", output_params['output_keys'])
 
 
 class runTurbSimext(Component):
@@ -135,7 +135,7 @@ class runTurbSimext(Component):
 
         run_dir = os.path.join(self.basedir, ts_case_name)
         self._logger.info("running TurbSim in %s " % run_dir)
-        print "running TurbSim in " , run_dir
+        print("running TurbSim in " , run_dir)
         self.rawts.run_dir = run_dir
         tsdict = dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax}.items() + case.fst_params.items())
         self.rawts.set_dict(tsdict)
@@ -153,11 +153,11 @@ class runTurbSimext(Component):
                     ln2 = ln[-2] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
                     ln2 = ln2.split(".")
                     if ((len(ln1) > 0 and ln1[0] == "Processing complete") or (len(ln2) > 0 and ln2[0] == "Processing complete")):
-                        print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
+                        print("re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws))
                         reuse_run = True
                 if (not reuse_run):
                     time.sleep(2)
-                    print "waiting for ", tsoutname
+                    print("waiting for ", tsoutname)
                     self._logger.info("waiting for %s" % tsoutname)
             self._logger.info("DONE waiting for %s" % tsoutname)
         
@@ -244,7 +244,7 @@ class runTurbSimpy(Component):
 
     def execute(self):
         case = self.inputs
-        print "CASE", case.fst_params
+        print("CASE", case.fst_params)
         ws=case.fst_params['Vhub']
         rho = case.fst_params['Rho']   #case.fst_params['rho'] ####### TODO: how does this get here?
         rs = case.fst_params['RandSeed1'] if 'RandSeed1' in case.fst_params else None
@@ -265,11 +265,11 @@ class runTurbSimpy(Component):
             os.mkdir(run_dir)
 
         self._logger.info("running TurbSim in %s " % run_dir)
-        print "running TurbSim in " , run_dir
+        print("running TurbSim in " , run_dir)
 #        self.rawts.run_dir = run_dir
         tsdict = dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax}.items() + case.fst_params.items())
 #        self.rawts.set_dict(tsdict)
-        print case.fst_params
+        print(case.fst_params)
         tsoutname = self.ts_file.replace("inp", "wnd")  #self.rawts.ts_file.replace("inp", "wnd")
         tsoutname = os.path.join(run_dir, tsoutname)
         tssumname = tsoutname.replace("wnd", "sum")
@@ -284,11 +284,11 @@ class runTurbSimpy(Component):
                     ln2 = ln[-2] # check last line2 lines (sometimes Turbsim inexplicably writes a final blank line!)
                     ln2 = ln2.split(".")
                     if ((len(ln1) > 0 and ln1[0] == "Processing complete") or (len(ln2) > 0 and ln2[0] == "Processing complete")):
-                        print "re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws)
+                        print("re-using previous TurbSim output %s for ws = %f" % (tsoutname, ws))
                         reuse_run = True
                 if (not reuse_run):
                     time.sleep(2)
-                    print "waiting for ", tsoutname
+                    print("waiting for ", tsoutname)
                     self._logger.info("waiting for %s" % tsoutname)
             self._logger.info("DONE waiting for %s" % tsoutname)
         
@@ -308,14 +308,14 @@ class runTurbSimpy(Component):
             #for i in range(len(hubdat)):
             #    fout.write("%d  %e  %e\n" % ( i, tsdata.time[i], hubdat[i]))
             #fout.close()
-            print "dphi prob is ", dphi_prob
+            print("dphi prob is ", dphi_prob)
             fout = file(os.path.join(run_dir, "delta_phis_prob.out"), "w")
             fout.write("%e\n" % dphi_prob)
             fout.close()
             
 #            tsr = self.create_tsr(rho, ws, tmax, self.dt)
 #            tsdat = tsr()
-#            print "writing data to ", tsdat, tsoutname
+#            print("writing data to ", tsdat, tsoutname)
 #            tsdat.write_bladed(tsoutname)
             ### check for errors!!?? ###
             
@@ -343,7 +343,7 @@ class runFASText(Component):
         super(runFASText,self).__init__()
         self.rawfast = runFAST()
 
-        print "runFASText init(), filedict = ", filedict
+        print("runFASText init(), filedict = ", filedict)
 
         # probably overridden by caller
         self.rawfast.setOutputs(self.fast_outputs)
@@ -354,7 +354,7 @@ class runFASText(Component):
  
         have_tags = all([tag in filedict for tag in ["fst_exe", "fst_dir", "fst_file", "ts_exe", "ts_dir", "ts_file"]])
         if (not have_tags):
-            print "Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST"
+            print("Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST")
             raise ValueError, "Failed to provide all necessary files/paths: fst_exe, fst_dir, fst_file, ts_exe, ts_dir, ts_file  needed to run FAST"
 
         self.rawfast.fst_exe = filedict['fst_exe']
@@ -386,10 +386,10 @@ class runFASText(Component):
         self.rawfast.set_wind_file(self.tswind_file)
 
         run_dir = os.path.join(self.basedir, case.case_name)
-        print "running FASTFASTFAST in " , run_dir, case.case_name
+        print("running FASTFASTFAST in " , run_dir, case.case_name)
 
         ### actually execute FAST (!!) 
-        print "RUNNING FAST WITH RUN_DIR", run_dir
+        print("RUNNING FAST WITH RUN_DIR", run_dir)
         self.rawfast.run_dir = run_dir
         self.rawfast.set_dict(case.fst_params)
         # FAST object write its inputs in execute()
@@ -413,8 +413,8 @@ class runFASText(Component):
             try:
                 os.mkdir(self.results_dir)
             except:
-                # print 'error creating directory', results_dir
-                # print 'it probably already exists, so no problem'
+                # print('error creating directory', results_dir)
+                # print('it probably already exists, so no problem')
                 pass
 
             # Is this supposed to do what we're doing by hand here?
@@ -424,7 +424,7 @@ class runFASText(Component):
             files += glob.glob( "%s.*" % os.path.join(self.rawts.run_dir, self.rawts.run_name))
             
             for filename in files:
-#                print "wanting to copy %s to %s" % (filename, results_dir) ## for debugging, don't clobber stuff you care about!
+#                print("wanting to copy %s to %s" % (filename, results_dir) ## for debugging, don't clobber stuff you care about!)
                 shutil.copy(filename, self.results_dir)
 
 
@@ -445,14 +445,14 @@ class designFAST(openFAST):
         self.x = [0 for i in range(size)]
 
     def dlc_from_params(self,x):
-        print x, self.param_names, self.dlc.case_name
+        print(x, self.param_names, self.dlc.case_name)
         case = FASTRunCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
-        print case.fst_params
+        print(case.fst_params)
         return case
 
     def execute(self):
         # build DLC from x, if we're using it
-        print "in design code. execute()", self.x
+        print("in design code. execute()", self.x)
         self.inputs = self.dlc_from_params(self.x)
         super(designFAST, self).execute()
         myfast = self.runfast.rawfast
@@ -466,7 +466,7 @@ def designFAST_test():
     ## sort of hacks to save this info
     w.param_names = ['Vhub']
     w.dlc = FASTRunCase("runAero-testcase", {}, None)
-    print "set aerocode dlc"
+    print("set aerocode dlc")
     ##
 
     res = []
@@ -475,7 +475,7 @@ def designFAST_test():
         w.execute()
         res.append([ w.dlc.case_name, w.param_names, w.x, w.f])
     for r in res:
-        print r
+        print(r)
 
 
 def openFAST_test():
@@ -509,11 +509,11 @@ def openFAST_test():
             w.inputs = dlc
             w.execute()
             results_dir = os.path.join(filedict['run_dir'],dlc.case_name)
-            print "name", results_dir
+            print("name", results_dir)
             rr = w.getResults(["RotPwr", "TwrBsMxt"], results_dir, operation=np.std)
             res.append(rr)
         for i in range(len(xs)):
-            print xs[i], res[i]
+            print(xs[i], res[i])
     elif case == 3:
         pass
 

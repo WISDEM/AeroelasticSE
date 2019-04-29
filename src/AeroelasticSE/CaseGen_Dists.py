@@ -138,14 +138,14 @@ def draw_weibull(shape, scale, nsamples=1):
     return x
 
 def draw_gamma(shape, scale, nsamples=1):
-#    print "gamma params:", shape, scale
+#    print("gamma params:", shape, scale)
     shape = max(1e-3,shape)
     scale = max(1e-3,scale)
     x = gamma.rvs(shape, loc=0, scale=scale, size=nsamples)
     return x
 
 def draw_vonmises(kappa, loc, nsamples=1):
-#    print "kappa, loc: ", kappa, loc
+#    print("kappa, loc: ", kappa, loc)
 #    x = 180/pi * vonmises.rvs(kappa, loc=loc, size=nsamples)
     x = vonmises.rvs(kappa, loc=loc, size=nsamples)
     return x
@@ -174,7 +174,7 @@ def prob_gamma(x, shape, scale):
     return p
 
 def prob_vonmises(x, kappa, loc):
-#    print "kappa, loc: ", kappa, loc
+#    print("kappa, loc: ", kappa, loc)
 #    p = vonmises.pdf(x*pi/180.0,kappa, loc=loc)
 #    p = [vonmises.pdf(x*pi/180.0 + m,kappa, loc=loc) for m in [-2*pi, 0, 2*pi]]
     p = [vonmises.pdf(x + m,kappa, loc=loc) for m in [-2*pi, 0, 2*pi]]
@@ -231,7 +231,7 @@ def parse_arg(a):
     obj = shlex(a)
     obj.wordchars += "." # enables parsing decimals
     alist = list(obj)
-#    print "parsed ", a, "to ", alist
+#    print("parsed ", a, "to ", alist)
 #eg: parsed  10 + Vhub/100 - 0.02*(WaveDir+1) to  ['10', '+', 'Vhub', '/', '100', '-', '0.02', '*', '(', 'WaveDir', '+', '1', ')']
     return alist
 
@@ -296,7 +296,7 @@ class FnDistn(Distribution):
         if (fn[0] == "T"):  ## this is a truncated distribution
             self.is_truncated = True
             self.fn = fn[1:]  # strip "T"            
-            print "distn is truncated", fn, self.fn
+            print("distn is truncated", fn, self.fn)
 
     def ensure_C(self, argvals):
         if not self.is_truncated:
@@ -308,7 +308,7 @@ class FnDistn(Distribution):
             self.C = integrate.quad(self.calc_prob, self.Vin, self.Vout)
             self.is_truncated = True
             self.C = self.C[0]
-            print "truncated distribution normalization constant = ", self.C, "range: ", self.Vin, self.Vout
+            print("truncated distribution normalization constant = ", self.C, "range: ", self.Vin, self.Vout)
 
     def sample(self):
         argvals = []
@@ -327,29 +327,29 @@ class FnDistn(Distribution):
 
     def raw_sample(self, argvals):
         if (self.fn == "N"):
-#            print " need to sample normal with args = ", argvals
+#            print(" need to sample normal with args = ", argvals)
             val = draw_normal(argvals[0], argvals[1])
         elif (self.fn == "N2"):
-#            print " need to sample 2D normal with args = ", argvals
+#            print(" need to sample 2D normal with args = ", argvals)
             val = draw_multivariate_normal([argvals[0], argvals[1]], [[argvals[2], argvals[4]],[argvals[4], argvals[3]]])
         elif (self.fn == "U"):
-#            print " need to sample uniform with args = ", argvals
+#            print(" need to sample uniform with args = ", argvals)
             val = draw_uniform(argvals[0], argvals[1])
         elif (self.fn == "G"):
-#            print " need to sample gamma with args = ", argvals
+#            print(" need to sample gamma with args = ", argvals)
             val = draw_gamma(argvals[0], argvals[1])
         elif (self.fn == "VM"):
-#            print " need to sample von Mises with args = ", argvals
+#            print(" need to sample von Mises with args = ", argvals)
             val = draw_vonmises(argvals[0], argvals[1])
         elif (self.fn == "W"):
             val = draw_weibull(argvals[0], argvals[1])
-#            print " sampled Wiebull with args = ", argvals, "got ", val
+#            print(" sampled Wiebull with args = ", argvals, "got ", val)
         else:
             raise ValueError,  "Sorry, unknown distribution: %s" % self.fn
         return val
 
     def calc_prob(self, x):
-#        print "calc_prob", self.fn, x
+#        print("calc_prob", self.fn, x)
 #        x = x[0]
         argvals = []
         for i in range(len(self.args)):
@@ -376,12 +376,12 @@ class FnDistn(Distribution):
             val = prob_vonmises(x,argvals[0], argvals[1])
         elif (self.fn == "W"):
             val = prob_weibull(x,argvals[0], argvals[1])
-#            print "prob W", x, argvals[0], argvals[1], val
+#            print("prob W", x, argvals[0], argvals[1], val)
         else:
             raise ValueError,  "unknown distribution %s" % self.fn
         
         if (math.isnan(val)):
-            print "NAN", val, x, self.fn, argvals
+            print("NAN", val, x, self.fn, argvals)
         return val/C
 
 
@@ -402,29 +402,29 @@ class DistnParser(object):
             if (len(ln) > 0 and ln[0] != "#"):
                 # first get rid of anything past any "#" on the right
                 ln = ln.split("#")[0]
- #               print "your line: ", ln
+ #               print("your line: ", ln)
                 # separate vars from the distn
                 tok = ln.split("=")
                 if len(tok) > 1:
-#                    print "found distn: ", tok                
+#                    print("found distn: ", tok)
                     vtok = tok[0].split(",")
                     # parse out the vars in question:
                     vstr = ""
                     for v in vtok:
                         v = v.strip()
                         if (v in self.vars):
-                            print "ERROR: Variable %s is doubly defined" %v
+                            print("ERROR: Variable %s is doubly defined" %v)
                         self.vars.append(v)
                         vstr = "%s" % v
                     # now parse the distn spec.
                     dspec = tok[1].strip()
-#                    print "look at", dspec
+#                    print("look at", dspec)
                     q = re.match("([^(]+)(\(.*\))", dspec)
                     if (q != None):
                         # found a function-like defn
                         dist = q.group(1) 
                         args = q.group(2)
-#                        print "split ", dspec , "into ", dist, args
+#                        print("split ", dspec , "into ", dist, args)
                         #eg: split  G(10 + Vhub/100 - 0.02*(WaveDir+1),.25) into  G (10 + Vhub/100 - 0.02*(WaveDir+1),.25)
                         args=args.strip("(").strip(")").split(",")
                         args = [s.strip() for s in args]
@@ -434,33 +434,33 @@ class DistnParser(object):
                         for a in args:
                             alist = parse_arg(a)
                             arglist.append(alist)    
-#                        print "found dist=", dist, " arglist=", arglist
+#                        print("found dist=", dist, " arglist=", arglist)
                         newdist = FnDistn(vstr,dist,arglist, self)
                         self.dlist.append(newdist)
                     elif dspec[0] == "{":
                         # found a set
                         args = [s.strip() for s in dspec.strip("{").strip("}").split(",")]
 #                        args = [float(s) for s in args]
-#                        print "found set ", args
+#                        print("found set ", args)
                         args = [parse_arg(a) for a in args]
-#                        print "FOUND set ", args
+#                        print("FOUND set ", args)
                         newdist = EnumDistn(vstr,args, self)
                         self.dlist.append(newdist)
                     else:
                         try:
                             arg = [parse_arg(dspec)]
                             # found a value. TODO: tuples
-#                            print "found number ", arg
+#                            print("found number ", arg)
                             newdist = EnumDistn(vstr, arg, self)
                             self.dlist.append(newdist)
                         except:
-                            print "cannot parse distribution spec ", dspec
+                            print("cannot parse distribution spec ", dspec)
                 if (newdist != None):
                     self.dlist_map[vstr] = newdist
                         
-        print "defined distns. for vars ", self.vars
-#        print self.dlist       
-#        print "dlist map = ", self.dlist_map
+        print("defined distns. for vars ", self.vars)
+#        print(self.dlist       )
+#        print("dlist map = ", self.dlist_map)
 
         return self.dlist
 
@@ -485,7 +485,7 @@ class DistnParser(object):
         self.clear_values()
         for d in self.dlist:
             s = d.sample()
-#            print "sampled ", d.vstr, " and got ", s
+#            print("sampled ", d.vstr, " and got ", s)
             self.set_value(d.vstr,s)
 
     def add_enum(self, slist, enum):
@@ -495,7 +495,7 @@ class DistnParser(object):
         output = slist X enum.items
         """
         newlist = []
-#        print "add enum, slist, enum.items", slist, enum.items
+#        print("add enum, slist, enum.items", slist, enum.items)
         for s in slist: 
             for x in enum.items:
                 item = {}
@@ -505,8 +505,8 @@ class DistnParser(object):
 #                item[enum.vstr] = self.resolve_value(x)
                 item[enum.vstr] = x  # not resolved yet!
                 newlist.append(item)                
-#                print "appended item to newlist" , item, newlist
-#        print newlist
+#                print("appended item to newlist" , item, newlist)
+#        print(newlist)
         return newlist
 
     def expand_enums(self):
@@ -523,17 +523,17 @@ class DistnParser(object):
         for d in self.dlist:
             if (hasattr(d,"fn")):
                 s = d.sample()
-#                print "sampled ", d.vstr, " and got ", s
+#                print("sampled ", d.vstr, " and got ", s)
                 self.set_value(d.vstr,s)
         return self.values
 
     def multi_sample(self, numsamples, expand_enums=False):
         slist = []
         if (expand_enums):
-#            print "expanding set variables, then sampling %d times" % numsamples
+#            print("expanding set variables, then sampling %d times" % numsamples)
             # make slist of product space of set vars.
             enum_list = self.expand_enums()
-#            print "enum_list", enum_list
+#            print("enum_list", enum_list)
             for e in enum_list:
 #                self.clear_values()
 #                self.set_values(e)
@@ -543,10 +543,10 @@ class DistnParser(object):
                     self.clear_values()
 
                     for d in self.dlist:
- #                       print "scanning ", d.vstr
+ #                       print("scanning ", d.vstr)
                         if (hasattr(d,"fn")):
                             s = d.sample()
-                            #print "sampled ", d.vstr, " and got ", s
+                            #print("sampled ", d.vstr, " and got ", s)
                             self.set_value(d.vstr,s)
                         
                         if (hasattr(d,"items")):  #### bad programming!
@@ -554,35 +554,35 @@ class DistnParser(object):
                             tries = 0
                             while (tries < maxiter):
                                 for it in e:  # find this var and resolve it here
-#                                    print it, e[it]
+#                                    print(it, e[it])
                                     # this is some crazy stuff: try (maybe out of order b/c of dict) until we succeed
                                     # to resolve everything
                                     try:
                                         val = self.resolve_value(e[it])
                                         self.set_value(it,val)
-#                                        print "succes resolving ", e[it]
+#                                        print("succes resolving ", e[it])
                                     except:
-#                                        print "failed resolving ", e[it]
+#                                        print("failed resolving ", e[it])
                                         pass
                                     tries += 1
                     slist.append(self.values)
 
 #                    vals = self.sample_fns()
-#                    print vals, e
+#                    print(vals, e)
 #                    vals = merge_dicts(vals, e)
 #                    slist.append(vals)
         else:            
-#            print "sampling %d times" % numsamples
+#            print("sampling %d times" % numsamples)
             for i in range(numsamples):
                 self.clear_values()
                 vals = self.sample()
-#                print "sample %d = " % i, self.values
+#                print("sample %d = " % i, self.values)
                 slist.append(self.values)
         
         return slist
 
     def resolve_one_value(self,a):
-#        print "resolve_one_value()", a        
+#        print("resolve_one_value()", a)
         if (is_float(a)):
             return float(a)
         else:
@@ -593,18 +593,18 @@ class DistnParser(object):
         return a
 
     def resolve_value(self,a):
-#        print "resolving:", a
+#        print("resolving:", a)
         vals = [self.resolve_one_value(x) for x in a]
-#        print vals
+#        print(vals)
         s = ""
         for v in vals:
             if is_float(v):
                 s = "%s %f" % (s, v)
             else:
                 s = "%s %s" % (s, v)
-#        print "evaluating:", s
+#        print("evaluating:", s)
         val = eval(s)
-#        print "= ", val
+#        print("= ", val)
         return val
 #        if (len(a) == 1):
 #            return self.resolve_one_value(a[0])
@@ -612,7 +612,7 @@ class DistnParser(object):
 #            v1 = self.resolve_one_value(a[0])
 #            v2 = self.resolve_one_value(a[2])
 #            op = a[1]
-#            print "2",a
+#            print("2",a)
 #            v1 = self.resolve_one_value(a[-1])
 #            v2 = self.resolve_value(a[:-2])
 #            op = a[-2]
@@ -655,11 +655,11 @@ class DistnParser(object):
         # for each key/value, need to find the distribution it belongs to
         # plan on using a pre-prepared mapping
         ptot = 1
-#        print "calc prob for ", samp
+#        print("calc prob for ", samp)
         for var in self.values:
             if (var in self.dlist_map):
                 dist = self.dlist_map[var]
-#                print "for ", var
+#                print("for ", var)
                 p = dist.calc_prob(self.values[var])
                 ptot *= p
         return ptot
@@ -726,11 +726,11 @@ def gen_cases(options=None, args=None):
             fout.write("\n")
         fout.close()
 
-        print "Calculated probabilities of samples in %s w.r.t. distribution in %s" % (options['old_samples'], options['dist'])
+        print("Calculated probabilities of samples in %s w.r.t. distribution in %s" % (options['old_samples'], options['dist']))
         if (options['augment']):
-            print "Augmented output with these probs as Prob2 in field (0-based) %d" % (pidx)
+            print("Augmented output with these probs as Prob2 in field (0-based) %d" % (pidx))
         else:
-            print "Replaced old probs with new probs in output"
+            print("Replaced old probs with new probs in output")
 
     else:
         numsamples = options['nsamples']
