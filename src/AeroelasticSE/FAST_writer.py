@@ -72,7 +72,7 @@ class InputWriter_Common(object):
         # make sure update dictionary is not empty
         if self.fst_update:
             # if update dictionary uses list keys, convert to nested dictionaries
-            if type(self.fst_update.keys()[0]) in [list, tuple]:
+            if type(list(self.fst_update.keys())[0]) in [list, tuple]:
                 fst_update = copy.copy(self.fst_update)
                 self.fst_update = {}
                 for var_list in fst_update.keys():
