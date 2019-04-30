@@ -56,7 +56,7 @@ class InputReader_Common(object):
         self.fst_vt = FstModel
 
         # Optional population class attributes from key word arguments
-        for k, w in kwargs.iteritems():
+        for (k, w) in kwargs.items():
             try:
                 setattr(self, k, w)
             except:

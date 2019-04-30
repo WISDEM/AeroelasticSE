@@ -32,7 +32,7 @@ class runFAST_pywrapper(object):
         self.dev_branch = False
 
         # Optional population class attributes from key word arguments
-        for k, w in kwargs.iteritems():
+        for (k, w) in kwargs.items():
             try:
                 setattr(self, k, w)
             except:
@@ -114,7 +114,7 @@ class runFAST_pywrapper_batch(object):
         self.post               = None
 
         # Optional population of class attributes from key word arguments
-        for k, w in kwargs.iteritems():
+        for (k, w) in kwargs.items():
             try:
                 setattr(self, k, w)
             except:
