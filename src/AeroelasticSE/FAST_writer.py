@@ -37,7 +37,7 @@ class InputWriter_Common(object):
         self.fst_update = {}
 
         # Optional population class attributes from key word arguments
-        for k, w in kwargs.iteritems():
+        for (k, w) in kwargs.items():
             try:
                 setattr(self, k, w)
             except:
