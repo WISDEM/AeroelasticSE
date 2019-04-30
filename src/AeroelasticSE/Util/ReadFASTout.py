@@ -120,7 +120,7 @@ def ReadFASTbinary(FileName):
     try:
         DescStr = ''.join(struct.unpack(str('c'*LenDesc),data[i:i+LenDesc]))     # DescStr converted to ASCII
     except:
-        DescStr = data[i:i+LenDesc].decode("utf-8")
+        DescStr = data[i:i+LenDesc].decode("utf-8").strip()
     i+=LenDesc
 
     ChanName = [None]*(NumOutChans+1)
@@ -128,7 +128,7 @@ def ReadFASTbinary(FileName):
         try:
             ChanName[idx] = ''.join(''.join(struct.unpack('c'*LenName,data[i:i+LenName]))).strip()  # variable channel names
         except:
-            ChanName[idx] = data[i:i+LenName].decode("utf-8")
+            ChanName[idx] = data[i:i+LenName].decode("utf-8").strip()
         i+=LenName
 
     ChanUnit = [None]*(NumOutChans+1)
@@ -136,7 +136,7 @@ def ReadFASTbinary(FileName):
         try:
             ChanUnit[idx] = ''.join(''.join(struct.unpack('c'*LenUnit,data[i:i+LenUnit]))).strip()  # variable units
         except:
-            ChanUnit[idx] = data[i:i+LenUnit].decode("utf-8")
+            ChanUnit[idx] = data[i:i+LenUnit].decode("utf-8").strip()
         i+=LenUnit
 
     #-------------------------        
