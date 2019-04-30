@@ -2,6 +2,7 @@ import os, sys, copy
 import operator
 import yaml
 import numpy as np
+from functools import reduce
 
 from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from AeroelasticSE.FAST_vars import FstModel
