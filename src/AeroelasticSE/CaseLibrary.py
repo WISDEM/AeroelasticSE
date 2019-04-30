@@ -160,7 +160,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
 
     case_inputs[("Fst","TMax")] = {'vals':[T], 'group':0}
     case_inputs[("Fst","TStart")] = {'vals':[TStart], 'group':0}
-    case_inputs[("Fst","DT")] = {'vals':dt, 'group':0}
+    case_inputs[("Fst","DT")] = {'vals':dt, 'group':1}
     case_inputs[("ElastoDyn","YawDOF")]      = {'vals':['True'], 'group':0}
     case_inputs[("ElastoDyn","FlapDOF1")]    = {'vals':['False'], 'group':0}
     case_inputs[("ElastoDyn","FlapDOF2")]    = {'vals':['False'], 'group':0}
