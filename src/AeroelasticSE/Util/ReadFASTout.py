@@ -117,17 +117,26 @@ def ReadFASTbinary(FileName):
 
     LenDesc = struct.unpack('i',data[i:i+4])[0]             # The number of characters in the description string, INT(4)
     i+=4
-    DescStr = ''.join(struct.unpack('c'*LenDesc,data[i:i+LenDesc]))     # DescStr converted to ASCII
+    try:
+        DescStr = ''.join(struct.unpack(str('c'*LenDesc),data[i:i+LenDesc]))     # DescStr converted to ASCII
+    except:
+        DescStr = data[i:i+LenDesc].decode("utf-8")
     i+=LenDesc
 
     ChanName = [None]*(NumOutChans+1)
     for idx in range(0,NumOutChans+1):
-        ChanName[idx] = ''.join(''.join(struct.unpack('c'*LenName,data[i:i+LenName]))).strip()  # variable channel names
+        try:
+            ChanName[idx] = ''.join(''.join(struct.unpack('c'*LenName,data[i:i+LenName]))).strip()  # variable channel names
+        except:
+            ChanName[idx] = data[i:i+LenName].decode("utf-8")
         i+=LenName
 
     ChanUnit = [None]*(NumOutChans+1)
     for idx in range(0,NumOutChans+1):
-        ChanUnit[idx] = ''.join(''.join(struct.unpack('c'*LenUnit,data[i:i+LenUnit]))).strip()  # variable units
+        try:
+            ChanUnit[idx] = ''.join(''.join(struct.unpack('c'*LenUnit,data[i:i+LenUnit]))).strip()  # variable units
+        except:
+            ChanUnit[idx] = data[i:i+LenUnit].decode("utf-8")
         i+=LenUnit
 
     #-------------------------        
