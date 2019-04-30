@@ -121,7 +121,8 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
 
     # Run conditions
     U = [4., 6., 7., 8., 9., 10., 10.5, 11., 11.5, 12., 14., 19., 24.]
-    dt = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+    # dt = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+    dt = [0.01]*len(U)
 
     # U = [4.,8.,9.,10.]
     omega = np.interp(U, U_init, Omega_init)
@@ -217,7 +218,8 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
     T      = 240.
     TStart = 120.
 
-    dt = 0.001
+    # dt = 0.001
+    dt = 0.01
     
     # Overwrite for testing
     if TMax < T:
