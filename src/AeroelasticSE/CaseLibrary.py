@@ -205,7 +205,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         case_inputs[("HydroDyn","RdtnDT")] = {'vals':dt, 'group':1}
         case_inputs[("HydroDyn","WaveMod")] = {'vals':[1], 'group':0}
 
-    from CaseGen_General import CaseGen_General
+    from AeroelasticSE.CaseGen_General import CaseGen_General
     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=runDir, namebase=namebase)
 
     channels = ['Wind1VelX','GenPwr',"RtAeroCp", "RotTorq", "RotThrust", "RotSpeed", "BldPitch1"]
