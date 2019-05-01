@@ -129,7 +129,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
     pitch = np.interp(U, U_init, pitch_init)
     print('omega', omega)
     print('pitch', pitch)
-    for i, (omegai, pitchi) in enumerate(zip(omega, self.pitch)):
+    for i, (omegai, pitchi) in enumerate(zip(omega, pitch)):
         if pitchi > 0. and Omegai < Omega_init[-1]:
             pitch[i] = 0.
     print('omega', omega)
