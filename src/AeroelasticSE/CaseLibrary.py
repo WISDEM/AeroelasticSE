@@ -127,6 +127,13 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
     # U = [4.,8.,9.,10.]
     omega = np.interp(U, U_init, Omega_init)
     pitch = np.interp(U, U_init, pitch_init)
+    print('omega', omega)
+    print('pitch', pitch)
+    for i, (omegai, pitchi) in enumerate(zip(omega, self.pitch)):
+        if pitchi > 0. and Omegai < Omega_init[-1]:
+            pitch[i] = 0.
+    print('omega', omega)
+    print('pitch', pitch)
 
     # Check if floating
     floating_dof = [fst_vt['ElastoDyn']['PtfmSgDOF'], fst_vt['ElastoDyn']['PtfmSwDOF'], fst_vt['ElastoDyn']['PtfmHvDOF'], fst_vt['ElastoDyn']['PtfmRDOF'], fst_vt['ElastoDyn']['PtfmPDOF'], fst_vt['ElastoDyn']['PtfmYDOF']]
