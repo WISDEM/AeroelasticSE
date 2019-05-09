@@ -125,7 +125,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         U_all.append(V_R25)
         U_all = list(sorted(U_all))
     U = [Vi for Vi in U_all if Vi <= Vrated]
-    print(U)
+    # print(U)
 
     # dt = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
     dt = [0.01]*len(U)
