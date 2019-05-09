@@ -106,7 +106,7 @@ from AeroelasticSE.CaseGen_IEC import CaseGen_IEC
 
 #     return case_list, case_name_list, channels
 
-def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[]):
+def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[], V_R25=0.):
 
     # Default Runtime
     T      = 240.
@@ -120,8 +120,12 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         TStart = 0.
 
     # Run conditions
-    U_all = list(sorted([4., 6., 7., 8., 9., 10., 10.5, 11., 11.5, 12., 14., 19., 25., Vrated]))
+    U_all = list(sorted([4., 6., 8., 9., 10., 10.5, 11., 11.5, 12., 14., 19., 25., Vrated]))
+    if V_R25 != 0.:
+        U_all.append(V_R25)
+        U_all = list(sorted(U_all))
     U = [Vi for Vi in U_all if Vi <= Vrated]
+    print(U)
 
     # dt = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
     dt = [0.01]*len(U)
