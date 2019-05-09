@@ -473,7 +473,7 @@ class pyIECWind_turb():
         # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
         # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
 
-        case_name = self.case_name + '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
+        case_name = self.case_name + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
         tsim_input_file = case_name + '.in'
         wind_file_out   = case_name + '.bts'
 

@@ -497,7 +497,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
     iec = CaseGen_IEC()
     iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':  U_init}
-    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = Omega_init
+    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = [0.95*omega_i for omega_i in Omega_init]
     iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':  U_init}
     iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = pitch_init
     iec.init_cond[("ElastoDyn","BlPitch2")] = iec.init_cond[("ElastoDyn","BlPitch1")]
@@ -520,7 +520,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.case_name_base  = namebase + '_turb'
     iec.Turbsim_exe     = Turbsim_exe
     iec.debug_level     = 0
-    iec.parallel_windfile_gen = False
+    iec.parallel_windfile_gen = True
     iec.run_dir         = runDir
 
     case_inputs = {}
