@@ -30,7 +30,11 @@ class TurbsimBuilder(turbsiminputs):
          self.run_dir = 'run%d'%np.random.uniform(0,1e10)
 
     def execute(self, write_specs=False, write_profile=False):
-         if not os.path.exists(self.run_dir): os.makedirs(self.run_dir)
+         if not os.path.exists(self.run_dir): 
+            try:
+               os.makedirs(self.run_dir)
+            except:
+               pass
 
          # Write turbulence file
          if write_specs:
