@@ -3,6 +3,8 @@ from AeroelasticSE.Turbsim_mdao.turbulence_spectrum import turb_specs
 from AeroelasticSE.Turbsim_mdao.wind_profile_writer import write_wind
 import os
 import numpy as np
+import random
+from time import sleep
 class TurbsimBuilder(turbsiminputs):
     def __init__(self):
          self.turbsim_vt = turbsiminputs()
@@ -32,7 +34,9 @@ class TurbsimBuilder(turbsiminputs):
     def execute(self, write_specs=False, write_profile=False):
          if not os.path.exists(self.run_dir): 
             try:
-               os.makedirs(self.run_dir)
+               sleep(random.uniform(0, 1))
+               if not os.path.exists(self.run_dir): 
+                  os.makedirs(self.run_dir)
             except:
                pass
 
