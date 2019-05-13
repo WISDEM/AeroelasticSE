@@ -209,7 +209,7 @@ class runFAST_pywrapper_batch(object):
         case_data_all = comm.scatter(case_data_all, root=0)
 
         time.sleep(rank*0.05)
-        print(rank, case_data_all[("InflowWind","HWindSpeed")])
+        print(rank, case_data_all, type(case_data_all))
 
         out = eval_multi(case_data_all)
 
