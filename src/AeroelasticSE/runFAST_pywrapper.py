@@ -184,9 +184,12 @@ class runFAST_pywrapper_batch(object):
         size = comm.Get_size()
         rank = comm.Get_rank()
 
+        N_cases = len(self.case_list)
+        N_loops = int(np.ceil(float(N_cases)/float(size)))
+
         if rank == 0:
             case_data_all = []
-            for i in range(len(self.case_list)):
+            for i in range(N_cases):
                 case_data = []
                 case_data.append(self.case_list[i])
                 case_data.append(self.case_name_list[i])
@@ -209,17 +212,21 @@ class runFAST_pywrapper_batch(object):
         else:
             case_data_all = []
 
-        case_data_all = comm.scatter(case_data_all, root=0)
+        output = []
+        for i in range(N_loops):
+            n_resid = N_cases - i*size
+            if n_resid < size: 
+                # comm_i = 
+                print('not there yet')
+            else:
+                comm_i = comm
 
-        time.sleep(rank*0.05)
+            idx_s = i*size
+            idx_e = min((i+1)*size, N_cases)
 
-        out = eval_multi(case_data_all)
-        print(rank, type(out))
-        print(rank, case_data_all[0][('InflowWind', 'HWindSpeed')], np.mean(out['GenPwr']), '<----')
-
-        output = comm.gather(out, root=0)
-
-        print(type(output), type(output[0]))
+            case_data_i = comm.scatter(case_data_all[idx_s, idx_e], root=0)
+            out = eval_multi(case_data_i)
+            output.extend(comm.gather(out, root=0))
 
         return output
 
@@ -268,7 +275,7 @@ def example_runFAST_pywrapper_batch():
     fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
 
     # fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-    # fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+   # fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
     # fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
     # fastBatch.FAST_runDirectory = 'temp/OpenFAST'
     # fastBatch.debug_level = 2
@@ -297,7 +304,7 @@ def example_runFAST_pywrapper_batch():
     case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
     case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
     case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-    # case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
+    case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
     
     from CaseGen_General import CaseGen_General
     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='testing')
