@@ -256,7 +256,7 @@ def example_runFAST_pywrapper_batch():
     """ 
     Example of running a batch of cases, in serial or in parallel
     """
-    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=dev_branch)
+    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
 
     # fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
     # fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
