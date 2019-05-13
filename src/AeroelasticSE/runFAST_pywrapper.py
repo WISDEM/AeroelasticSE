@@ -12,6 +12,7 @@ import multiprocessing as mp
 from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from AeroelasticSE.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
 from AeroelasticSE.FAST_wrapper import FastWrapper
+from AeroelasticSE.FAST_post import return_timeseries
 
 class runFAST_pywrapper(object):
 
@@ -209,7 +210,7 @@ class runFAST_pywrapper_batch(object):
         case_data_all = comm.scatter(case_data_all, root=0)
 
         time.sleep(rank*0.05)
-        print(rank, case_data_all, type(case_data_all))
+        print(rank, case_data_all[0], '<----')
 
         out = eval_multi(case_data_all)
 
@@ -266,11 +267,12 @@ def example_runFAST_pywrapper_batch():
     # fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
     # fastBatch.FAST_runDirectory = 'temp/OpenFAST'
     # fastBatch.debug_level = 2
-    fastBatch.FAST_exe = '/projects/windse/importance_sampling/WT_Codes/openfast/build/glue-codes/openfast/openfast'   # Path to executable
-    fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    fastBatch.FAST_directory = "/projects/windse/importance_sampling/WISDEM/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-Shutdown"   # Path to fst directory files
+    fastBatch.FAST_exe          = '/projects/windse/importance_sampling/WT_Codes/openfast/build/glue-codes/openfast/openfast'   # Path to executable
+    fastBatch.FAST_InputFile    = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+    fastBatch.FAST_directory    = "/projects/windse/importance_sampling/WISDEM/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-Shutdown"   # Path to fst directory files
     fastBatch.FAST_runDirectory = 'temp/OpenFAST'
-    fastBatch.debug_level = 2
+    fastBatch.debug_level       = 2
+    fastBatch.post              = return_timeseries
 
 
     ## Define case list explicitly
