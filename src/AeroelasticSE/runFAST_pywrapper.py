@@ -169,9 +169,51 @@ class runFAST_pywrapper_batch(object):
 
         return pool.map(eval_multi, case_data_all)
 
-    def run_mpi(self):
-        # Run in parallel with mpi, not yet implimented
-        print('MPI interfaced not yet implimented')
+    def run_mpi(self, comm=None):
+        # Run in parallel with mpi
+        from mpi4py import MPI
+
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
+
+        if not comm:
+            comm = MPI.COMM_WORLD
+        size = comm.Get_size()
+        rank = comm.Get_rank()
+
+        if rank == 0:
+            case_data_all = []
+            for i in range(len(self.case_list)):
+                case_data = []
+                case_data.append(self.case_list[i])
+                case_data.append(self.case_name_list[i])
+                case_data.append(self.FAST_ver)
+                case_data.append(self.FAST_exe)
+                case_data.append(self.FAST_runDirectory)
+                case_data.append(self.FAST_InputFile)
+                case_data.append(self.FAST_directory)
+                case_data.append(self.read_yaml)
+                case_data.append(self.FAST_yamlfile_in)
+                case_data.append(self.fst_vt)
+                case_data.append(self.write_yaml)
+                case_data.append(self.FAST_yamlfile_out)
+                case_data.append(self.channels)
+                case_data.append(self.debug_level)
+                case_data.append(self.dev_branch)
+                case_data.append(self.post)
+
+                case_data_all.append(case_data)
+        else:
+            case_data_all = []
+
+        case_data_all = comm.scatter(case_data_all, root=0)
+
+        out = self.eval_multi(case_data_all)
+
+        output = comm.gather(out, root=0)
+
+        return output
+
 
 
 def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, dev_branch, post):
@@ -217,7 +259,12 @@ def example_runFAST_pywrapper_batch():
 
     fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
 
-    fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
+    # fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
+    # fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
+    # fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+    # fastBatch.FAST_runDirectory = 'temp/OpenFAST'
+    # fastBatch.debug_level = 2
+    fastBatch.FAST_exe = '/projects/windse/importance_sampling/WT_Codes/openfast/build/glue-codes/openfast/openfast'   # Path to executable
     fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
     fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
     fastBatch.FAST_runDirectory = 'temp/OpenFAST'
@@ -232,7 +279,7 @@ def example_runFAST_pywrapper_batch():
     ## Generate case list using General Case Generator
     ## Specify several variables that change independently or collectly
     case_inputs = {}
-    case_inputs[("Fst","TMax")] = {'vals':[10.], 'group':0}
+    case_inputs[("Fst","TMax")] = {'vals':[1.], 'group':0}
     case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
     case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
     case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
@@ -240,7 +287,7 @@ def example_runFAST_pywrapper_batch():
     case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
     case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
     case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-    case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
+    # case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
     
     from CaseGen_General import CaseGen_General
     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='testing')
@@ -249,7 +296,8 @@ def example_runFAST_pywrapper_batch():
     fastBatch.case_name_list = case_name_list
 
     # fastBatch.run_serial()
-    fastBatch.run_multi(2)
+    # fastBatch.run_multi(2)
+    fastBatch.run_mpi()
 
 
 def example_runFAST_CaseGenIEC():
@@ -365,6 +413,6 @@ def example_runFAST_pywrapper():
 
 if __name__=="__main__":
 
-    example_runFAST_pywrapper()
-    # example_runFAST_pywrapper_batch()
+    # example_runFAST_pywrapper()
+    example_runFAST_pywrapper_batch()
     # example_runFAST_CaseGenIEC()
