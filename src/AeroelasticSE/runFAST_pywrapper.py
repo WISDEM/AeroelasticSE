@@ -208,7 +208,7 @@ class runFAST_pywrapper_batch(object):
 
         case_data_all = comm.scatter(case_data_all, root=0)
 
-        out = self.eval_multi(case_data_all)
+        out = eval_multi(case_data_all)
 
         output = comm.gather(out, root=0)
 
