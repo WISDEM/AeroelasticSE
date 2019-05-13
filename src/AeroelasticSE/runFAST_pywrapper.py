@@ -228,7 +228,7 @@ class runFAST_pywrapper_batch(object):
             out = eval_multi(case_data_i)
             output_i = comm.gather(out, root=0)
             if rank == 0:
-                output.extend()
+                output.extend(output_i)
 
         return output
 
@@ -298,7 +298,7 @@ def example_runFAST_pywrapper_batch():
     ## Generate case list using General Case Generator
     ## Specify several variables that change independently or collectly
     case_inputs = {}
-    case_inputs[("Fst","TMax")] = {'vals':[30.], 'group':0}
+    case_inputs[("Fst","TMax")] = {'vals':[5.], 'group':0}
     case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
     case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
     case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
