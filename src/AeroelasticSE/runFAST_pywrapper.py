@@ -14,6 +14,8 @@ from AeroelasticSE.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, 
 from AeroelasticSE.FAST_wrapper import FastWrapper
 from AeroelasticSE.FAST_post import return_timeseries
 
+import numpy as np
+
 class runFAST_pywrapper(object):
 
     def __init__(self, **kwargs):
