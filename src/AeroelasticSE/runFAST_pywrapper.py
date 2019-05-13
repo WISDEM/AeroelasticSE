@@ -224,7 +224,7 @@ class runFAST_pywrapper_batch(object):
             idx_s = i*size
             idx_e = min((i+1)*size, N_cases)
 
-            case_data_i = comm.scatter(case_data_all[idx_s, idx_e], root=0)
+            case_data_i = comm.scatter(case_data_all[idx_s:idx_e], root=0)
             out = eval_multi(case_data_i)
             output.extend(comm.gather(out, root=0))
 
