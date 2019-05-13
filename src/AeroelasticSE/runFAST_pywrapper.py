@@ -279,7 +279,7 @@ def example_runFAST_pywrapper_batch():
     ## Generate case list using General Case Generator
     ## Specify several variables that change independently or collectly
     case_inputs = {}
-    case_inputs[("Fst","TMax")] = {'vals':[1.], 'group':0}
+    case_inputs[("Fst","TMax")] = {'vals':[30.], 'group':0}
     case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
     case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
     case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
