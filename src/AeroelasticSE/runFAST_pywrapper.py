@@ -266,9 +266,10 @@ def example_runFAST_pywrapper_batch():
     # fastBatch.debug_level = 2
     fastBatch.FAST_exe = '/projects/windse/importance_sampling/WT_Codes/openfast/build/glue-codes/openfast/openfast'   # Path to executable
     fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
+    fastBatch.FAST_directory = "/projects/windse/importance_sampling/WISDEM/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-Shutdown"   # Path to fst directory files
     fastBatch.FAST_runDirectory = 'temp/OpenFAST'
     fastBatch.debug_level = 2
+
 
     ## Define case list explicitly
     # case_list = [{}, {}]
