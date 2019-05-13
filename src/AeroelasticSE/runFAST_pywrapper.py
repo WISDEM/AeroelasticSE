@@ -226,7 +226,9 @@ class runFAST_pywrapper_batch(object):
 
             case_data_i = comm.scatter(case_data_all[idx_s:idx_e], root=0)
             out = eval_multi(case_data_i)
-            output.extend(comm.gather(out, root=0))
+            output_i = comm.gather(out, root=0)
+            if rank == 0:
+                output.extend()
 
         return output
 
