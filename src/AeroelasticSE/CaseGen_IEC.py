@@ -142,6 +142,8 @@ class CaseGen_IEC():
                     WindFile_type_out.extend(case[2])
 
             elif self.parallel_windfile_gen and self.mpi_run:
+                print('<=============== Running with mpi')
+
                 # Parallel wind file generation with MPI
                 comm = MPI.COMM_WORLD
                 size = comm.Get_size()
