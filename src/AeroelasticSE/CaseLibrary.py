@@ -565,6 +565,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     case_inputs[("AeroDyn15","MaxIter")]     = {'vals':[5000], 'group':0}
     case_inputs[("AeroDyn15","UseBlCm")]     = {'vals':['True'], 'group':0}
     
+    print('mpi_run, CaseLibrary', mpi_run)
     case_list, case_name_list = iec.execute(case_inputs=case_inputs)
 
     channels  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]

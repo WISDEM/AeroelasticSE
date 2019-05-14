@@ -126,6 +126,7 @@ class CaseGen_IEC():
                 matrix_out.append(row_out)
             matrix_out = np.asarray(matrix_out)
             
+            print('mpi_run, CaseGen_IEC', self.mpi_run)
             if self.parallel_windfile_gen and not self.mpi_run:
                 print('<=============== Running with multiprocessing')
                 # Parallel wind file generation (threaded with multiprocessing)
