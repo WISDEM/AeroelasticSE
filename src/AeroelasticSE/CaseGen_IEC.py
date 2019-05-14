@@ -5,6 +5,7 @@ import multiprocessing as mp
 from AeroelasticSE.CaseGen_General import CaseGen_General, save_case_matrix
 from AeroelasticSE.pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
+from mpi4py import MPI
 
 # Generate wind files
 def gen_windfile(data):
