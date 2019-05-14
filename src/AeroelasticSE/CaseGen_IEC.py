@@ -165,7 +165,10 @@ class CaseGen_IEC():
                 var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
                 out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
                 out      = comm.gather(out_i,root=0)
-                
+
+                group.Free()
+                subgroup.Free()
+                subcomm.Free()
 
                 # output = []
                 # for idx in range(N_loops):
