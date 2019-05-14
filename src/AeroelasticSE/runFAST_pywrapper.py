@@ -176,9 +176,11 @@ class runFAST_pywrapper_batch(object):
         # Run in parallel with mpi
         from mpi4py import MPI
 
+        # file management
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory)
 
+        # mpi comm management
         if not comm:
             comm = MPI.COMM_WORLD
         size = comm.Get_size()
@@ -214,19 +216,40 @@ class runFAST_pywrapper_batch(object):
 
         output = []
         for i in range(N_loops):
+            # if # of cases left to run is less than comm size, split comm
             n_resid = N_cases - i*size
             if n_resid < size: 
-                # comm_i = 
-                print('not there yet')
+                split_comm = True
+                color = np.zeros(size)
+                for i in range(n_resid):
+                    color[i] = 1
+                color = [int(j) for j in color]
+                comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
             else:
+                split_comm = False
                 comm_i = comm
 
-            idx_s = i*size
-            idx_e = min((i+1)*size, N_cases)
+            # position in case list
+            idx_s  = i*size
+            idx_e  = min((i+1)*size, N_cases)
 
-            case_data_i = comm.scatter(case_data_all[idx_s:idx_e], root=0)
+            # scatter out cases
+            if split_comm:
+                if color[rank] == 1:
+                    case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)    
+            else:
+                case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)
+            
+            # eval
             out = eval_multi(case_data_i)
-            output_i = comm.gather(out, root=0)
+
+            # gather results
+            if split_comm:
+                if color[rank] == 1:
+                    output_i = comm_i.gather(out, root=0)
+            else:
+                output_i = comm_i.gather(out, root=0)
+
             if rank == 0:
                 output.extend(output_i)
 
