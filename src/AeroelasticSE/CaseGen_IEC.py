@@ -127,6 +127,7 @@ class CaseGen_IEC():
             matrix_out = np.asarray(matrix_out)
             
             if self.parallel_windfile_gen and not self.mpi_run:
+                print('<=============== Running with multiprocessing')
                 # Parallel wind file generation (threaded with multiprocessing)
                 if self.cores != 0:
                     p = mp.Pool(self.cores)
@@ -184,6 +185,7 @@ class CaseGen_IEC():
                 return output
 
             else:
+                print('<=============== Running serial')
                 # Serial
                 U_out = []
                 WindFile_out = []
