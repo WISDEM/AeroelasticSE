@@ -156,9 +156,16 @@ class CaseGen_IEC():
                 N_loops = int(np.ceil(float(N_cases)/float(size)))
 
 
-                color = [1 if self.mpi_fd_rank==i+1 else 0 for i in self.mpi_color]
-                print(size, rank, color, 'XXXX')
+                idx_group = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
 
+                group    = comm.Get_group()
+                subgroup = MPI.Group.Incl(group,idx_group)
+                subcomm  = comm.Create(subgroup)
+
+                var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
+                out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
+                out      = comm.gather(out_i,root=0)
+                
 
                 # output = []
                 # for idx in range(N_loops):

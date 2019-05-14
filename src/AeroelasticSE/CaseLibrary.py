@@ -524,7 +524,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.cores           = cores
     iec.run_dir         = runDir
 
-    mpi_run = False
+    # mpi_run = False
     if mpi_run:
         iec.mpi_run     = mpi_run
         iec.mpi_color   = mpi_color
