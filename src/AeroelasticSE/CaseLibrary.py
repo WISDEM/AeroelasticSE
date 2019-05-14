@@ -483,7 +483,7 @@ def RotorSE_DLC_7_1_Steady(fst_vt, runDir, namebase, TMax, turbine_class, turbul
     return case_list, case_name_list, channels
 
 
-def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0):
+def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_color=[], mpi_fd_rank=0):
     
     # Default Runtime
     T      = 630.
@@ -523,6 +523,11 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.parallel_windfile_gen = True
     iec.cores           = cores
     iec.run_dir         = runDir
+
+    if mpi_run:
+        iec.mpi_run     = mpi_run
+        iec.mpi_color   = mpi_color
+        iec.mpi_fd_rank = mpi_fd_rank
 
     case_inputs = {}
     case_inputs[("Fst","TMax")]              = {'vals':[T], 'group':0}

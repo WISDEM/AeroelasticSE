@@ -55,9 +55,81 @@ class runTS_pywrapper_batch(object):
             fname = r[1]
             self.case_list[idx]['tswind_file'] = fname
 
-    def run_mpi(self):
-        # Run in parallel with mpi, not yet implimented
-        print('MPI interfaced not yet implimented')
+    # def run_mpi(self, comm=None):
+    #     from mpi4py import MPI
+
+    #     self.common_init()
+
+    #     # file management
+    #     if not os.path.exists(self.FAST_runDirectory):
+    #         os.makedirs(self.FAST_runDirectory)
+
+    #     # mpi comm management
+    #     if not comm:
+    #         comm = MPI.COMM_WORLD
+    #     size = comm.Get_size()
+    #     rank = comm.Get_rank()
+
+    #     N_cases = len(self.case_list)
+    #     N_loops = int(np.ceil(float(N_cases)/float(size)))
+
+    #     if rank == 0:
+    #         caseNfile = []
+    #         for case_idx in range(len(self.case_list)):
+    #             case = self.case_list[case_idx]
+    #             case_name = self.case_name_list[case_idx]
+    #             caseNfile.append([case,self.filedict, case_idx, case_name])
+    #     else:
+    #         caseNfile = []
+
+    #     output = []
+    #     for i in range(N_loops):
+    #         # if # of cases left to run is less than comm size, split comm
+    #         n_resid = N_cases - i*size
+    #         if n_resid < size: 
+    #             split_comm = True
+    #             color = np.zeros(size)
+    #             for i in range(n_resid):
+    #                 color[i] = 1
+    #             color = [int(j) for j in color]
+    #             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+    #         else:
+    #             split_comm = False
+    #             comm_i = comm
+
+    #         # position in case list
+    #         idx_s  = i*size
+    #         idx_e  = min((i+1)*size, N_cases)
+
+    #         # scatter out cases
+    #         if split_comm:
+    #             if color[rank] == 1:
+    #                 case_data_i = comm_i.scatter(caseNfile[idx_s:idx_e], root=0)    
+    #         else:
+    #             case_data_i = comm_i.scatter(caseNfile[idx_s:idx_e], root=0)
+            
+    #         # eval
+    #         out = tseval(case_data_i)
+
+    #         # gather results
+    #         if split_comm:
+    #             if color[rank] == 1:
+    #                 output_i = comm_i.gather(out, root=0)
+    #         else:
+    #             output_i = comm_i.gather(out, root=0)
+
+    #         if rank == 0:
+    #             output.extend(output_i)
+
+    #     if rank == 0:
+    #         output_fname = []
+    #         for outi in output:
+    #             output_fname.append(outi[1])
+
+    #     return output
+        
+        
+
 
 
 def tseval(dat):

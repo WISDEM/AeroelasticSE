@@ -49,6 +49,10 @@ class CaseGen_IEC():
         self.parallel_windfile_gen = False
         self.cores = 0
 
+        self.mpi_run = False
+        self.mpi_color = []
+        self.mpi_fd_rank = 0
+
     def execute(self, case_inputs={}):
 
         case_list_all = {}
@@ -114,7 +118,7 @@ class CaseGen_IEC():
             matrix_idx = list(itertools.product(*group_idx))
             matrix_group_idx = [np.where([group_i == group_j for group_j in range(0,len(group_len))])[0].tolist() for group_i in range(0,len(group_len))]
             matrix_out = []
-            for i, row in enumerate(matrix_idx):
+            for idx, row in enumerate(matrix_idx):
                 row_out = [None]*len(change_vars)
                 for j, val in enumerate(row):
                     for g in matrix_group_idx[j]:
@@ -122,7 +126,7 @@ class CaseGen_IEC():
                 matrix_out.append(row_out)
             matrix_out = np.asarray(matrix_out)
             
-            if self.parallel_windfile_gen:
+            if self.parallel_windfile_gen and not self.mpi_run:
                 # Parallel wind file generation (threaded with multiprocessing)
                 if self.cores != 0:
                     p = mp.Pool(self.cores)
@@ -136,6 +140,47 @@ class CaseGen_IEC():
                     U_out.extend(case[0])
                     WindFile_out.extend(case[1])
                     WindFile_type_out.extend(case[2])
+
+            elif self.parallel_windfile_gen and self.mpi_run:
+                # Parallel wind file generation with MPI
+                comm = MPI.COMM_WORLD
+                size = comm.Get_size()
+                rank = comm.Get_rank()
+
+                N_cases = len(matrix_out)
+                N_loops = int(np.ceil(float(N_cases)/float(size)))
+
+                output = []
+                for idx in range(N_loops):
+                    n_resid = N_cases - idx*size
+                    if n_resid < size: 
+                        split_comm = True
+                        color = np.zeros(size)
+                        for idx in range(n_resid):
+                            color[idx] = 1
+                        color = [int(j) for j in color]
+                        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+                    else:
+                        split_comm = False
+                        comm_i = comm
+
+                    idx_s  = i*size
+                    idx_e  = min((i+1)*size, N_cases)
+
+                    if split_comm:
+                        if color[rank] == 1:
+                            var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
+                    else:
+                        var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
+
+                    out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
+                    out      = comm.gather(out_i,root=0)
+
+                    if rank == 0:
+                        output.extend(output_i)
+
+                return output
+
             else:
                 # Serial
                 U_out = []

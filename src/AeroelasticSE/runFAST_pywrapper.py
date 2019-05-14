@@ -176,10 +176,6 @@ class runFAST_pywrapper_batch(object):
         # Run in parallel with mpi
         from mpi4py import MPI
 
-        # file management
-        if not os.path.exists(self.FAST_runDirectory):
-            os.makedirs(self.FAST_runDirectory)
-
         # mpi comm management
         if not comm:
             comm = MPI.COMM_WORLD
@@ -188,6 +184,10 @@ class runFAST_pywrapper_batch(object):
 
         N_cases = len(self.case_list)
         N_loops = int(np.ceil(float(N_cases)/float(size)))
+        
+        # file management
+        if not os.path.exists(self.FAST_runDirectory) and rank == 0:
+            os.makedirs(self.FAST_runDirectory)
 
         if rank == 0:
             case_data_all = []
