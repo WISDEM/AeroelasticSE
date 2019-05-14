@@ -155,34 +155,41 @@ class CaseGen_IEC():
                 N_cases = len(matrix_out)
                 N_loops = int(np.ceil(float(N_cases)/float(size)))
 
-                output = []
-                for idx in range(N_loops):
-                    n_resid = N_cases - idx*size
-                    if n_resid < size: 
-                        split_comm = True
-                        color = np.zeros(size)
-                        for idx in range(n_resid):
-                            color[idx] = 1
-                        color = [int(j) for j in color]
-                        comm_i  = MPI.COMM_WORLD.Split(color, 1)
-                    else:
-                        split_comm = False
-                        comm_i = comm
 
-                    idx_s  = i*size
-                    idx_e  = min((i+1)*size, N_cases)
+                color = [1 if self.mpi_fd_rank==i+1 else 0 for i in self.mpi_color]
+                print(size, rank, color, 'XXXX')
 
-                    if split_comm:
-                        if color[rank] == 1:
-                            var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
-                    else:
-                        var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
 
-                    out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
-                    out      = comm.gather(out_i,root=0)
+                # output = []
+                # for idx in range(N_loops):
+                #     n_resid = N_cases - idx*size
+                #     if n_resid < size: 
+                #         split_comm = True
+                #         color = np.zeros(size)
+                #         for idx in range(n_resid):
+                #             color[idx] = 1
+                #         color = [int(j) for j in color]
+                #         # comm_i  = MPI.COMM_WORLD.Split(color, 1)
+                #     else:
+                #         split_comm = False
+                #         # comm_i = comm
 
-                    if rank == 0:
-                        output.extend(output_i)
+                #     idx_s  = i*size
+                #     idx_e  = min((i+1)*size, N_cases)
+
+                #     if split_comm:
+                #         color_i = 
+                #         comm_split  = MPI.COMM_WORLD.Split(color, 1)
+                #         if color[rank] == 1:
+                #             var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
+                #     else:
+                #         var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
+
+                #     out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
+                #     out      = comm.gather(out_i,root=0)
+
+                #     if rank == 0:
+                #         output.extend(output_i)
 
                 return output
 
