@@ -224,7 +224,7 @@ class runFAST_pywrapper_batch(object):
                 for i in range(n_resid):
                     color[i] = 1
                 color = [int(j) for j in color]
-                comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+                comm_i  = MPI.COMM_WORLD.Split(color, 1)
             else:
                 split_comm = False
                 comm_i = comm

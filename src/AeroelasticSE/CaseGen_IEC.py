@@ -164,7 +164,7 @@ class CaseGen_IEC():
                         for idx in range(n_resid):
                             color[idx] = 1
                         color = [int(j) for j in color]
-                        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+                        comm_i  = MPI.COMM_WORLD.Split(color, 1)
                     else:
                         split_comm = False
                         comm_i = comm
