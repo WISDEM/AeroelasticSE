@@ -169,7 +169,7 @@ class CaseGen_IEC():
                         rank_j = sub_ranks[j]
                         comm.send(data, dest=rank_j, tag=0)
 
-                    for rank_j in sub_ranks
+                    for rank_j in sub_ranks:
                         data_out = comm.recv(source=rank_j, tag=1)
                         U_out.append(data_out[0])
                         WindFile_out.append(data_out[1])
