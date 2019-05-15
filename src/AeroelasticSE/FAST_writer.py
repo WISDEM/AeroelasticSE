@@ -1,4 +1,4 @@
-import os, sys, copy
+import os, sys, copy, random, time
 import operator
 import yaml
 import numpy as np
@@ -619,7 +619,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
             try:
                 os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
             except:
-                print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData'))
+                try:
+                    time.sleep(random.random())
+                    if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
+                        os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+                except:
+                    print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData'))
 
         # create write airfoil objects to files
         for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
