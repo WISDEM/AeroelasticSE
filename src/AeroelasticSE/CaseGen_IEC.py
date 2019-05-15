@@ -155,20 +155,25 @@ class CaseGen_IEC():
                 N_cases = len(matrix_out)
                 N_loops = int(np.ceil(float(N_cases)/float(size)))
 
+                sub_ranks = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
 
-                idx_group = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
+                U_out = []
+                WindFile_out = []
+                WindFile_type_out = []
+                for i in range(N_loops):
+                    idx_s    = i*size
+                    idx_e    = min((i+1)*size, N_cases)
 
-                group    = comm.Get_group()
-                subgroup = MPI.Group.Incl(group,idx_group)
-                subcomm  = comm.Create(subgroup)
+                    for j, var_vals in enumerate(matrix_out[idx_s:idx_e]):
+                        data   = [gen_windfile, [iecwind, IEC_WindType, change_vars, var_vals]]
+                        rank_j = sub_ranks[j]
+                        comm.send(data, dest=rank_j, tag=0)
 
-                var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
-                out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
-                out      = comm.gather(out_i,root=0)
-
-                group.Free()
-                subgroup.Free()
-                subcomm.Free()
+                    for rank_j in sub_ranks
+                        data_out = comm.recv(source=rank_j, tag=1)
+                        U_out.append(data_out[0])
+                        WindFile_out.append(data_out[1])
+                        WindFile_type_out.append(data_out[2])
 
                 # output = []
                 # for idx in range(N_loops):
@@ -201,7 +206,7 @@ class CaseGen_IEC():
                 #     if rank == 0:
                 #         output.extend(output_i)
 
-                return output
+                # return output
 
             else:
                 print('<=============== Running serial')
