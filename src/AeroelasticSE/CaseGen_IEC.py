@@ -171,42 +171,9 @@ class CaseGen_IEC():
 
                     for rank_j in sub_ranks:
                         data_out = comm.recv(source=rank_j, tag=1)
-                        U_out.append(data_out[0])
-                        WindFile_out.append(data_out[1])
-                        WindFile_type_out.append(data_out[2])
-
-                # output = []
-                # for idx in range(N_loops):
-                #     n_resid = N_cases - idx*size
-                #     if n_resid < size: 
-                #         split_comm = True
-                #         color = np.zeros(size)
-                #         for idx in range(n_resid):
-                #             color[idx] = 1
-                #         color = [int(j) for j in color]
-                #         # comm_i  = MPI.COMM_WORLD.Split(color, 1)
-                #     else:
-                #         split_comm = False
-                #         # comm_i = comm
-
-                #     idx_s  = i*size
-                #     idx_e  = min((i+1)*size, N_cases)
-
-                #     if split_comm:
-                #         color_i = 
-                #         comm_split  = MPI.COMM_WORLD.Split(color, 1)
-                #         if color[rank] == 1:
-                #             var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
-                #     else:
-                #         var_vals = comm.scatter(matrix_out[idx_s:idx_e], root=0)
-
-                #     out_i    = gen_windfile([iecwind, IEC_WindType, change_vars, var_vals])
-                #     out      = comm.gather(out_i,root=0)
-
-                #     if rank == 0:
-                #         output.extend(output_i)
-
-                # return output
+                        U_out.extend(data_out[0])
+                        WindFile_out.extend(data_out[1])
+                        WindFile_type_out.extend(data_out[2])
 
             else:
                 print('<=============== Running serial')
