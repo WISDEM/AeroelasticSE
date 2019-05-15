@@ -172,15 +172,16 @@ class runFAST_pywrapper_batch(object):
 
         return pool.map(eval_multi, case_data_all)
 
-    def run_mpi(self, comm=None):
+    def run_mpi(self, mpi_color):
         # Run in parallel with mpi
         from mpi4py import MPI
 
         # mpi comm management
         if not comm:
             comm = MPI.COMM_WORLD
-        size = comm.Get_size()
         rank = comm.Get_rank()
+        sub_ranks = [i for i, ci in enumerate(mpi_color) if ci==rank+1]
+        size = len(sub_ranks)
 
         N_cases = len(self.case_list)
         N_loops = int(np.ceil(float(N_cases)/float(size)))
@@ -189,69 +190,123 @@ class runFAST_pywrapper_batch(object):
         if not os.path.exists(self.FAST_runDirectory) and rank == 0:
             os.makedirs(self.FAST_runDirectory)
 
-        if rank == 0:
-            case_data_all = []
-            for i in range(N_cases):
-                case_data = []
-                case_data.append(self.case_list[i])
-                case_data.append(self.case_name_list[i])
-                case_data.append(self.FAST_ver)
-                case_data.append(self.FAST_exe)
-                case_data.append(self.FAST_runDirectory)
-                case_data.append(self.FAST_InputFile)
-                case_data.append(self.FAST_directory)
-                case_data.append(self.read_yaml)
-                case_data.append(self.FAST_yamlfile_in)
-                case_data.append(self.fst_vt)
-                case_data.append(self.write_yaml)
-                case_data.append(self.FAST_yamlfile_out)
-                case_data.append(self.channels)
-                case_data.append(self.debug_level)
-                case_data.append(self.dev_branch)
-                case_data.append(self.post)
+        case_data_all = []
+        for i in range(N_cases):
+            case_data = []
+            case_data.append(self.case_list[i])
+            case_data.append(self.case_name_list[i])
+            case_data.append(self.FAST_ver)
+            case_data.append(self.FAST_exe)
+            case_data.append(self.FAST_runDirectory)
+            case_data.append(self.FAST_InputFile)
+            case_data.append(self.FAST_directory)
+            case_data.append(self.read_yaml)
+            case_data.append(self.FAST_yamlfile_in)
+            case_data.append(self.fst_vt)
+            case_data.append(self.write_yaml)
+            case_data.append(self.FAST_yamlfile_out)
+            case_data.append(self.channels)
+            case_data.append(self.debug_level)
+            case_data.append(self.dev_branch)
+            case_data.append(self.post)
 
-                case_data_all.append(case_data)
-        else:
-            case_data_all = []
+            case_data_all.append(case_data)
 
         output = []
         for i in range(N_loops):
-            # if # of cases left to run is less than comm size, split comm
-            n_resid = N_cases - i*size
-            if n_resid < size: 
-                split_comm = True
-                color = np.zeros(size)
-                for i in range(n_resid):
-                    color[i] = 1
-                color = [int(j) for j in color]
-                comm_i  = MPI.COMM_WORLD.Split(color, 1)
-            else:
-                split_comm = False
-                comm_i = comm
+            idx_s    = i*size
+            idx_e    = min((i+1)*size, N_cases)
 
-            # position in case list
-            idx_s  = i*size
-            idx_e  = min((i+1)*size, N_cases)
+            for j, var_vals in enumerate(case_data_all[idx_s:idx_e]):
+                data   = [gen_windfile, [iecwind, IEC_WindType, change_vars, var_vals]]
+                rank_j = sub_ranks[j]
+                comm.send(data, dest=rank_j, tag=0)
 
-            # scatter out cases
-            if split_comm:
-                if color[rank] == 1:
-                    case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)    
-            else:
-                case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)
+            for rank_j in sub_ranks:
+                data_out = comm.recv(source=rank_j, tag=1)
+                output.append(data_out)
+
+
+    # def run_mpi(self, comm=None):
+    #     # Run in parallel with mpi
+    #     from mpi4py import MPI
+
+    #     # mpi comm management
+    #     if not comm:
+    #         comm = MPI.COMM_WORLD
+    #     size = comm.Get_size()
+    #     rank = comm.Get_rank()
+
+    #     N_cases = len(self.case_list)
+    #     N_loops = int(np.ceil(float(N_cases)/float(size)))
+        
+    #     # file management
+    #     if not os.path.exists(self.FAST_runDirectory) and rank == 0:
+    #         os.makedirs(self.FAST_runDirectory)
+
+    #     if rank == 0:
+    #         case_data_all = []
+    #         for i in range(N_cases):
+    #             case_data = []
+    #             case_data.append(self.case_list[i])
+    #             case_data.append(self.case_name_list[i])
+    #             case_data.append(self.FAST_ver)
+    #             case_data.append(self.FAST_exe)
+    #             case_data.append(self.FAST_runDirectory)
+    #             case_data.append(self.FAST_InputFile)
+    #             case_data.append(self.FAST_directory)
+    #             case_data.append(self.read_yaml)
+    #             case_data.append(self.FAST_yamlfile_in)
+    #             case_data.append(self.fst_vt)
+    #             case_data.append(self.write_yaml)
+    #             case_data.append(self.FAST_yamlfile_out)
+    #             case_data.append(self.channels)
+    #             case_data.append(self.debug_level)
+    #             case_data.append(self.dev_branch)
+    #             case_data.append(self.post)
+
+    #             case_data_all.append(case_data)
+    #     else:
+    #         case_data_all = []
+
+    #     output = []
+    #     for i in range(N_loops):
+    #         # if # of cases left to run is less than comm size, split comm
+    #         n_resid = N_cases - i*size
+    #         if n_resid < size: 
+    #             split_comm = True
+    #             color = np.zeros(size)
+    #             for i in range(n_resid):
+    #                 color[i] = 1
+    #             color = [int(j) for j in color]
+    #             comm_i  = MPI.COMM_WORLD.Split(color, 1)
+    #         else:
+    #             split_comm = False
+    #             comm_i = comm
+
+    #         # position in case list
+    #         idx_s  = i*size
+    #         idx_e  = min((i+1)*size, N_cases)
+
+    #         # scatter out cases
+    #         if split_comm:
+    #             if color[rank] == 1:
+    #                 case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)    
+    #         else:
+    #             case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)
             
-            # eval
-            out = eval_multi(case_data_i)
+    #         # eval
+    #         out = eval_multi(case_data_i)
 
-            # gather results
-            if split_comm:
-                if color[rank] == 1:
-                    output_i = comm_i.gather(out, root=0)
-            else:
-                output_i = comm_i.gather(out, root=0)
+    #         # gather results
+    #         if split_comm:
+    #             if color[rank] == 1:
+    #                 output_i = comm_i.gather(out, root=0)
+    #         else:
+    #             output_i = comm_i.gather(out, root=0)
 
-            if rank == 0:
-                output.extend(output_i)
+    #         if rank == 0:
+    #             output.extend(output_i)
 
         return output
 
