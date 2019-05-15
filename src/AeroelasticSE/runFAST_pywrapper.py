@@ -177,8 +177,7 @@ class runFAST_pywrapper_batch(object):
         from mpi4py import MPI
 
         # mpi comm management
-        if not comm:
-            comm = MPI.COMM_WORLD
+        comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
         sub_ranks = [i for i, ci in enumerate(mpi_color) if ci==rank+1]
         size = len(sub_ranks)
