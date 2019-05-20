@@ -109,7 +109,7 @@ from AeroelasticSE.CaseGen_IEC import CaseGen_IEC
 def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[], V_R25=0.):
 
     # Default Runtime
-    T      = 240.
+    T      = 360.
     TStart = 120.
     # T      = 120.
     # TStart = 60.
@@ -120,7 +120,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         TStart = 0.
 
     # Run conditions
-    U_all = list(sorted([4., 6., 8., 9., 10., 10.5, 11., 11.5, 12., 14., 19., 25., Vrated]))
+    U_all = list(sorted([4., 6., 8., 9., 10., 10.5, 11., 11.5, 11.75, 12., 12.5, 13., 14., 19., 25., Vrated]))
     if V_R25 != 0.:
         U_all.append(V_R25)
         U_all = list(sorted(U_all))
