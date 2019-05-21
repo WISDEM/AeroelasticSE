@@ -146,13 +146,14 @@ class CaseGen_IEC():
             elif self.parallel_windfile_gen and self.mpi_run:
                 # Parallel wind file generation with MPI
                 comm = MPI.COMM_WORLD
-                size = comm.Get_size()
+                # size = comm.Get_size()
+                sub_ranks = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
+                size = len(sub_ranks)
                 rank = comm.Get_rank()
 
                 N_cases = len(matrix_out)
                 N_loops = int(np.ceil(float(N_cases)/float(size)))
 
-                sub_ranks = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
                 U_out = []
                 WindFile_out = []
                 WindFile_type_out = []
