@@ -170,7 +170,11 @@ class runFAST_pywrapper_batch(object):
 
             case_data_all.append(case_data)
 
-        return pool.map(eval_multi, case_data_all)
+        output = pool.map(eval_multi, case_data_all)
+        pool.close()
+        pool.join()
+
+        return output
 
     def run_mpi(self, mpi_color):
         # Run in parallel with mpi

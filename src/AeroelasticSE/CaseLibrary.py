@@ -520,9 +520,14 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.case_name_base  = namebase + '_turb'
     iec.Turbsim_exe     = Turbsim_exe
     iec.debug_level     = debug_level
-    iec.parallel_windfile_gen = True
     iec.cores           = cores
     iec.run_dir         = runDir
+    iec.overwrite       = True
+    # iec.overwrite       = False
+    if cores > 1:
+        iec.parallel_windfile_gen = True
+    else:
+        iec.parallel_windfile_gen = False
 
     # mpi_run = False
     if mpi_run:

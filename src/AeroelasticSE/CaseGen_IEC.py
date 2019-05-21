@@ -49,6 +49,7 @@ class CaseGen_IEC():
         self.debug_level = 2
         self.parallel_windfile_gen = False
         self.cores = 0
+        self.overwrite = False
 
         self.mpi_run = False
         self.mpi_color = []
@@ -102,7 +103,7 @@ class CaseGen_IEC():
             iecwind.case_name = self.case_name_base
             iecwind.Turbsim_exe = self.Turbsim_exe
             iecwind.debug_level = self.debug_level
-            iecwind.overwrite = False
+            iecwind.overwrite = self.overwrite
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
@@ -152,7 +153,6 @@ class CaseGen_IEC():
                 N_loops = int(np.ceil(float(N_cases)/float(size)))
 
                 sub_ranks = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
-
                 U_out = []
                 WindFile_out = []
                 WindFile_type_out = []
@@ -165,7 +165,8 @@ class CaseGen_IEC():
                         rank_j = sub_ranks[j]
                         comm.send(data, dest=rank_j, tag=0)
 
-                    for rank_j in sub_ranks:
+                    for j, var_vals in enumerate(matrix_out[idx_s:idx_e]):
+                        rank_j = sub_ranks[j]
                         data_out = comm.recv(source=rank_j, tag=1)
                         U_out.extend(data_out[0])
                         WindFile_out.extend(data_out[1])
