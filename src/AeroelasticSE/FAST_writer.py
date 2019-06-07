@@ -375,7 +375,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['TStart'], 'TStart', '- Time to begin tabular output (s)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['OutFileFmt'], 'OutFileFmt', '- Format for tabular (time-marching) output file (switch) {1: text file [<RootName>.out], 2: binary file [<RootName>.outb], 3: both}\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['Fst']['TabDelim'], 'TabDelim', '- Use tab delimiters in text tabular output file? (flag) {uses spaces if false}\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['OutFmt'], 'OutFmt', '- Format used for text tabular output, excluding the time channel.  Resulting field should be 10 characters. (quoted string)\n'))
+        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['Fst']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.  Resulting field should be 10 characters. (quoted string)\n'))
         f.write('---------------------- LINEARIZATION -------------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['Fst']['Linearize'], 'Linearize', '- Linearization analysis (flag)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['NLinTimes'], 'NLinTimes', '- Number of times to linearize (-) [>=1] [unused if Linearize=False]\n'))

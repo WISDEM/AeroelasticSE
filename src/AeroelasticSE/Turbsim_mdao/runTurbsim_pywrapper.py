@@ -5,6 +5,14 @@ from AeroelasticSE.runFAST_pywrapper import runFAST_pywrapper_batch
 from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
 from AeroelasticSE.CaseGen_General import CaseGen_General, save_case_matrix_direct
 
+from openmdao.core.mpi_wrap import MPI
+if MPI:
+    from openmdao.api import PetscImpl as impl
+    from mpi4py import MPI
+    from petsc4py import PETSc
+else:
+    from openmdao.api import BasicImpl as impl
+
 class runTS_pywrapper_batch(object):
 
     def __init__(self, filedict, case_list=None, case_name_list = None):
@@ -54,6 +62,45 @@ class runTS_pywrapper_batch(object):
             idx = r[0]
             fname = r[1]
             self.case_list[idx]['tswind_file'] = fname
+
+    def run_mpi(self, mpi_comm_map_down):
+
+        self.common_init()
+
+        comm = MPI.COMM_WORLD
+        # size = comm.Get_size()
+        rank = comm.Get_rank()
+        sub_ranks = mpi_comm_map_down[rank]
+        size = len(sub_ranks)
+
+        caseNfile = []
+        for case_idx in range(len(self.case_list)):
+            case = self.case_list[case_idx]
+            case_name = self.case_name_list[case_idx]
+            caseNfile.append([case,self.filedict, case_idx, case_name])
+
+        N_cases = len(caseNfile)
+        N_loops = int(np.ceil(float(N_cases)/float(size)))
+
+        U_out = []
+        WindFile_out = []
+        WindFile_type_out = []
+        for i in range(N_loops):
+            idx_s    = i*size
+            idx_e    = min((i+1)*size, N_cases)
+
+            for j, var_vals in enumerate(caseNfile[idx_s:idx_e]):
+                data   = [tseval, var_vals]
+                rank_j = sub_ranks[j]
+                comm.send(data, dest=rank_j, tag=0)
+
+            for j, var_vals in enumerate(caseNfile[idx_s:idx_e]):
+                rank_j = sub_ranks[j]
+                data_out = comm.recv(source=rank_j, tag=1)
+
+                idx   = data_out[0]
+                fname = data_out[1]
+                self.case_list[idx]['tswind_file'] = fname
 
     # def run_mpi(self, comm=None):
     #     from mpi4py import MPI
@@ -138,7 +185,7 @@ def tseval(dat):
     filedict = dat[1]
     case_idx = dat[2]
     case_name = dat[3]
-    print("running ts", case, filedict)
+    # print("running ts", case, filedict)
     pyturb = pyTurbsim_wrapper(filedict, case, case_name) # initialize runner with case variable inputs
 #        pyturb.ny = 20 # example of changing an attribute
     pyturb.execute() # run
@@ -236,7 +283,7 @@ def example_runTSFAST_Batch():
         case_list[i][("InflowWind","Filename")] = tsBatch.case_list[i]['tswind_file']
         case_list[i][("InflowWind","FilenameRoot")] = tsBatch.case_list[i]['tswind_file'].replace(".wnd", "")
 #        case_list[i][("InflowWind","InflowFile")] = tsBatch.case_name_list[i]
-        print(case_list[i])
+        # print(case_list[i])
 
     fastBatch.case_list = case_list
     fastBatch.case_name_list = case_name_list

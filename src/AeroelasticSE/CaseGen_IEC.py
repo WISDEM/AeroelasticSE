@@ -52,8 +52,7 @@ class CaseGen_IEC():
         self.overwrite = False
 
         self.mpi_run = False
-        self.mpi_color = []
-        self.mpi_fd_rank = 0
+        self.comm_map_down = []
 
     def execute(self, case_inputs={}):
 
@@ -147,9 +146,9 @@ class CaseGen_IEC():
                 # Parallel wind file generation with MPI
                 comm = MPI.COMM_WORLD
                 # size = comm.Get_size()
-                sub_ranks = [i for i, ci in enumerate(self.mpi_color) if self.mpi_fd_rank+1==ci]
-                size = len(sub_ranks)
                 rank = comm.Get_rank()
+                sub_ranks = self.comm_map_down[rank]
+                size = len(sub_ranks)
 
                 N_cases = len(matrix_out)
                 N_loops = int(np.ceil(float(N_cases)/float(size)))

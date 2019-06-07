@@ -88,7 +88,8 @@ class pyTurbsim_wrapper():
             try:
                 os.mkdir(self.basedir)
             except:
-                print("ok, %s exists after all" % self.basedir)
+                pass
+                # print("ok, %s exists after all" % self.basedir)
 
     def add_phase_dist(self, tsr, rho, tmax):
         tsr.cohere = pyts.cohereModels.main.none()
@@ -105,7 +106,7 @@ class pyTurbsim_wrapper():
     def execute(self):
         case = self.case
         case_name = self.case_name
-        print("CASE", case, case_name)
+        # print("CASE", case, case_name)
         ws=case['Vhub']
         rho = case['Rho']   #case.fst_params['rho'] ####### TODO: how does this get here?
         rs = case['RandSeed1'] if 'RandSeed1' in case else None
@@ -129,7 +130,7 @@ class pyTurbsim_wrapper():
         tsoutname = os.path.join(run_dir, tsoutname)
         tssumname = case_name + '.sum'
         # tssumname = self.ts_file.replace("inp", "sum")
-        print("running TurbSim in dir for case:" , run_dir, case, tsdict)
+        # print("running TurbSim in dir for case:" , run_dir, case, tsdict)
 
         tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
         for key in tsdict:

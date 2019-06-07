@@ -176,14 +176,14 @@ class runFAST_pywrapper_batch(object):
 
         return output
 
-    def run_mpi(self, mpi_color):
+    def run_mpi(self, mpi_comm_map_down):
         # Run in parallel with mpi
         from mpi4py import MPI
 
         # mpi comm management
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
-        sub_ranks = [i for i, ci in enumerate(mpi_color) if ci==rank+1]
+        sub_ranks = mpi_comm_map_down[rank]
         size = len(sub_ranks)
 
         N_cases = len(self.case_list)
@@ -228,6 +228,8 @@ class runFAST_pywrapper_batch(object):
             for rank_j in sub_ranks:
                 data_out = comm.recv(source=rank_j, tag=1)
                 output.append(data_out)
+
+        return output
 
 
     # def run_mpi(self, comm=None):
@@ -311,7 +313,7 @@ class runFAST_pywrapper_batch(object):
     #         if rank == 0:
     #             output.extend(output_i)
 
-        return output
+        # return output
 
 
 
