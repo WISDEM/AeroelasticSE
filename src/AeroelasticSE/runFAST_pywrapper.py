@@ -220,14 +220,22 @@ class runFAST_pywrapper_batch(object):
             idx_s    = i*size
             idx_e    = min((i+1)*size, N_cases)
 
+            print()
+
             for j, case_data in enumerate(case_data_all[idx_s:idx_e]):
                 data   = [eval_multi, case_data]
                 rank_j = sub_ranks[j]
                 comm.send(data, dest=rank_j, tag=0)
 
-            for rank_j in sub_ranks:
+                print('sending', rank_j)
+
+            # for rank_j in sub_ranks:
+            for j, case_data in enumerate(case_data_all[idx_s:idx_e]):
+                rank_j = sub_ranks[j]
                 data_out = comm.recv(source=rank_j, tag=1)
                 output.append(data_out)
+
+                print('recieving', rank_j)
 
         return output
 
