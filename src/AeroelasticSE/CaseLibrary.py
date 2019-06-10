@@ -531,8 +531,8 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
     # mpi_run = False
     if mpi_run:
-        iec.mpi_run     = mpi_run
-        iec.mpi_color   = mpi_comm_map_down
+        iec.mpi_run           = mpi_run
+        iec.comm_map_down = mpi_comm_map_down
 
     case_inputs = {}
     case_inputs[("Fst","TMax")]              = {'vals':[T], 'group':0}
