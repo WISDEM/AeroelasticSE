@@ -59,6 +59,8 @@ class pyTurbsim_wrapper():
 
     def __init__(self, filedict, case, case_name):
 
+        self.overwrite = True
+
         self.case = case
         self.case_name = case_name
 
@@ -138,35 +140,37 @@ class pyTurbsim_wrapper():
         # tssumname = self.ts_file.replace("inp", "sum")
         # print("running TurbSim in dir for case:" , run_dir, case, tsdict)
 
-        tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
-        for key in tsdict:
-            tsinput[key] = tsdict[key]
-        tsr = ptsm.cfg2tsrun(tsinput)
+        if self.overwite or (not self.overwrite and not os.file.exists(tsoutname)):
 
-        ### the random seed:
-        ### bug somewhere in complicated pyts use of numpy (only when called inside multiprocessing)
-        ### Success via cutting out the middle man!:
-        if rs is None:
-            tsr.randgen.seed(tsr.RandSeed)
-        else:
-            tsr.randgen.seed(rs)  ## this does nothing!
-            np.random.seed(rs)  ### this does the trick!
+            tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
+            for key in tsdict:
+                tsinput[key] = tsdict[key]
+            tsr = ptsm.cfg2tsrun(tsinput)
 
-        ###tsr = self.add_phase_dist(tsr, rho, tmax)
-        tsr.cohere = pyts.cohereModels.main.nwtc()
-        tsr.stress = pyts.stressModels.main.uniform(0,0,0)
-        tsr.phase = Rinker(rho, np.pi)
-        cg = tsr.grid
-        tsr.grid = tsGrid(center=cg.center, ny=cg.n_y, nz=cg.n_z,
-                     height=cg.height, width=cg.width,
-                     time_sec=tmax, dt=cg.dt)
+            ### the random seed:
+            ### bug somewhere in complicated pyts use of numpy (only when called inside multiprocessing)
+            ### Success via cutting out the middle man!:
+            if rs is None:
+                tsr.randgen.seed(tsr.RandSeed)
+            else:
+                tsr.randgen.seed(rs)  ## this does nothing!
+                np.random.seed(rs)  ### this does the trick!
 
-        tsdata = tsr()  ## actually runs turbsim
-        ptsm.write(tsdata, tsinput, fname=tsoutname)
+            ###tsr = self.add_phase_dist(tsr, rho, tmax)
+            tsr.cohere = pyts.cohereModels.main.nwtc()
+            tsr.stress = pyts.stressModels.main.uniform(0,0,0)
+            tsr.phase = Rinker(rho, np.pi)
+            cg = tsr.grid
+            tsr.grid = tsGrid(center=cg.center, ny=cg.n_y, nz=cg.n_z,
+                         height=cg.height, width=cg.width,
+                         time_sec=tmax, dt=cg.dt)
 
-        # here we provide the means to link turbsim to fast:
-        self.tswind_file = tsoutname
-        self.tswind_dir = run_dir
+            tsdata = tsr()  ## actually runs turbsim
+            ptsm.write(tsdata, tsinput, fname=tsoutname)
+
+            # here we provide the means to link turbsim to fast:
+            self.tswind_file = tsoutname
+            self.tswind_dir = run_dir
 
 if __name__ == "__main__":
 

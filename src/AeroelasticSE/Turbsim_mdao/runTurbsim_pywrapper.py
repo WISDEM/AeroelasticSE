@@ -15,10 +15,12 @@ else:
 
 class runTS_pywrapper_batch(object):
 
-    def __init__(self, filedict, case_list=None, case_name_list = None):
+    def __init__(self, filedict, case_list=None, case_name_list = None, overwrite=True):
         self.case_list          = case_list ### user needs to set this if they don't provide it.
         self.case_name_list = case_name_list ### ditto
         self.filedict = filedict
+
+        self.overwrite = overwrite
 
     def common_init(self):
         pass
@@ -33,7 +35,7 @@ class runTS_pywrapper_batch(object):
         for case_idx in range(len(self.case_list)):
             case = self.case_list[case_idx]
             case_name = self.case_name_list[case_idx]
-            dat = [case,self.filedict, case_idx, case_name]
+            dat = [case,self.filedict, case_idx, case_name, self.overwrite]
             r = tseval(dat)
             res.append(r)
         for r in res:
@@ -54,7 +56,7 @@ class runTS_pywrapper_batch(object):
         for case_idx in range(len(self.case_list)):
             case = self.case_list[case_idx]
             case_name = self.case_name_list[case_idx]
-            caseNfile.append([case,self.filedict, case_idx, case_name])
+            caseNfile.append([case,self.filedict, case_idx, case_name, self.overwrite])
         res = pool.map(tseval, caseNfile)
         # map returns a list of all the return vals from each call.
         # now add them to the cases:
@@ -77,7 +79,7 @@ class runTS_pywrapper_batch(object):
         for case_idx in range(len(self.case_list)):
             case = self.case_list[case_idx]
             case_name = self.case_name_list[case_idx]
-            caseNfile.append([case,self.filedict, case_idx, case_name])
+            caseNfile.append([case,self.filedict, case_idx, case_name, self.overwrite])
 
         N_cases = len(caseNfile)
         N_loops = int(np.ceil(float(N_cases)/float(size)))
@@ -187,6 +189,12 @@ def tseval(dat):
     case_name = dat[3]
     # print("running ts", case, filedict)
     pyturb = pyTurbsim_wrapper(filedict, case, case_name) # initialize runner with case variable inputs
+    try:
+        overwrite = dat[4]
+        pyturb.overwrite = overwrite
+    except:
+        pass
+
 #        pyturb.ny = 20 # example of changing an attribute
     pyturb.execute() # run
     #case['tswind_file'] = pyturb.tswind_file  ### need to really return it!
