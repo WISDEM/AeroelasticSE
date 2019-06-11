@@ -80,10 +80,16 @@ class pyTurbsim_wrapper():
 
 #        self.rawts.run_name = self.run_name
 
-
-        self.basedir = os.path.join(os.getcwd(),"allts_runs")
+        try:
+            self.basedir = os.path.join(os.getcwd(),"allts_runs")
+        except:
+            pass
+        
         if 'run_dir' in filedict:
-            self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+            try:
+                self.basedir = os.path.join(os.getcwd(),filedict['run_dir'])
+            except:
+                self.basedir = filedict['run_dir']
         if (not os.path.exists(self.basedir)):
             try:
                 os.mkdir(self.basedir)
