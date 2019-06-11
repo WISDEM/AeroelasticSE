@@ -140,7 +140,7 @@ class pyTurbsim_wrapper():
         # tssumname = self.ts_file.replace("inp", "sum")
         # print("running TurbSim in dir for case:" , run_dir, case, tsdict)
 
-        if self.overwrite or (not self.overwrite and not os.file.exists(tsoutname)):
+        if self.overwrite or (not self.overwrite and not os.path.exists(tsoutname)):
 
             tsinput = ptsin.read(os.path.join(self.ts_dir, self.ts_file))
             for key in tsdict:
