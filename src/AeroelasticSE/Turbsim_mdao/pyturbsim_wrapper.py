@@ -168,9 +168,9 @@ class pyTurbsim_wrapper():
             tsdata = tsr()  ## actually runs turbsim
             ptsm.write(tsdata, tsinput, fname=tsoutname)
 
-            # here we provide the means to link turbsim to fast:
-            self.tswind_file = tsoutname
-            self.tswind_dir = run_dir
+        # here we provide the means to link turbsim to fast:
+        self.tswind_file = tsoutname
+        self.tswind_dir = run_dir
 
 if __name__ == "__main__":
 
