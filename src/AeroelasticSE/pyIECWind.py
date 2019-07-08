@@ -440,8 +440,9 @@ class pyIECWind_turb():
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
         turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.2)
-        turbsim_vt.tmspecs.NumGrid_Z          = 15
-        turbsim_vt.tmspecs.NumGrid_Y          = 15
+        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.2)
+        turbsim_vt.tmspecs.NumGrid_Z          = 21
+        turbsim_vt.tmspecs.NumGrid_Y          = 21
         turbsim_vt.tmspecs.HFlowAng           = 0.0
         turbsim_vt.tmspecs.VFlowAng           = 0.0
         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
@@ -454,7 +455,17 @@ class pyIECWind_turb():
         turbsim_vt.metboundconds.RefHt        = self.z_hub
         turbsim_vt.metboundconds.URef         = self.Uref
         turbsim_vt.metboundconds.PLExp        = self.PLExp
-
+        
+        turbsim_vt.noniecboundconds.Latitude  = '"default"'
+        turbsim_vt.noniecboundconds.RICH_NO   = 0.05
+        turbsim_vt.noniecboundconds.UStar     = '"default"'
+        turbsim_vt.noniecboundconds.ZI        = '"default"'
+        turbsim_vt.noniecboundconds.PC_UW     = '"default"'
+        turbsim_vt.noniecboundconds.PC_UV     = '"default"'
+        turbsim_vt.noniecboundconds.PC_VW     = '"default"'
+        
+        
+        
         return turbsim_vt
 
     def execute(self, IEC_WindType, Uref, ver='Turbsim'):
