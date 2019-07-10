@@ -454,7 +454,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['Fst']['TStart'] = float_read(f.readline().split()[0])
         self.fst_vt['Fst']['OutFileFmt'] = int(f.readline().split()[0])
         self.fst_vt['Fst']['TabDelim'] = bool_read(f.readline().split()[0])
-        self.fst_vt['Fst']['OutFmt'] = f.readline().split()[0][1:-1]
+        self.fst_vt['Fst']['OutFmt'] = f.readline().split()[0] #[1:-1]
 
         # Fst
         f.readline()
@@ -892,6 +892,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Airfoil Information
         f.readline()
+        self.fst_vt['AeroDyn15']['AFTabMod']         = int(f.readline().split()[0])  #bem: added in to account for new line dedicated to table interpolation
         self.fst_vt['AeroDyn15']['InCol_Alfa']       = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cl']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cd']         = int(f.readline().split()[0])
@@ -947,7 +948,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_AeroDyn15Polar()
 
     def read_AeroDyn15Blade(self):
-        # AeroDyn v5.00 Blade Definition File
+        # AeroDyn v5.00 Blade Definition File 
 
         ad_blade_file = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn15']['ADBlFile1'])
         f = open(ad_blade_file)
@@ -978,7 +979,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
 
     def read_AeroDyn15Polar(self):
-        # AirfoilInfo v1.01
+        # AirfoilInfo v1.01 (bem: we need to modify to be able to read in multiple tables)
 
         def readline_filterComments(f):
             read = True

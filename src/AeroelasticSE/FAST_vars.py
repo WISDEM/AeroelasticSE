@@ -468,6 +468,7 @@ AeroDyn15['tau1_const']     = 4
 AeroDyn15['UAMod']          = 0
 AeroDyn15['FLookup']        = False
 
+AeroDyn15['AFTabMod']          = 0
 AeroDyn15['InCol_Alfa']        = 0
 AeroDyn15['InCol_Cl']          = 0
 AeroDyn15['InCol_Cd']          = 0
