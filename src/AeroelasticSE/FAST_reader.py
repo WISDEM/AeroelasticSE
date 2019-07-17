@@ -979,7 +979,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
 
     def read_AeroDyn15Polar(self):
-        # AirfoilInfo v1.01 (bem: we need to modify to be able to read in multiple tables)
+        # AirfoilInfo v1.01
 
         def readline_filterComments(f):
             read = True
@@ -1003,66 +1003,71 @@ class InputReader_OpenFAST(InputReader_Common):
             polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
-            polar['Re']             = float_read(readline_filterComments(f).split()[0])
-            polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
-            polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
+            self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
 
-            # Unsteady Aero Data
-            if polar['InclUAdata']:
-                polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
-                polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
-                polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
-                polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_p']        = float_read(readline_filterComments(f).split()[0])
-                polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
-                polar['b1']         = float_read(readline_filterComments(f).split()[0])
-                polar['b2']         = float_read(readline_filterComments(f).split()[0])
-                polar['b5']         = float_read(readline_filterComments(f).split()[0])
-                polar['A1']         = float_read(readline_filterComments(f).split()[0])
-                polar['A2']         = float_read(readline_filterComments(f).split()[0])
-                polar['A5']         = float_read(readline_filterComments(f).split()[0])
-                polar['S1']         = float_read(readline_filterComments(f).split()[0])
-                polar['S2']         = float_read(readline_filterComments(f).split()[0])
-                polar['S3']         = float_read(readline_filterComments(f).split()[0])
-                polar['S4']         = float_read(readline_filterComments(f).split()[0])
-                polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
-                polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
-                polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
-                polar['k0']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1']         = float_read(readline_filterComments(f).split()[0])
-                polar['k2']         = float_read(readline_filterComments(f).split()[0])
-                polar['k3']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
-                polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
-                polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
-                polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
+            for tab in range(polar['NumTabs']): # For multiple tables
+                polar['Re']             = float_read(readline_filterComments(f).split()[0])
+                polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
+                polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
 
-            # Polar Data
-            polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
-            polar['Alpha']          = [None]*polar['NumAlf']
-            polar['Cl']             = [None]*polar['NumAlf']
-            polar['Cd']             = [None]*polar['NumAlf']
-            polar['Cm']             = [None]*polar['NumAlf']
-            polar['Cpmin']          = [None]*polar['NumAlf']
-            for i in range(polar['NumAlf']):
-                data = [float(val) for val in readline_filterComments(f).split()]
-                if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
-                    polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
-                    polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
-                    polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
-                    polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
-                    polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+                # Unsteady Aero Data
+                if polar['InclUAdata']:
+                    polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
+                    polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
+                    polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
+                    polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_p']        = float_read(readline_filterComments(f).split()[0])
+                    polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
+                    polar['b1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S4']         = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
+                    polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
+                    polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['k0']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
+                    polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
+                    polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
+                    polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
 
-            self.fst_vt['AeroDyn15']['af_data'][afi] = polar
+                # Polar Data
+                polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
+                polar['Alpha']          = [None]*polar['NumAlf']
+                polar['Cl']             = [None]*polar['NumAlf']
+                polar['Cd']             = [None]*polar['NumAlf']
+                polar['Cm']             = [None]*polar['NumAlf']
+                polar['Cpmin']          = [None]*polar['NumAlf']
+                for i in range(polar['NumAlf']):
+                    data = [float(val) for val in readline_filterComments(f).split()]
+                    if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
+                        polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
+                        polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
+                        polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
+                        polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
+                        polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+
+                #print(len(polar))
+                self.fst_vt['AeroDyn15']['af_data'][afi][tab] = polar # For multiple tables
+                #self.fst_vt['AeroDyn15']['af_data'][afi] = polar
 
 
     def read_ServoDyn(self):

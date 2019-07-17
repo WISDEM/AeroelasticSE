@@ -392,10 +392,10 @@ AeroDynPolar['CnNegStall']  = 0.0           #Cn at stall value for negative angl
 AeroDynPolar['alphaCdMin']  = 0.0           #Angle of attack for minimum CD (deg)
 AeroDynPolar['CdMin']       = 0.0           #Minimum Cd Value
 
-AeroDynPolar['alpha']       = zeros([1])    #angle of attack
-AeroDynPolar['cl']          = zeros([1])    #coefficient of lift
-AeroDynPolar['cd']          = zeros([1])    #coefficient of drag
-AeroDynPolar['cm']          = zeros([1])    #coefficient of the pitching moment
+AeroDynPolar['alpha']       = []    #angle of attack
+AeroDynPolar['cl']          = []    #coefficient of lift
+AeroDynPolar['cd']          = []    #coefficient of drag
+AeroDynPolar['cm']          = []    #coefficient of the pitching moment
 
 AeroDynPolar['Re']          = 0.0
 AeroDynPolar['Ctrl']        = 0.0
