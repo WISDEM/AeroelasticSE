@@ -472,7 +472,9 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['Fst']['VTK_type'] = int(f.readline().split()[0])
         self.fst_vt['Fst']['VTK_fields'] = bool_read(f.readline().split()[0])
         self.fst_vt['Fst']['VTK_fps'] = float_read(f.readline().split()[0])
-
+        
+        f.close()
+        
     def read_ElastoDyn(self):
         # ElastoDyn v1.03 Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
@@ -975,7 +977,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['AeroDynBlade']['BlTwist'][i] = data[4]
             self.fst_vt['AeroDynBlade']['BlChord'][i] = data[5]
             self.fst_vt['AeroDynBlade']['BlAFID'][i]  = data[6]
-
+        
+        f.close()
 
     def read_AeroDyn15Polar(self):
         # AirfoilInfo v1.01
@@ -1062,7 +1065,8 @@ class InputReader_OpenFAST(InputReader_Common):
                     polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
 
             self.fst_vt['AeroDyn15']['af_data'][afi] = polar
-
+            
+            f.close()
 
     def read_ServoDyn(self):
         # ServoDyn v1.05 Input File

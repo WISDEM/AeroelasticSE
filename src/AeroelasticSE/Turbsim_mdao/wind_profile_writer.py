@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import decimal
-import pandas
+# import pandas
 from collections import OrderedDict
 
 def write_wind(V_ref, alpha, Beta, Z_hub, filename, template_file):

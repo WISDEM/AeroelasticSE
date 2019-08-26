@@ -703,7 +703,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('TwrRe  '+ '  '.join(['TwrCD%d'%(i+1) for i in range(self.fst_vt['AeroDynTower']['NTwrCD'])]) +'\n')
         for Re, CD in zip(self.fst_vt['AeroDynTower']['TwrRe'], self.fst_vt['AeroDynTower']['TwrCD']):
             f.write('% 2.15e' %Re + '   '.join(['% 2.15e'%cdi for cdi in CD]) + '\n')
-
+        
+        f.close()
+        
     def write_AeroDyn15(self):
         # AeroDyn v15.03
 
@@ -819,7 +821,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         BlAFID   = self.fst_vt['AeroDynBlade']['BlAFID']
         for Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, AFID in zip(BlSpn, BlCrvAC, BlSwpAC, BlCrvAng, BlTwist, BlChord, BlAFID):
             f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 8d}\n'.format(Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, int(AFID)))
-
+        
+        f.close()
+        
     def write_AeroDyn15Polar(self):
         # Airfoil Info v1.01
         # TODO: Coordinates file not supported currently
@@ -924,7 +928,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
             for row in polar:
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
-
+            
+            f.close()
 
     def write_ServoDyn(self):
         # ServoDyn v1.05 Input File
@@ -1294,7 +1299,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         for channel_list in outlist:
             f.write('"' + ', '.join(channel_list) + '"\n')
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
-
+        
+        f.close()
 
     def write_MAP(self):
 
@@ -1349,6 +1355,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<11s}'.format('(-)')+'\n')
         f.write(" ".join(self.fst_vt['MAP']['Option']).strip() + '\n')
 
+        f.close()
 
         # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MAP'][''], '', '- \n'))
         # f.write('\n')

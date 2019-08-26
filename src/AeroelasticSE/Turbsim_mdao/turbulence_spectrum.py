@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import pandas
+# import pandas
 from collections import OrderedDict
 import AeroelasticSE
 def turb_specs(V_ref, L_u, L_v, L_w, sigma_u, sigma_v, sigma_w, template_file, filename):
