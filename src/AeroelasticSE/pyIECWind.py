@@ -15,7 +15,6 @@ class pyIECWind_extreme():
         self.Turbine_Class = 'I'     # IEC Wind Turbine Class
         self.Turbulence_Class = 'B'  # IEC Turbulance Class
         self.Vert_Slope = 0          # Vertical slope of the wind inflow (deg)
-        self.Tstart = 30             # Time to start transient conditions (s)
         self.dt = 0.05               # Transient wind time step (s)
         self.dir_change = 'both'     # '+','-','both': sign for transient events in EDC, EWS
         self.shear_orient = 'both'   # 'v','h','both': vertical or horizontal shear for EWS
@@ -24,6 +23,7 @@ class pyIECWind_extreme():
         
         self.T0 = 0.
         self.TF = 630.
+        self.Tstart = (self.TF - self.T0)/2. # Time to start transient conditions (s)
 
     def setup(self):
         # General turbulence parameters: 6.3
@@ -81,7 +81,7 @@ class pyIECWind_extreme():
         return sigma_1, V_e50, V_e1, V_50, V_1
 
     def EOG(self, V_hub_in):
-        # Extreme operating guest: 6.3.2.2
+        # Extreme operating gust: 6.3.2.2
 
         self.setup()
 
@@ -545,5 +545,5 @@ def example_TurbulentWind():
 
 if __name__=="__main__":
 
-    # example_ExtremeWind()
-    example_TurbulentWind()
+    example_ExtremeWind()
+    # example_TurbulentWind()
