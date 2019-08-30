@@ -324,8 +324,8 @@ def RotorSE_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_clas
 def RotorSE_DLC_1_4_Rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe=''):
 
     # Default Runtime
-    T      = 60.
-    TStart = 30.
+    T      = 360.
+    TStart = 60.
     # TStart = 0.
     
     # Overwrite for testing
@@ -345,6 +345,8 @@ def RotorSE_DLC_1_4_Rated(fst_vt, runDir, namebase, TMax, turbine_class, turbule
     iec.Turbulence_Class = turbulence_class
     iec.D = fst_vt['ElastoDyn']['TipRad']*2.
     iec.z_hub = fst_vt['InflowWind']['RefHt']
+    iec.TF = T
+    iec.Tstart = T*3./4.
 
     iec.dlc_inputs = {}
     iec.dlc_inputs['DLC']   = [1.4]
@@ -402,7 +404,7 @@ def RotorSE_DLC_1_4_Rated(fst_vt, runDir, namebase, TMax, turbine_class, turbule
     channels  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
     channels += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
     channels += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
-    channels += ["RtAeroCp", "RotTorq", "RotThrust", "RotSpeed", "NacYaw"]
+    channels += ["RtAeroCp", "RotTorq", "RotThrust", "RotSpeed", "NacYaw", "Wind1VelX"]
 
     channels += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
     channels += ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
