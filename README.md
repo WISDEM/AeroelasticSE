@@ -1,3 +1,11 @@
+# DEPRECATED
+------------
+
+**THIS REPOSITORY IS DEPRECATED AND WILL BE ARCHIVED (READ-ONLY) IN NOVEMBER 2019.**
+
+WISDEM has moved to a single, integrated repository at https://github.com/wisdem/wisdem
+
+---------------
 # AeroelasticSE
 
 AeroelasticSE is a wrapper for the OpenFAST aeroelastic code that allows it to be used in OpenMDAO.
